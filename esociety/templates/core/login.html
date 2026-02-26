@@ -1,6 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | eSociety</title>
 
-<form method="post">
-    {% csrf_token %}
-    {{form.as_p}}
-    <button type="submit">Login</button>
-</form>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+
+<div class="page-container">
+
+    <div class="card">
+
+        <h1>Login</h1>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <!-- Email -->
+            <div class="form-group">
+
+                <label>Email:</label>
+
+                <div class="input-wrapper">
+                    {{ form.email }}
+                </div>
+
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+
+                <label>Password:</label>
+
+                <div class="input-wrapper">
+
+                    {{ form.password }}
+
+                    <i class="fa fa-eye toggle-password"
+                       onclick="togglePassword()"></i>
+
+                </div>
+
+            </div>
+
+            <!-- Button -->
+            <button type="submit" class="btn">
+                Login
+            </button>
+
+        </form>
+
+        <p class="bottom-text">
+            Don't have an account?
+            <a href="{% url 'signup' %}">Sign Up</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script>
+function togglePassword()
+{
+    var password = document.getElementById("id_password");
+
+    if(password.type === "password")
+        password.type = "text";
+    else
+        password.type = "password";
+}
+</script>
+
+</body>
+</html>

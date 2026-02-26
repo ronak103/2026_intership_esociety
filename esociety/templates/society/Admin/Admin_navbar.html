@@ -1,0 +1,29 @@
+{% load static %}
+
+<nav class="navbar">
+
+    <div class="logo">
+        <a href="/">eSociety</a>
+    </div>
+
+    <div class="nav-links">
+
+        <!-- Admin Navbar -->
+        {% if user.is_authenticated and user.role == "Admin" %}
+
+            <a href="#">Dashboard</a>
+            <a href="#">Visitors</a>
+            <a href="#">Complaints</a>
+            <a href="#">Facilities</a>
+            <a href="#">Payments</a>
+
+        {% endif %}
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'logout' %}">Logout</a>
+        {% else %}
+            <a href="{% url 'login' %}">Login</a>
+        {% endif %} 
+
+    </div>
+</nav>

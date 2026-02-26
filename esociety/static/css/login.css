@@ -1,0 +1,216 @@
+/* Reset */
+*
+{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+/* Background same as signup */
+body
+{
+    font-family: "Segoe UI", Arial, sans-serif;
+
+    min-height:100vh;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    background:
+    linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)),
+    url("../images/society-bg.jpg");
+
+    background-size:cover;
+    background-position:center;
+}
+
+/* Container */
+.page-container
+{
+    width:100%;
+    padding:20px;
+}
+
+/* Card */
+.card
+{
+    max-width:500px;
+    width:100%;
+
+    margin:auto;
+
+    background:white;
+
+    padding:40px;
+
+    border-radius:20px;
+
+    box-shadow:0 20px 40px rgba(0,0,0,0.2);
+}
+
+/* Title */
+.card h1
+{
+    text-align:center;
+
+    margin-bottom:30px;
+
+    font-size:32px;
+
+    color:#2d3748;
+}
+
+/* Form group */
+.form-group
+{
+    margin-bottom:20px;
+}
+
+/* Label */
+label
+{
+    display:block;
+
+    margin-bottom:8px;
+
+    font-weight:600;
+
+    color:#4a5568;
+}
+
+/* Input wrapper */
+.input-wrapper
+{
+    position:relative;
+}
+
+/* Inputs */
+input
+{
+    width:100%;
+
+    padding:12px;
+
+    font-size:15px;
+
+    border-radius:10px;
+
+    border:1px solid #cbd5e0;
+
+    outline:none;
+
+    transition:0.3s;
+}
+
+input:focus
+{
+    border-color:#3b82f6;
+
+    box-shadow:0 0 0 3px rgba(59,130,246,0.2);
+}
+
+/* Password toggle */
+.toggle-password
+{
+    position:absolute;
+
+    right:12px;
+
+    top:50%;
+
+    transform:translateY(-50%);
+
+    cursor:pointer;
+
+    color:#555;
+}
+
+/* Button */
+.btn
+{
+    width:100%;
+
+    padding:14px;
+
+    background:#2b4c9b;
+
+    color:white;
+
+    border:none;
+
+    border-radius:10px;
+
+    font-size:18px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    margin-top:10px;
+
+    transition:0.3s;
+}
+
+.btn:hover
+{
+    background:#1f3a7a;
+}
+
+/* Bottom text */
+.bottom-text
+{
+    text-align:center;
+
+    margin-top:20px;
+
+    color:#555;
+}
+
+.bottom-text a
+{
+    color:#2b4c9b;
+
+    text-decoration:none;
+
+    font-weight:600;
+}
+.bottom-text a:hover
+{
+    text-decoration:underline;
+}
+
+/* Mobile responsive */
+@media(max-width:768px)
+{
+    .card
+    {
+        padding:25px;
+    }
+
+    .card h1
+    {
+        font-size:26px;
+    }
+}
+
+@media(max-width:480px)
+{
+    .card
+    {
+        padding:20px;
+        border-radius:15px;
+    }
+
+    input
+    {
+        font-size:14px;
+        padding:10px;
+    }
+
+    .btn
+    {
+        font-size:16px;
+        padding:12px;
+    }
+}

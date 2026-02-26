@@ -1,0 +1,20 @@
+{% load static %}
+
+<nav class="navbar">
+
+    <div class="logo">
+        <a href="/">eSociety</a>
+    </div>
+
+    <div class="nav-links">
+
+<!-- Guard Navbar -->
+        {% if user.is_authenticated and user.role == "securityguard" %}
+
+            <a href="#">Dashboard</a>
+            <a href="#">Visitor Entry</a>
+            <a href="#">Visitor Exit</a>
+
+        {% endif %}
+    </div>
+</nav>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>eSociety</title>
+
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
+
+</head>
+
+<body>
+
+    {% if user.is_authenticated %}
+
+    {% if user.role == "Admin" %}
+        {% include "society/Admin/Admin_navbar.html" %}
+
+    {% elif user.role == "Resident" %}
+        {% include "society/Resident/Resident_navbar.html" %}
+
+    {% elif user.role == "Securityguard" %}
+        {% include "society/Securityguard/Security_navbar.html" %}
+
+    {% else %}
+        <p>No role matched</p>
+    {% endif %}
+
+{% else %}
+
+    <p>User not logged in</p>
+
+{% endif %}
+
+
+
+    {% block content %}
+    {% endblock %}
+
+</body>
+</html>

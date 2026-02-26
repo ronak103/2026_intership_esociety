@@ -1,0 +1,175 @@
+/* ===== NAVBAR MAIN ===== */
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+
+    padding: 14px 40px;
+
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+
+/* ===== LOGO ===== */
+
+.logo a {
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: bold;
+    text-decoration: none;
+    letter-spacing: 1px;
+}
+
+.logo a:hover {
+    color: #38bdf8;
+}
+
+
+/* ===== NAV LINKS ===== */
+
+.nav-links {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+
+/* ===== NAV LINK STYLE ===== */
+
+.nav-links a {
+
+    color: #e2e8f0;
+
+    text-decoration: none;
+
+    font-size: 16px;
+
+    font-weight: 500;
+
+    padding: 8px 14px;
+
+    border-radius: 6px;
+
+    transition: all 0.3s ease;
+
+}
+
+
+/* Hover Effect */
+
+.nav-links a:hover {
+
+    background-color: #38bdf8;
+
+    color: #0f172a;
+
+    transform: translateY(-2px);
+
+}
+
+
+/* Active Link */
+
+.nav-links a.active {
+
+    background-color: #38bdf8;
+
+    color: #0f172a;
+
+}
+
+
+/* Logout Button Special */
+
+.nav-links a:last-child {
+
+    background-color: #ef4444;
+
+    color: white;
+
+}
+
+.nav-links a:last-child:hover {
+
+    background-color: #dc2626;
+
+    color: white;
+
+}
+
+
+/* ===== MOBILE RESPONSIVE ===== */
+
+@media screen and (max-width: 768px) {
+
+    .navbar {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        padding: 15px 20px;
+
+    }
+
+    .nav-links {
+
+        flex-direction: column;
+
+        width: 100%;
+
+        margin-top: 10px;
+
+        gap: 10px;
+
+    }
+
+    .nav-links a {
+
+        width: 100%;
+
+        padding: 10px;
+
+    }
+
+}
+
+
+/* ===== SMOOTH ANIMATION ===== */
+
+.nav-links a {
+    position: relative;
+}
+
+.nav-links a::after {
+
+    content: "";
+
+    position: absolute;
+
+    width: 0;
+
+    height: 2px;
+
+    left: 0;
+
+    bottom: -4px;
+
+    background-color: #38bdf8;
+
+    transition: width 0.3s ease;
+
+}
+
+.nav-links a:hover::after {
+
+    width: 100%;
+
+}
