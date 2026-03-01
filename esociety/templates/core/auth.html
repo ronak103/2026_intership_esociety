@@ -1,0 +1,187 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication | eSociety</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+</head>
+<body>
+
+<div class="auth-wrapper">
+
+    <!-- Toggle Bar -->
+    <div class="toggle-bar">
+        <a href="{% url 'login' %}"
+           class="toggle-btn {% if active_form == 'signin' %}active{% endif %}"
+           data-type="signin">
+            Sign In
+        </a>
+
+        <a href="{% url 'signup' %}"
+           class="toggle-btn {% if active_form == 'signup' %}active{% endif %}"
+           data-type="signup">
+            Sign Up
+        </a>
+
+        <div class="slider {% if active_form == 'signup' %}move{% endif %}"></div>
+    </div>
+
+    <!-- Card -->
+    <div class="auth-card">
+
+        <div class="form-slider">
+            <div class="form-track">
+
+                <!-- ── SIGN IN ─────────────────────────── -->
+                <div class="form-panel" id="panel-signin">
+                    <h2>Welcome back</h2>
+                    <p class="subtitle">Sign in to your account to continue</p>
+
+                    <form method="post" action="{% url 'login' %}" novalidate>
+                        {% csrf_token %}
+
+                        {% if login_form.non_field_errors %}
+                            <div class="form-error-global">
+                                {% for error in login_form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            {{ login_form.username }}
+                            {% for error in login_form.username.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password</label>
+                            {{ login_form.password }}
+                            {% for error in login_form.password.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" name="signin_submit" class="submit-btn">
+                            <span>Sign In</span>
+                        </button>
+
+                        <p class="bottom-link">
+                            Don't have an account?
+                            <a href="{% url 'signup' %}" class="js-switch" data-type="signup">Sign Up</a>
+                        </p>
+                    </form>
+                </div>
+
+                <!-- ── SIGN UP ─────────────────────────── -->
+                <div class="form-panel" id="panel-signup">
+                    <h2>Create account</h2>
+                    <p class="subtitle">Join us today — it only takes a minute</p>
+
+                    <form method="post" action="{% url 'signup' %}" novalidate>
+                        {% csrf_token %}
+
+                        {% if signup_form.non_field_errors %}
+                            <div class="form-error-global">
+                                {% for error in signup_form.non_field_errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>First Name</label>
+                                {{ signup_form.first_name }}
+                                {% for error in signup_form.first_name.errors %}
+                                    <span class="field-error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group">
+                                <label>Last Name</label>
+                                {{ signup_form.last_name }}
+                                {% for error in signup_form.last_name.errors %}
+                                    <span class="field-error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Email</label>
+                            {{ signup_form.email }}
+                            {% for error in signup_form.email.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Mobile Number</label>
+                            {{ signup_form.mobile_number }}
+                            {% for error in signup_form.mobile_number.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Role</label>
+                                {{ signup_form.role }}
+                                {% for error in signup_form.role.errors %}
+                                    <span class="field-error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="form-group">
+                                <label>Gender</label>
+                                {{ signup_form.gender }}
+                                {% for error in signup_form.gender.errors %}
+                                    <span class="field-error">{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Password</label>
+                            {{ signup_form.password1 }}
+                            {% for error in signup_form.password1.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirm Password</label>
+                            {{ signup_form.password2 }}
+                            {% for error in signup_form.password2.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+
+                        <button type="submit" name="signup_submit" class="submit-btn">
+                            <span>Create Account</span>
+                        </button>
+
+                        <p class="bottom-link">
+                            Already have an account?
+                            <a href="{% url 'login' %}" class="js-switch" data-type="signin">Sign In</a>
+                        </p>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+
+    </div><!-- /.auth-card -->
+</div><!-- /.auth-wrapper -->
+
+<script src="{% static 'js/auth.js' %}"></script>
+
+</body>
+</html>

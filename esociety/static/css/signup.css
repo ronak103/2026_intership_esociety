@@ -1,276 +1,234 @@
-/* Reset */
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── RESET ── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --primary:       #1a56db;
+    --primary-dark:  #1342b0;
+    --primary-light: #eef3ff;
+    --text:          #0d1117;
+    --text2:         #4b5563;
+    --muted:         #9ca3af;
+    --border:        #e5e7eb;
+    --surface:       #f9fafb;
+    --white:         #ffffff;
+    --error:         #ef4444;
+
+    --shadow-xl: 0 32px 80px rgba(0,0,0,.14);
+
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-xl: 28px;
+
+    --font: 'Plus Jakarta Sans', sans-serif;
 }
 
-
-/* ADD THIS (IMPORTANT) */
-html, body {
-    height: 100%;
-}
-
+/* ── BODY ── */
 body {
-
-    font-family: "Segoe UI", Arial, sans-serif;
-
+    font-family: var(--font);
     min-height: 100vh;
-
-    background-image: url("../images/bg.jpg");
-
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-
     display: flex;
-
+    align-items: flex-start;
     justify-content: center;
-    align-items: center;
-
+    padding: 50px 20px;
+    background: var(--white);
     position: relative;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
 }
 
-
-
-/* Dim overlay (FIXED) */
+/* Blob bg */
 body::before {
-
-    content: "";
-
+    content: '';
     position: fixed;
-
-    top: 0;
-    left: 0;
-
-    width: 100%;
-    height: 100%;
-
-    background-color: rgba(0, 0, 0, 0.5);
-
-    z-index: 1;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 65% 55% at 15% 10%, #dbeafe 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 88% 85%, #bfdbfe 0%, transparent 55%),
+        radial-gradient(ellipse 38% 38% at 55% 48%, #ede9fe 0%, transparent 60%);
+    filter: blur(60px);
+    opacity: .65;
+    z-index: 0;
+    animation: blobFloat 14s ease-in-out infinite;
 }
 
+@keyframes blobFloat {
+    0%, 100% { transform: scale(1) translate(0,0); }
+    33%       { transform: scale(1.03) translate(22px,-14px); }
+    66%       { transform: scale(.97) translate(-16px,12px); }
+}
 
+/* Dot grid */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, #c7d7f0 1px, transparent 1px);
+    background-size: 36px 36px;
+    opacity: .32;
+    mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
+    z-index: 0;
+    pointer-events: none;
+}
 
-/* Signup container */
+/* ── SIGNUP CONTAINER ── */
 .signup-container {
-
-    background: rgba(255, 255, 255, 0.95);
-
-    width: 460px;   /* increased width */
-
-    padding: 25px 30px;
-
-    border-radius: 14px;
-
-    box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-
+    width: 100%;
+    max-width: 480px;
+    background: var(--white);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border);
+    padding: 44px 42px 38px;
+    box-shadow: var(--shadow-xl);
     position: relative;
-
     z-index: 2;
+    animation: fadeUp .55s cubic-bezier(.22,1,.36,1) both;
 }
 
-/* Heading */
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── HEADING ── */
 .signup-container h2 {
-
-    text-align: center;
-
-    margin-bottom: 25px;
-
-    font-size: 26px;
-
-    font-weight: 600;
-
-    color: #1f2937;
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: -.6px;
+    color: var(--text);
+    margin-bottom: 3px;
+    line-height: 1.15;
 }
 
+.signup-subtitle {
+    font-size: .84rem;
+    color: var(--text2);
+    margin-top: 4px;
+    margin-bottom: 26px;
+}
 
-/* Labels */
+/* ── FORM GROUP ── */
+.form-group { margin-bottom: 15px; }
+
+/* ── LABELS ── */
 .signup-container label {
-
-    font-size: 14px;
-
-    font-weight: 500;
-
-    color: #374151;
-
-    margin-bottom: 5px;
-
     display: block;
-}
-/* Fix password rules alignment */
-.signup-container ul {
-
-    font-size: 13px;
-
-    color: #6b7280;
-
-    margin-top: -10px;
-
-    margin-bottom: 15px;
-
-    padding-left: 0;        /* remove left shift */
-
-    list-style-position: inside;   /* align properly */
+    font-size: .76rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: .15px;
 }
 
-
-/* Make helptext same style */
-.signup-container .helptext {
-
-    display: block;
-
-    font-size: 13px;
-
-    color: #6b7280;
-
-    margin-top: -10px;
-
-    margin-bottom: 15px;
-}
-
-/* Inputs */
+/* ── INPUTS & SELECTS ── */
 .signup-container input,
 .signup-container select {
-
     width: 100%;
-
-    padding: 12px;
-
-    margin-bottom: 18px;
-
-    border-radius: 8px;
-
-    border: 1px solid #d1d5db;
-
-    font-size: 14px;
-
-    background-color: #f9fafb;
-
-    transition: 0.3s;
+    padding: 11px 13px;
+    font-size: .87rem;
+    font-family: var(--font);
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    transition: all .2s ease;
 }
 
+.signup-container input::placeholder { color: var(--muted); }
 
-/* Input focus */
+.signup-container input:hover,
+.signup-container select:hover { border-color: #93b4f8; }
+
 .signup-container input:focus,
 .signup-container select:focus {
-
-    outline: none;
-
-    border-color: #1e3a8a;
-
-    background-color: #ffffff;
-
-    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+    background: var(--white);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
 }
 
-
-/* Help text */
-.signup-container .helptext {
-
-    display: block;
-
-    font-size: 12px;
-
-    color: #6b7280;
-
-    margin-top: -10px;
-
-    margin-bottom: 15px;
+input:-webkit-autofill {
+    box-shadow: 0 0 0 1000px var(--surface) inset !important;
+    -webkit-text-fill-color: var(--text) !important;
 }
 
+/* Hide Django help text */
+.helptext, .help-text, ul.helptext, span.helptext, p.help-text, form ul {
+    display: none;
+}
 
-/* Button */
-.signup-container button {
-
+/* ── BUTTON ── */
+.signup-container button[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-
-    padding: 13px;
-
-    background-color: #1e3a8a;
-
-    color: white;
-
-    font-size: 16px;
-
-    font-weight: 600;
-
+    padding: .82rem 1.6rem;
     border: none;
-
-    border-radius: 8px;
-
+    border-radius: var(--radius-md);
+    font-size: .88rem;
+    font-weight: 700;
+    font-family: var(--font);
+    color: var(--white);
+    background: var(--primary);
+    box-shadow: 0 4px 18px rgba(26,86,219,.35);
     cursor: pointer;
-
-    transition: 0.3s;
+    margin-top: 8px;
+    transition: all .22s ease;
+    white-space: nowrap;
 }
 
-
-/* Button hover */
-.signup-container button:hover {
-
-    background-color: #1e40af;
-}
-.signup-container li {
-    margin-bottom: 4px;
+.signup-container button[type="submit"]:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 26px rgba(26,86,219,.42);
 }
 
+.signup-container button[type="submit"]:active { transform: scale(.97) translateY(0); }
 
-/* Login text */
+/* ── BOTTOM LINK ── */
 .login-text {
-
     text-align: center;
-
-    margin-top: 15px;
-
-    font-size: 14px;
-
-    color: #374151;
+    margin-top: 18px;
+    font-size: .82rem;
+    color: var(--text2);
 }
-
 
 .login-text a {
-
-    color: #1e3a8a;
-
+    color: var(--primary);
     text-decoration: none;
-
-    font-weight: 600;
+    font-weight: 700;
+    transition: color .18s;
 }
 
-
 .login-text a:hover {
-
+    color: var(--primary-dark);
     text-decoration: underline;
 }
 
-
-/* Tablet responsive */
-@media (max-width: 768px) {
-
-    .signup-container {
-
-        width: 90%;
-
-        padding: 25px;
-    }
-
+/* ── ERRORS ── */
+.form-error-global {
+    background: #fef2f2;
+    border: 1.5px solid #fecaca;
+    padding: 11px 13px;
+    border-radius: var(--radius-sm);
+    font-size: .82rem;
+    color: var(--error);
+    margin-bottom: 16px;
+    font-weight: 500;
 }
 
+.field-error {
+    display: block;
+    color: var(--error);
+    font-size: .72rem;
+    margin-top: 5px;
+    font-weight: 600;
+}
 
-/* Mobile responsive */
-@media (max-width: 480px) {
-
-    .signup-container {
-
-        width: 95%;
-
-        padding: 20px;
-    }
-
-    .signup-container h2 {
-
-        font-size: 22px;
-    }
-
+/* ── RESPONSIVE ── */
+@media (max-width: 520px) {
+    .signup-container { padding: 30px 22px 28px; }
+    .signup-container h2 { font-size: 1.5rem; }
 }

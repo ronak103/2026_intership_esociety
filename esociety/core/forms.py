@@ -11,6 +11,7 @@ class UserSignupForm(UserCreationForm):
             'password2':forms.PasswordInput(),
             'gender':forms.Select()
         }
+
         
 class UserLoginForm(forms.Form):
     email = forms.EmailField()

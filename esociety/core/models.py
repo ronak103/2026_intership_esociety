@@ -47,7 +47,7 @@ class User(AbstractBaseUser):
     first_name = models.CharField(max_length=50,null=True)
     last_name = models.CharField(max_length=50,null=True)
     gender = models.CharField(max_length=10,choices=gender_choice,default="male")
-    mobile_number = models.BigIntegerField(max_length=15,null=True)
+    mobile_number = models.CharField(null=True)
     
     
     objects = UserManager()

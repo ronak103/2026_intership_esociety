@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-
+{% csrf_token %}
 {% block content %}
 <h1>resident dashboard</h1>
 <p>{{request.user}}</p>

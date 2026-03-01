@@ -1,0 +1,699 @@
+{%load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+  <title>Home</title>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════ -->
+<nav class="nav" id="navbar">
+  <div class="container">
+    <div class="nav__inner">
+
+      <a href="#" class="nav__logo">
+        <div class="nav__logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M12 3L22 10V21H16V15H8V21H2V10L12 3Z" fill="white"/>
+            <rect x="9.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+            <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+          </svg>
+        </div>
+        e<em>Society</em>
+      </a>
+
+      <ul class="nav__links">
+        <li><a href="#features">Features</a></li>
+        <li><a href="#platform">Platform</a></li>
+        <li><a href="#how-it-works">How It Works</a></li>
+        <li><a href="#testimonials">Reviews</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+
+      <div class="nav__actions">
+  
+        <a href="{% url 'login' %}" class="btn btn-outline btn-sm">Login</a>
+        <button class="btn btn-primary btn-sm">Book a Demo →</button>
+      </div>
+
+      <div class="nav__hamburger" id="hamburger">
+        <span></span><span></span><span></span>
+      </div>
+
+    </div>
+  </div>
+</nav>
+
+
+<!-- ════════════════════════════════════════
+     HERO
+════════════════════════════════════════ -->
+<section class="hero" id="home">
+  <div class="hero__bg">
+    <div class="hero__grid"></div>
+    <div class="hero__blob hero__blob--1"></div>
+    <div class="hero__blob hero__blob--2"></div>
+    <div class="hero__blob hero__blob--3"></div>
+  </div>
+
+  <div class="container">
+    <div class="hero__inner">
+
+      <!-- LEFT — Copy -->
+      <div class="hero__left">
+        <div class="hero__tag">
+          <span class="hero__tag-dot"></span>
+          Trusted by 500+ Societies
+        </div>
+
+        <h1 class="hero__title">
+          Smarter Living<br>
+          Starts at Your<br>
+          <span class="highlight">Society Gate</span>
+        </h1>
+
+        <p class="hero__desc">
+          One platform for residents, security guards &amp; managers — visitor approvals, complaints, facility bookings, and finances, all in one place.
+        </p>
+
+        <div class="hero__actions">
+          <button class="btn btn-primary btn-lg">Book a Free Demo →</button>
+          <button class="btn btn-outline btn-lg">Watch Video ▶</button>
+        </div>
+
+        <div class="hero__trust">
+          <div class="hero__trust-avatars">
+            <div class="hero__avatar a1">RK</div>
+            <div class="hero__avatar a2">PS</div>
+            <div class="hero__avatar a3">AM</div>
+            <div class="hero__avatar a4">VJ</div>
+          </div>
+          <div class="hero__trust-text">
+            <strong>50,000+ residents</strong>
+            love eSociety across India
+          </div>
+
+          <div class="hero__divider"></div>
+
+          <div>
+            <div class="hero__stars">★★★★★</div>
+            <div class="hero__rating-label"><strong>4.8</strong> App Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT — Phone Mockup -->
+      <div class="hero__visual">
+
+        <!-- Floating notification -->
+        <div class="float-notif">
+          <div class="fn-icon" style="background:#dcfce7">✅</div>
+          <div>
+            <div class="fn-title">Visitor Approved</div>
+            <div class="fn-sub">Swiggy • Gate 1 • Now</div>
+          </div>
+        </div>
+
+        <!-- Floating stat -->
+        <div class="float-stat">
+          <div class="fst-val">98%</div>
+          <div class="fst-lbl">Dues collected on time</div>
+        </div>
+
+        <div class="phone-wrap">
+          <div class="phone-frame">
+            <div class="phone-screen">
+              <div class="phone-notch"></div>
+
+              <!-- Status + Header -->
+              <div class="phone-status">
+                <div class="ps-left">
+                  <div class="ps-avatar">👤</div>
+                  <div>
+                    <div class="ps-greeting">Good morning,</div>
+                    <div class="ps-name">Priya Sharma</div>
+                  </div>
+                </div>
+                <div class="ps-bell">🔔</div>
+              </div>
+
+              <!-- Quick Actions -->
+              <div class="phone-actions">
+                <div class="pa-item">
+                  <div class="pa-icon">🚪</div>
+                  <div class="pa-label">Invite</div>
+                </div>
+                <div class="pa-item">
+                  <div class="pa-icon">🔧</div>
+                  <div class="pa-label">Complaint</div>
+                </div>
+                <div class="pa-item">
+                  <div class="pa-icon">📅</div>
+                  <div class="pa-label">Book</div>
+                </div>
+                <div class="pa-item">
+                  <div class="pa-icon">💰</div>
+                  <div class="pa-label">Pay</div>
+                </div>
+              </div>
+
+              <!-- Body -->
+              <div class="phone-body">
+                <!-- Mini stats -->
+                <div class="phone-section-title">Overview</div>
+                <div class="phone-stats">
+                  <div class="pstat">
+                    <div class="pstat__val" style="color:#1a56db">3</div>
+                    <div class="pstat__lbl">Open Complaints</div>
+                  </div>
+                  <div class="pstat">
+                    <div class="pstat__val" style="color:#f59e0b">₹2,400</div>
+                    <div class="pstat__lbl">Pending Dues</div>
+                  </div>
+                </div>
+
+                <!-- Activity -->
+                <div class="phone-section-title">Recent Activity</div>
+                <div class="phone-activity">
+                  <div class="pact">
+                    <div class="pact__left">
+                      <div class="pact__icon" style="background:#dcfce7">🚪</div>
+                      <div>
+                        <div class="pact__title">Amazon Delivery</div>
+                        <div class="pact__sub">Awaiting approval</div>
+                      </div>
+                    </div>
+                    <span class="chip chip--blue">Allow?</span>
+                  </div>
+                  <div class="pact">
+                    <div class="pact__left">
+                      <div class="pact__icon" style="background:#fef9c3">🔧</div>
+                      <div>
+                        <div class="pact__title">Plumbing Issue</div>
+                        <div class="pact__sub">Block A · In progress</div>
+                      </div>
+                    </div>
+                    <span class="chip chip--yellow">Open</span>
+                  </div>
+                  <div class="pact">
+                    <div class="pact__left">
+                      <div class="pact__icon" style="background:#ede9fe">📅</div>
+                      <div>
+                        <div class="pact__title">Gym — Tue 7 AM</div>
+                        <div class="pact__sub">Booking confirmed</div>
+                      </div>
+                    </div>
+                    <span class="chip chip--green">Done</span>
+                  </div>
+                </div>
+              </div>
+            </div><!-- /phone-screen -->
+          </div><!-- /phone-frame -->
+        </div><!-- /phone-wrap -->
+      </div><!-- /hero__visual -->
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     LOGOS / CITIES STRIP
+════════════════════════════════════════ -->
+<div class="logos-strip">
+  <span class="logos-strip__label">Trusted by societies in</span>
+  <div class="logos-strip__cities">
+    <span class="city-pill">🏙 Ahmedabad</span>
+    <span class="city-pill">🏙 Mumbai</span>
+    <span class="city-pill">🏙 Bangalore</span>
+    <span class="city-pill">🏙 Pune</span>
+    <span class="city-pill">🏙 Delhi NCR</span>
+    <span class="city-pill">🏙 Hyderabad</span>
+    <span class="city-pill">🏙 Chennai</span>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     FEATURES
+════════════════════════════════════════ -->
+<section class="section" id="features">
+  <div class="container">
+
+    <div class="section__header section__header--center reveal">
+      <div class="section__tag">Core Features</div>
+      <h2 class="section__title">Everything your society <span>actually needs</span></h2>
+      <p class="section__sub">From the gate to the committee room — eSociety brings every moving part together in one seamless platform.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feat-card reveal">
+        <div class="feat-card__icon" style="background:#dbeafe">🚪</div>
+        <div class="feat-card__title">Visitor Management</div>
+        <div class="feat-card__desc">QR & OTP-based digital entry. Residents approve or deny visitors instantly. Full entry-exit audit trail for security.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-card__icon" style="background:#fef9c3">🔧</div>
+        <div class="feat-card__title">Complaint Tracking</div>
+        <div class="feat-card__desc">Log maintenance issues with photos, auto-assign to staff, and track resolution status from open to closed.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-card__icon" style="background:#dcfce7">📅</div>
+        <div class="feat-card__title">Facility Booking</div>
+        <div class="feat-card__desc">Live availability calendars for gym, pool, and hall. Book and pay online. Instant confirmation, no calls needed.</div>
+      </div>
+      <div class="feat-card reveal">
+        <div class="feat-card__icon" style="background:#fef3c7">💰</div>
+        <div class="feat-card__title">Financial Management</div>
+        <div class="feat-card__desc">Automate maintenance dues, generate invoices, track overdue payments, and view society expense reports.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-card__icon" style="background:#ede9fe">📢</div>
+        <div class="feat-card__title">Community Board</div>
+        <div class="feat-card__desc">Broadcast notices, announce events, and run polls. Keep every resident informed and engaged at all times.</div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-card__icon" style="background:#fee2e2">🚨</div>
+        <div class="feat-card__title">Emergency Alerts</div>
+        <div class="feat-card__desc">One-tap SOS alerts to all residents and guards. Instant notifications for fire, unauthorized entry, or any crisis.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     HOW IT WORKS
+════════════════════════════════════════ -->
+<section class="section section--grey" id="how-it-works">
+  <div class="container">
+
+    <div class="section__header section__header--center reveal">
+      <div class="section__tag">How It Works</div>
+      <h2 class="section__title">Up and running in <span>4 simple steps</span></h2>
+      <p class="section__sub">No complex setup. No IT team required. Your society can go live in under a day.</p>
+    </div>
+
+    <div class="steps-row">
+      <div class="step reveal">
+        <div class="step__num">1</div>
+        <div class="step__title">Setup Society</div>
+        <div class="step__desc">Admin configures the society profile, adds residents, blocks, and facility details.</div>
+      </div>
+      <div class="step reveal reveal-delay-1">
+        <div class="step__num">2</div>
+        <div class="step__title">Residents Onboard</div>
+        <div class="step__desc">Residents download the app and get access to all features — visitors, bookings, bills.</div>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step__num">3</div>
+        <div class="step__title">Guards Go Digital</div>
+        <div class="step__desc">Security team uses the guard app for visitor screening, approvals, and entry logs.</div>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step__num">4</div>
+        <div class="step__title">Manage &amp; Grow</div>
+        <div class="step__desc">Admins track finances, complaints, and reports from a single smart dashboard.</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     PLATFORM — VISITOR MANAGEMENT
+════════════════════════════════════════ -->
+<section class="section" id="platform">
+  <div class="container">
+
+    <div class="platform-split">
+      <!-- Widget -->
+      <div class="reveal">
+        <div class="widget-card">
+          <div class="widget-header">
+            <span class="widget-title">🚪 Visitor Log — Today</span>
+            <span class="chip chip--blue">● Live</span>
+          </div>
+          <div class="widget-body">
+            <div class="visitor-row">
+              <div class="vr-left">
+                <div class="vr-ava" style="background:#dcfce7">🛵</div>
+                <div>
+                  <div class="vr-name">Swiggy Delivery</div>
+                  <div class="vr-type">Delivery · 9:42 AM</div>
+                </div>
+              </div>
+              <span class="chip chip--green">Entered</span>
+            </div>
+            <div class="visitor-row">
+              <div class="vr-left">
+                <div class="vr-ava" style="background:#dbeafe">👤</div>
+                <div>
+                  <div class="vr-name">Amit Patel</div>
+                  <div class="vr-type">Guest · 10:15 AM</div>
+                </div>
+              </div>
+              <span class="chip chip--blue">Approved</span>
+            </div>
+            <div class="visitor-row">
+              <div class="vr-left">
+                <div class="vr-ava" style="background:#fef9c3">🔧</div>
+                <div>
+                  <div class="vr-name">AC Repair — Suresh</div>
+                  <div class="vr-type">Service · 11:00 AM</div>
+                </div>
+              </div>
+              <span class="chip chip--yellow">Waiting</span>
+            </div>
+            <div class="visitor-row">
+              <div class="vr-left">
+                <div class="vr-ava" style="background:#fee2e2">🚗</div>
+                <div>
+                  <div class="vr-name">Unknown Vehicle</div>
+                  <div class="vr-type">Unverified · 11:30 AM</div>
+                </div>
+              </div>
+              <span class="chip chip--red">Denied</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Text -->
+      <div class="reveal reveal-delay-1">
+        <div class="platform-tag">Visitor Management</div>
+        <h3 class="platform-title">Know exactly who enters your gates — always</h3>
+        <p class="platform-desc">No more guesswork at the gate. Residents get real-time alerts and approve visitors from anywhere. Guards log every entry digitally — no paper registers.</p>
+        <div class="platform-checks">
+          <div class="platform-check"><div class="check-icon">✓</div>QR code & OTP-based digital entry</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Approve or deny visitors remotely</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Full entry & exit audit log maintained</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Works offline for security guards</div>
+        </div>
+        <button class="btn btn-primary">Explore Visitor Features →</button>
+      </div>
+    </div>
+
+    <!-- ── FINANCIAL MANAGEMENT ── -->
+    <div class="platform-split">
+      <!-- Text -->
+      <div class="reveal">
+        <div class="platform-tag">Financial Management</div>
+        <h3 class="platform-title">Society finances — transparent &amp; stress-free</h3>
+        <p class="platform-desc">Track every rupee coming in and going out. Automate invoices, collect dues online, and generate audit-ready reports for the committee — all without a single spreadsheet.</p>
+        <div class="platform-checks">
+          <div class="platform-check"><div class="check-icon">✓</div>Auto-generate invoices & receipts</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Track pending dues with reminders</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Monthly expense reports for RWA</div>
+          <div class="platform-check"><div class="check-icon">✓</div>Online payment collection</div>
+        </div>
+        <button class="btn btn-primary">Explore Finance Features →</button>
+      </div>
+
+      <!-- Widget -->
+      <div class="reveal reveal-delay-1">
+        <div class="widget-card">
+          <div class="widget-header">
+            <span class="widget-title">💰 Fund Overview — October</span>
+            <span class="chip chip--green">On Track</span>
+          </div>
+          <div class="widget-body">
+            <div class="prog">
+              <div class="prog__top">
+                <span class="prog__label">Maintenance Collected</span>
+                <span class="prog__val">196 / 220</span>
+              </div>
+              <div class="prog__bar">
+                <div class="prog__fill" style="width:89%; background:#1a56db;"></div>
+              </div>
+            </div>
+            <div class="prog">
+              <div class="prog__top">
+                <span class="prog__label">Sinking Fund</span>
+                <span class="prog__val">₹8.6L / ₹10L</span>
+              </div>
+              <div class="prog__bar">
+                <div class="prog__fill" style="width:86%; background:#10b981;"></div>
+              </div>
+            </div>
+            <div class="prog">
+              <div class="prog__top">
+                <span class="prog__label">Overdue Residents</span>
+                <span class="prog__val">24 residents</span>
+              </div>
+              <div class="prog__bar">
+                <div class="prog__fill" style="width:11%; background:#f59e0b;"></div>
+              </div>
+            </div>
+            <div style="margin-top:1.2rem">
+              <div class="complaint-row">
+                <div class="cr-icon" style="background:#dbeafe">📄</div>
+                <div>
+                  <div class="cr-title">Invoice #1042 Generated</div>
+                  <div class="cr-sub">Flat 204, Block B · ₹3,200</div>
+                </div>
+                <div class="cr-right"><span class="chip chip--blue">Sent</span></div>
+              </div>
+              <div class="complaint-row">
+                <div class="cr-icon" style="background:#dcfce7">✅</div>
+                <div>
+                  <div class="cr-title">Payment Received</div>
+                  <div class="cr-sub">Flat 108, Block A · ₹3,200</div>
+                </div>
+                <div class="cr-right"><span class="chip chip--green">Paid</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     STATS
+════════════════════════════════════════ -->
+<section class="section section--grey">
+  <div class="container">
+
+    <div class="section__header section__header--center reveal">
+      <div class="section__tag">By the Numbers</div>
+      <h2 class="section__title">Communities <span>trust eSociety</span></h2>
+    </div>
+
+    <div class="stats-grid reveal">
+      <div class="stat-box">
+        <div class="stat-box__num">500+</div>
+        <div class="stat-box__label">Societies Onboarded</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box__num">50K+</div>
+        <div class="stat-box__label">Active Residents</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box__num">30+</div>
+        <div class="stat-box__label">Cities Covered</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box__num">4.8★</div>
+        <div class="stat-box__label">Average App Rating</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     TESTIMONIALS
+════════════════════════════════════════ -->
+<section class="section" id="testimonials">
+  <div class="container">
+
+    <div class="section__header section__header--center reveal">
+      <div class="section__tag">Reviews</div>
+      <h2 class="section__title">Residents &amp; managers <span>love it</span></h2>
+      <p class="section__sub">Real feedback from real communities — no filters.</p>
+    </div>
+
+    <div class="testimonials-grid">
+      <div class="testi-card reveal">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"Managing 300+ flats used to be a nightmare. With eSociety, everything from visitor logs to maintenance dues is handled in one place. The committee finally has time to focus on improving the community."</p>
+        <div class="testi-author">
+          <div class="testi-ava" style="background: linear-gradient(135deg,#1a56db,#06b6d4)">RK</div>
+          <div>
+            <div class="testi-name">Rajesh Kumar</div>
+            <div class="testi-role">RWA President, Sunrise Apartments · Pune</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-1">
+        <div class="testi-stars">★★★★★</div>
+        <p class="testi-text">"The visitor approval feature is a game changer. I can approve my maid and delivery from the office without calling the guard every time. Feels genuinely convenient and modern."</p>
+        <div class="testi-author">
+          <div class="testi-ava" style="background: linear-gradient(135deg,#ec4899,#f43f5e)">PS</div>
+          <div>
+            <div class="testi-name">Priya Shah</div>
+            <div class="testi-role">Resident, Green Valley Society · Ahmedabad</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card reveal reveal-delay-2">
+        <div class="testi-stars">★★★★☆</div>
+        <p class="testi-text">"The guard app is very simple to use. Even our older guards learned it in one day. No more paper registers — everything is digital and the RWA can see real-time who entered or left."</p>
+        <div class="testi-author">
+          <div class="testi-ava" style="background: linear-gradient(135deg,#10b981,#059669)">AM</div>
+          <div>
+            <div class="testi-name">Arvind Mehta</div>
+            <div class="testi-role">Security Head, Palm Grove Residency · Mumbai</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     CTA / CONTACT
+════════════════════════════════════════ -->
+<section class="cta-section" id="contact">
+  <div class="container">
+    <div class="cta-inner">
+
+      <div class="reveal">
+        <h2 class="cta-title">Switch to eSociety.<br>Your community deserves better.</h2>
+        <p class="cta-desc">Book a free demo today. See how eSociety can transform your society's operations in under 30 minutes. No commitment. No credit card.</p>
+      </div>
+
+      <div class="reveal reveal-delay-1">
+        <div class="cta-form">
+          <input class="cta-input" type="text"   placeholder="Your full name" />
+          <input class="cta-input" type="tel"    placeholder="Mobile number" />
+          <input class="cta-input" type="text"   placeholder="Society name" />
+          <input class="cta-input" type="text"   placeholder="City / Pincode" />
+          <button class="btn btn-white btn-lg" style="justify-content:center">Schedule Free Demo →</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+<footer class="footer">
+  <div class="container">
+
+    <div class="footer__top">
+      <div>
+        <div class="footer__brand-name">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <rect width="24" height="24" rx="6" fill="#1a56db"/>
+            <path d="M12 3L21 9.5V21H15V15H9V21H3V9.5L12 3Z" fill="white"/>
+          </svg>
+          eSociety
+        </div>
+        <p class="footer__brand-desc">Making everyday community living easier, safer, and more connected — one society at a time.</p>
+      </div>
+
+      <div>
+        <div class="footer__col-title">Product</div>
+        <div class="footer__links">
+          <a href="#">Visitor Management</a>
+          <a href="#">Complaint Tracking</a>
+          <a href="#">Facility Booking</a>
+          <a href="#">Financials</a>
+          <a href="#">Community Board</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer__col-title">Company</div>
+        <div class="footer__links">
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">Blog</a>
+          <a href="#">Press</a>
+          <a href="#">Contact Us</a>
+        </div>
+      </div>
+
+      <div>
+        <div class="footer__col-title">Legal</div>
+        <div class="footer__links">
+          <a href="#">Privacy Policy</a>
+          <a href="#">Terms of Service</a>
+          <a href="#">Cookie Policy</a>
+          <a href="#">Security</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© 2025 eSociety Technologies Pvt. Ltd. All rights reserved.</span>
+      <div class="footer__bottom-links">
+        <a href="#">Privacy</a>
+        <a href="#">Terms</a>
+        <a href="#">Support</a>
+      </div>
+    </div>
+
+  </div>
+</footer>
+
+
+<!-- ════════════════════════════════════════
+     JS — Scroll effects & nav
+════════════════════════════════════════ -->
+<script>
+  // Navbar scroll shadow
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 20);
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.reveal');
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        revealObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => revealObserver.observe(el));
+
+  // Progress bar animation on scroll
+  const progFills = document.querySelectorAll('.prog__fill');
+  const progObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.width = e.target.style.width; // trigger reflow
+        progObserver.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  progFills.forEach(el => { const w = el.style.width; el.style.width = '0'; setTimeout(() => el.style.width = w, 300); progObserver.observe(el); });
+
+  // Hamburger (mobile) - basic toggle
+  const hamburger = document.getElementById('hamburger');
+  hamburger.addEventListener('click', () => hamburger.classList.toggle('active'));
+</script>
+
+</body>
+</html>

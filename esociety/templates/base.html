@@ -1,41 +1,49 @@
+{% load static %}
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-
-    <title>eSociety</title>
-
-    {% load static %}
-    <link rel="stylesheet" href="{% static 'css/navbar.css' %}">
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Society Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    {% block extra_css %}{% endblock %}
 </head>
-
 <body>
 
-    {% if user.is_authenticated %}
+    <!-- Mobile Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-    {% if user.role == "Admin" %}
-        {% include "society/Admin/Admin_navbar.html" %}
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        {% if user.role == 'Admin' %}
+            {% include 'society/Admin/Admin_sidebar.html' %}
+        {% elif user.role == 'Resident' %}
+            {% include 'society/Resident/Resident_sidebar.html' %}
+        {% elif user.role == 'Securityguard' %}
+            {% include 'society/Securityguard/Security_sidebar.html' %}
+        {% endif %}
+    </aside>
 
-    {% elif user.role == "Resident" %}
-        {% include "society/Resident/Resident_navbar.html" %}
+    <!-- Main Content -->
+    <main class="main-content" id="mainContent">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-right">
+                <span class="topbar-greeting">Hello, {{ user.get_full_name|default:user.email }}</span>
+            </div>
+        </header>
 
-    {% elif user.role == "Securityguard" %}
-        {% include "society/Securityguard/Security_navbar.html" %}
+        <!-- Page Content -->
+        <div class="page-content">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
 
-    {% else %}
-        <p>No role matched</p>
-    {% endif %}
-
-{% else %}
-
-    <p>User not logged in</p>
-
-{% endif %}
-
-
-
-    {% block content %}
-    {% endblock %}
-
+    <script src="{% static 'js/sidebar.js' %}"></script>
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
