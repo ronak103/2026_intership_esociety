@@ -7,12 +7,14 @@
     <title>Authentication | eSociety</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
 </head>
 <body>
 
 <div class="auth-wrapper">
+        
 
     <!-- Toggle Bar -->
     <div class="toggle-bar">
@@ -33,6 +35,15 @@
 
     <!-- Card -->
     <div class="auth-card">
+        
+            {% if messages and request.resolver_match.url_name == 'login' %}
+                {% for message in messages %}
+                    <div class="message-box {{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
 
         <div class="form-slider">
             <div class="form-track">
@@ -61,9 +72,14 @@
                             {% endfor %}
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group password-group">
                             <label>Password</label>
-                            {{ login_form.password }}
+
+                            <div class="password-wrapper">
+                                {{ login_form.password }}
+                                <i class="fa-solid fa-eye toggle-password"></i>
+                            </div>
+
                             {% for error in login_form.password.errors %}
                                 <span class="field-error">{{ error }}</span>
                             {% endfor %}
@@ -87,6 +103,13 @@
 
                     <form method="post" action="{% url 'signup' %}" novalidate>
                         {% csrf_token %}
+                        {% if messages and active_form == 'signup' %}
+                            {% for message in messages %}
+                                <div class="message-box {{ message.tags }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
 
                         {% if signup_form.non_field_errors %}
                             <div class="form-error-global">
@@ -148,20 +171,22 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group password-group">
                             <label>Password</label>
-                            {{ signup_form.password1 }}
-                            {% for error in signup_form.password1.errors %}
-                                <span class="field-error">{{ error }}</span>
-                            {% endfor %}
+
+                            <div class="password-wrapper">
+                                {{ signup_form.password1 }}
+                                <i class="fa-solid fa-eye toggle-password"></i>
+                            </div>
                         </div>
 
-                        <div class="form-group">
+                        <div class="form-group password-group">
                             <label>Confirm Password</label>
-                            {{ signup_form.password2 }}
-                            {% for error in signup_form.password2.errors %}
-                                <span class="field-error">{{ error }}</span>
-                            {% endfor %}
+
+                            <div class="password-wrapper">
+                                {{ signup_form.password2 }}
+                                <i class="fa-solid fa-eye toggle-password"></i>
+                            </div>
                         </div>
 
                         <button type="submit" name="signup_submit" class="submit-btn">
@@ -182,6 +207,30 @@
 </div><!-- /.auth-wrapper -->
 
 <script src="{% static 'js/auth.js' %}"></script>
+{% if redirect_to_login %}
+<script>
+    setTimeout(function () {
 
+        // Move slider to Sign In
+        const slider = document.querySelector(".slider");
+        const formTrack = document.querySelector(".form-track");
+
+        slider.classList.remove("move");
+        formTrack.style.transform = "translateX(0%)";
+
+        // Switch active buttons
+        document.querySelectorAll(".toggle-btn").forEach(btn => {
+            btn.classList.remove("active");
+        });
+        document.querySelector('[data-type="signin"]').classList.add("active");
+
+        // Remove message after switching
+        const msg = document.querySelector(".message-box");
+        if (msg) msg.remove();
+
+    }, 3000);
+</script>
+{% endif %}
 </body>
+
 </html>

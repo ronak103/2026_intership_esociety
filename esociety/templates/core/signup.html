@@ -18,6 +18,24 @@
     <h2>Create Account</h2>
     <p class="signup-subtitle">Join us today — it only takes a minute</p>
 
+    <!-- ✅ Success / Django Messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <div style="
+                background: rgba(34,197,94,0.1);
+                border: 1px solid rgba(34,197,94,0.4);
+                color: #15803d;
+                padding: 12px;
+                border-radius: 8px;
+                text-align: center;
+                margin-bottom: 18px;
+                font-weight: 500;
+            ">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
     <form method="post" novalidate>
         {% csrf_token %}
 
@@ -110,6 +128,15 @@
 
     </form>
 </div>
+
+<!-- ✅ Auto Redirect After Success -->
+{% if redirect_to_login %}
+<script>
+    setTimeout(function() {
+        window.location.href = "{% url 'login' %}";
+    }, 3000); // 3 seconds
+</script>
+{% endif %}
 
 </body>
 </html>

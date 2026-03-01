@@ -6,6 +6,7 @@ from django.core.mail import send_mail
 from django.contrib import messages
 from django.conf import settings
 import threading
+import os
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 
@@ -27,11 +28,15 @@ def userSignupView(request):
                 daemon=True
             ).start()
 
-            messages.success(request, "Account created successfully! Please login.")
-            return redirect("login")
+            messages.success(request, "Account created successfully! Redirecting to login...")
+
+            # Instead of redirect, render same page with flag
+            return render(request, "core/signup.html", {
+                "form": UserSignupForm(),   # empty form
+                "redirect_to_login": True
+            })
 
     return render(request, "core/signup.html", {"form": form})
-
     
 def userLoginview(request):
 
@@ -82,47 +87,73 @@ def send_welcome_email(user):
     )
 
     email_message.attach_alternative(html_content, "text/html")
+    image_path = os.path.join(settings.BASE_DIR, 'static/images/welcome.png')
+    email_message.attach_file(image_path)
+
     email_message.send()
 
 from django.contrib.auth import login
 
 def authView(request):
+
     login_form = AuthenticationForm()
     signup_form = UserSignupForm()
     active_form = 'signup' if request.resolver_match and request.resolver_match.url_name == 'signup' else 'signin'
+    redirect_to_login = False  # default
 
     if request.method == "POST":
 
+        # =======================
+        # SIGNUP
+        # =======================
         if 'signup_submit' in request.POST:
             active_form = 'signup'
             signup_form = UserSignupForm(request.POST)
+
             if signup_form.is_valid():
                 user = signup_form.save()
-                threading.Thread(target=send_welcome_email, args=(user,), daemon=True).start()
-                messages.success(request, "Account created! Please login.")
-                return redirect("login")
 
+                threading.Thread(
+                    target=send_welcome_email,
+                    args=(user,),
+                    daemon=True
+                ).start()
+
+                messages.success(
+                    request,
+                    "Account created successfully! Redirecting to login..."
+                )
+
+                redirect_to_login = True  # ONLY set here
+
+                # Clear form
+                signup_form = UserSignupForm()
+
+        # =======================
+        # SIGNIN
+        # =======================
         elif 'signin_submit' in request.POST:
             active_form = 'signin'
             login_form = AuthenticationForm(request, data=request.POST)
+
             if login_form.is_valid():
                 user = login_form.get_user()
                 login(request, user)
 
-                # Role based redirect
-                role = user.role  # adjust field name if different
+                role = user.role
 
                 if role == 'Admin':
                     return redirect('admin_dashboard')
                 elif role == 'Resident':
                     return redirect('resident_dashboard')
-                elif role == 'Security':
+                elif role == 'Securityguard':
                     return redirect('security_dashboard')
                 else:
-                    return redirect('home')  # fallback
+                    return redirect('home')
 
     return render(request, "core/auth.html", {
         'login_form': login_form,
         'signup_form': signup_form,
         'active_form': active_form,
+        'redirect_to_login': redirect_to_login
     })

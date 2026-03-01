@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const formSlider  = document.querySelector(".form-slider");
     const panelSignin = document.getElementById("panel-signin");
     const panelSignup = document.getElementById("panel-signup");
+    const toggles = document.querySelectorAll(".toggle-password");
 
     /* ─────────────────────────────────────────
        Measure a panel's TRUE height in isolation.
@@ -47,22 +48,40 @@ document.addEventListener("DOMContentLoaded", function () {
         toggleBtns[0].classList.remove("active");
         setHeight(panelSignup);
     }
+    toggles.forEach(toggle => {
+        toggle.addEventListener("click", function () {
+
+            const input = this.previousElementSibling;
+
+            if (!input) return;
+
+            const type = input.getAttribute("type") === "password" ? "text" : "password";
+            input.setAttribute("type", type);
+
+            this.classList.toggle("fa-eye");
+            this.classList.toggle("fa-eye-slash");
+        });
+    });
+
 
     /* ── Set the correct panel position immediately (no animation) ── */
     const isSignup = window.location.pathname.includes("signup");
 
     if (isSignup) {
-        formTrack.style.transform = "translateX(-50%)";
-        slider.classList.add("move");
-        toggleBtns[1].classList.add("active");
-        toggleBtns[0].classList.remove("active");
+        goToSignup();
+    } else {
+        goToSignin();
     }
 
     /* ── Wait for full paint (fonts + layout) before measuring ── */
     window.addEventListener("load", function () {
         /* Disable transition for the initial snap */
         formSlider.style.transition = "none";
-        formSlider.style.height     = measurePanel(isSignup ? panelSignup : panelSignin) + "px";
+        if (isSignup) {
+            setHeight(panelSignup);
+        } else {
+            setHeight(panelSignin);
+        }
 
         /* Re-enable smooth transition after browser has painted */
         requestAnimationFrame(() => {
@@ -101,3 +120,4 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 
 });
+
