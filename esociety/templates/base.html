@@ -32,9 +32,9 @@
             <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
                 <i class="fas fa-bars"></i>
             </button>
-            <div class="topbar-right">
-                <span class="topbar-greeting">Hello, {{ user.get_full_name|default:user.email }}</span>
-            </div>
+            <span class="topbar-greeting">
+                Hello, {{ user.first_name |default:user.email }} 
+            </span>
         </header>
 
         <!-- Page Content -->

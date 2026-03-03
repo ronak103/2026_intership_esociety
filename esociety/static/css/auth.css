@@ -170,12 +170,12 @@ body::after {
 
 /* ── PANEL HEADINGS ── */
 .form-panel h2 {
+    text-align: center;
     font-size: 1.75rem;
     font-weight: 900;
     letter-spacing: -.6px;
     color: var(--text);
-    margin-bottom: 3px;
-    line-height: 1.15;
+    margin: 6px 0 3px;
 }
 
 .subtitle {
@@ -336,6 +336,7 @@ select:focus-visible {
 .message-box {
     padding: 14px 16px;
     border-radius: 12px;
+    margin-top: 10px;
     margin-bottom: 18px;
     font-size: 14px;
     font-weight: 500;
@@ -343,6 +344,7 @@ select:focus-visible {
     align-items: center;
     gap: 10px;
     animation: fadeSlide 0.4s ease;
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 /* SUCCESS STYLE (Green) */
@@ -362,6 +364,28 @@ select:focus-visible {
     height: 22px;
     border-radius: 50%;
     background: #22c55e;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* ERROR STYLE (Red) */
+.message-box.error {
+    background: rgba(239, 68, 68, 0.08);   /* soft red background */
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #991b1b;                        /* dark red text */
+}
+
+/* Red icon circle */
+.message-box.error::before {
+    content: "✖";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ef4444;
     color: white;
     font-size: 12px;
     font-weight: bold;
@@ -400,4 +424,44 @@ select:focus-visible {
 
 .toggle-password:hover {
     color: #333;
+}
+
+/* ── LOGO ── */
+.logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-decoration: none;
+    margin-bottom: 22px;
+}
+
+.logo-icon {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(26, 86, 219, 0.25);
+    
+}
+
+.logo-icon svg {
+    width: 26px;
+    height: 26px;
+   
+}
+
+.logo span {
+    display: flex;
+    align-items: center;
+    line-height: 1;
+}
+
+.logo em {
+    color: var(--primary);
+    font-style: normal;
 }

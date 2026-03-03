@@ -118,6 +118,26 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
     });
+    /* ── Auto hide messages after 2 seconds ── */
+     const messages = document.querySelectorAll(".message-box");
+
+        messages.forEach(function (message) {
+
+            setTimeout(function () {
+
+                message.style.transition = "opacity 0.4s ease, transform 0.4s ease";
+                message.style.opacity = "0";
+                message.style.transform = "translateY(-8px)";
+
+                setTimeout(function () {
+                    message.remove();
+                }, 400); // wait for fade animation
+
+            }, 2000); // 2 seconds
+
+        });
+   
 
 });
+
 
