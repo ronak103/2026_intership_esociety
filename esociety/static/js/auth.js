@@ -28,10 +28,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     /* ── Animate slider height to active panel ── */
-    function setHeight(panel) {
-        formSlider.style.height = measurePanel(panel) + "px";
-    }
-
+   function setHeight(panel) {
+    formSlider.style.height = panel.scrollHeight + "px";
+}
     /* ── Switch helpers ── */
     function goToSignin() {
         formTrack.style.transform = "translateX(0%)";
@@ -77,11 +76,13 @@ document.addEventListener("DOMContentLoaded", function () {
     window.addEventListener("load", function () {
         /* Disable transition for the initial snap */
         formSlider.style.transition = "none";
-        if (isSignup) {
-            setHeight(panelSignup);
-        } else {
-            setHeight(panelSignin);
-        }
+        setTimeout(() => {
+            if (isSignup) {
+                setHeight(panelSignup);
+            } else {
+                setHeight(panelSignin);
+            }
+        }, 50);
 
         /* Re-enable smooth transition after browser has painted */
         requestAnimationFrame(() => {
@@ -140,4 +141,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
-
+window.addEventListener("resize", () => {
+    if (slider.classList.contains("move")) {
+        setHeight(panelSignup);
+    } else {
+        setHeight(panelSignin);
+    }
+});

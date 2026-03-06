@@ -6,7 +6,7 @@
 <div class="sidebar-header">
     <div class="sidebar-logo">
         <i class="fas fa-building"></i>
-        <span class="sidebar-logo-text">eSociety</span>
+        <span class="sidebar-logo-text">SocietySync</span>
     </div>
     <span class="sidebar-role-badge">Admin</span>
 </div>
@@ -48,6 +48,12 @@
             <a href="#" class="sidebar-link">
                 <i class="fas fa-clipboard-list sidebar-icon"></i>
                 <span class="sidebar-link-text">Visitor Logs</span>
+            </a>
+        </li>
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'settings' %}active{% endif %}">
+            <a href="#" class="sidebar-link">
+                <i class="fas fa-cog sidebar-icon"></i>
+                <span class="sidebar-link-text">Settings</span>
             </a>
         </li>
     </ul>

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/resident.css' %}">
+
+<div class="section-header">
+<h2 class="section-title">Facility Booking</h2>
+<p class="section-sub">Book society facilities</p>
+</div>
+
+<div class="facility-grid">
+
+<div class="facility-card">
+<div class="facility-icon">🏊</div>
+<div class="facility-name">Swimming Pool</div>
+<div class="facility-slots">6 slots/day</div>
+<div class="facility-fee">₹200/hr</div>
+<button class="btn btn-primary">Book</button>
+</div>
+
+<div class="facility-card">
+<div class="facility-icon">🏋️</div>
+<div class="facility-name">Gym</div>
+<div class="facility-slots">Open 5AM–10PM</div>
+<div class="facility-fee">Free</div>
+<button class="btn btn-primary">Book</button>
+</div>
+
+</div>
+
+{% endblock %}

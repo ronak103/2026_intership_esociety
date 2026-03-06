@@ -1,6 +1,112 @@
-{% extends 'base.html' %}
-{% csrf_token %}
+{% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<h1>resident dashboard</h1>
-<p>{{request.user}}</p>
+<link rel="stylesheet" href="{% static 'css/resident.css' %}">
+
+<div class="section-header">
+    <h2 class="section-title">My Dashboard</h2>
+    <p class="section-sub">Welcome back! Here is your activity overview.</p>
+</div>
+
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-icon">💳</div>
+        <div>
+            <div class="stat-value">₹3,500</div>
+            <div class="stat-label">Maintenance Due</div>
+            <div class="stat-sub">Due: Mar 5</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div>
+            <div class="stat-value">2</div>
+            <div class="stat-label">My Complaints</div>
+            <div class="stat-sub">1 resolved</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">📅</div>
+        <div>
+            <div class="stat-value">1</div>
+            <div class="stat-label">Active Booking</div>
+            <div class="stat-sub">Pool – Mar 3</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🚶</div>
+        <div>
+            <div class="stat-value">3</div>
+            <div class="stat-label">Visitors Pending</div>
+            <div class="stat-sub">Awaiting approval</div>
+        </div>
+    </div>
+
+</div>
+
+<div class="grid-2">
+
+<div class="card">
+<p class="card-title">Recent Notices</p>
+
+<div class="notice-item">
+<div class="notice-dot"></div>
+<div class="notice-text">Water Supply Interruption — Feb 28</div>
+</div>
+
+<div class="notice-item">
+<div class="notice-dot"></div>
+<div class="notice-text">AGM Meeting — March 5</div>
+</div>
+
+<div class="notice-item">
+<div class="notice-dot"></div>
+<div class="notice-text">Holi Celebration — March 14</div>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<p class="card-title">Payment History</p>
+
+<table>
+<thead>
+<tr>
+<th>Month</th>
+<th>Amount</th>
+<th>Date</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td>Feb 2025</td>
+<td>₹3,500</td>
+<td>—</td>
+<td><span class="badge badge-warning">Due</span></td>
+</tr>
+
+<tr>
+<td>Jan 2025</td>
+<td>₹3,500</td>
+<td>Jan 4</td>
+<td><span class="badge badge-success">Paid</span></td>
+</tr>
+
+</tbody>
+</table>
+
+</div>
+
+</div>
+
 {% endblock %}

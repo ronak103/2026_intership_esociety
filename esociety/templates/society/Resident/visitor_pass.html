@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/resident.css' %}">  
+
+<div class="section-header">
+<h2 class="section-title">Visitor Management</h2>
+<p class="section-sub">Approve visitors before entry</p>
+</div>
+
+
+<div class="card">
+
+<p class="card-title">Pre Approve Visitor</p>
+
+<div class="form-row">
+
+<div>
+<label class="inner-label">Visitor Name</label>
+<input class="inner-input">
+</div>
+
+<div>
+<label class="inner-label">Mobile</label>
+<input class="inner-input">
+</div>
+
+<div>
+<label class="inner-label">Date</label>
+<input type="date" class="inner-input">
+</div>
+
+<div>
+<label class="inner-label">Purpose</label>
+<input class="inner-input">
+</div>
+
+</div>
+
+<button class="btn btn-primary">Generate Pass</button>
+
+</div>
+
+{% endblock %}

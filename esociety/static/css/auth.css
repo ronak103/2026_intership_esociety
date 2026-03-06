@@ -34,7 +34,7 @@ body {
     font-family: var(--font);
     min-height: 100vh;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 40px 20px;
     background: var(--white);
@@ -148,7 +148,7 @@ body::after {
 
 /* ── FORM SLIDER SYSTEM ── */
 .form-slider {
-    overflow: hidden;
+    overflow: visible;
     /* height set by JS after load — starts auto so nothing clips on first paint */
     transition: height 0.46s cubic-bezier(0.65, 0, 0.35, 1);
     will-change: height;
