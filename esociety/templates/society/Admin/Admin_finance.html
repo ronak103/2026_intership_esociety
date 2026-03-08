@@ -1,0 +1,255 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Finance — SocietySync Admin{% endblock %}
+{% block page_title %}Finance{% endblock %}
+{% block page_subtitle %}Payment tracking and financial overview{% endblock %}
+
+{% block topbar_actions %}
+<a href="?export=csv" class="topbar-btn topbar-btn-outline"><i class="fas fa-download"></i> Export CSV</a>
+<button class="topbar-btn topbar-btn-primary" onclick="openModal('addPaymentModal')">
+    <i class="fas fa-plus"></i> Record Payment
+</button>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-grid" style="margin-bottom:24px;">
+    <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><div class="stat-value amount">₹{{ total_collected|floatformat:0 }}</div><div class="stat-label">Total Collected</div><div class="stat-sub">{{ completed_count }} transactions</div></div></div>
+    <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-hourglass-half"></i></div>
+        <div class="stat-info"><div class="stat-value amount">₹{{ total_pending|floatformat:0 }}</div><div class="stat-label">Pending Dues</div><div class="stat-sub">{{ pending_count }} residents</div></div></div>
+    <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-tools"></i></div>
+        <div class="stat-info"><div class="stat-value amount">₹{{ maintenance_total|floatformat:0 }}</div><div class="stat-label">Maintenance Fees</div></div></div>
+    <div class="stat-card purple"><div class="stat-icon purple"><i class="fas fa-calendar-check"></i></div>
+        <div class="stat-info"><div class="stat-value amount">₹{{ facility_total|floatformat:0 }}</div><div class="stat-label">Facility Bookings</div></div></div>
+</div>
+
+<div class="tab-pills">
+    <a href="?tab=payments"   class="tab-pill {% if active_tab == 'payments'   %}active{% endif %}"><i class="fas fa-receipt"></i> All Payments</a>
+    <a href="?tab=bookings"   class="tab-pill {% if active_tab == 'bookings'   %}active{% endif %}"><i class="fas fa-calendar-check"></i> Facility Bookings</a>
+    <a href="?tab=defaulters" class="tab-pill {% if active_tab == 'defaulters' %}active{% endif %}"><i class="fas fa-exclamation-triangle"></i> Defaulters</a>
+</div>
+
+{% if active_tab == 'payments' %}
+<div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-receipt"></i> Payment Records</span></div>
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <form method="get" class="filter-bar">
+            <input type="hidden" name="tab" value="payments">
+            <div class="search-box"><i class="fas fa-search"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search resident, transaction ID…">
+            </div>
+            <select name="type" class="filter-select" onchange="this.form.submit()">
+                <option value="all"              {% if type_filter == 'all'              %}selected{% endif %}>All Types</option>
+                <option value="maintenance"      {% if type_filter == 'maintenance'      %}selected{% endif %}>Maintenance</option>
+                <option value="facility_booking" {% if type_filter == 'facility_booking' %}selected{% endif %}>Facility Booking</option>
+                <option value="other"            {% if type_filter == 'other'            %}selected{% endif %}>Other</option>
+            </select>
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="all"       {% if status_filter == 'all'       %}selected{% endif %}>All Status</option>
+                <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Completed</option>
+                <option value="pending"   {% if status_filter == 'pending'   %}selected{% endif %}>Pending</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>Resident</th><th>Type</th><th>Amount</th><th>Transaction ID</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for p in payments %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar sm">{{ p.resident.first_name|first|upper }}{{ p.resident.last_name|first|upper }}</div>
+                            <div class="info">
+                                <div class="name">{{ p.resident.first_name }} {{ p.resident.last_name }}</div>
+                                <div class="sub">{{ p.resident.unit_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-gray">{{ p.get_payment_type_display }}</span></td>
+                    <td class="fw amount" style="color:var(--success);">₹{{ p.amount }}</td>
+                    <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">{{ p.transaction_id|default:"—" }}</td>
+                    <td style="font-size:12.5px;">{{ p.payment_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if p.payment_status == 'completed' %}<span class="badge badge-success">Paid</span>
+                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if p.payment_status == 'pending' %}
+                        <a href="{% url 'admin_mark_paid' p.id %}" class="btn btn-success btn-xs"
+                           onclick="return confirm('Mark as paid?')"><i class="fas fa-check"></i> Mark Paid</a>
+                        {% else %}<span style="color:var(--text-muted);font-size:12px;">—</span>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8"><div class="empty-state"><i class="fas fa-receipt"></i><p>No payment records found.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+        <div class="pagination-controls">
+            {% if page_obj.has_previous %}<a href="?tab=payments&page={{ page_obj.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<a href="?tab=payments&page={{ num }}" class="page-btn">{{ num }}</a>{% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}<a href="?tab=payments&page={{ page_obj.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% elif active_tab == 'bookings' %}
+<div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-calendar-check"></i> Facility Bookings</span></div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>Resident</th><th>Facility</th><th>Booking Date</th><th>Time Slot</th><th>Amount</th><th>Booking Status</th><th>Payment</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for b in bookings %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar sm">{{ b.booked_by.first_name|first|upper }}{{ b.booked_by.last_name|first|upper }}</div>
+                            <div class="info">
+                                <div class="name">{{ b.booked_by.first_name }} {{ b.booked_by.last_name }}</div>
+                                <div class="sub">{{ b.booked_by.unit_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="fw">{{ b.facility.facility_name }}</td>
+                    <td>{{ b.booking_date|date:"d M Y" }}</td>
+                    <td><span class="badge badge-gray">{{ b.time_slot }}</span></td>
+                    <td class="fw amount">₹{{ b.amount }}</td>
+                    <td>
+                        {% if b.booking_status == 'confirmed' %}<span class="badge badge-success">Confirmed</span>
+                        {% elif b.booking_status == 'cancelled' %}<span class="badge badge-danger">Cancelled</span>
+                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if b.payment_status == 'completed' %}<span class="badge badge-success">Paid</span>
+                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    </td>
+                    <td>
+                        {% if b.booking_status == 'pending' %}
+                        <div style="display:flex;gap:4px;">
+                            <a href="{% url 'admin_confirm_booking' b.id %}" class="btn btn-success btn-xs" onclick="return confirm('Confirm?')"><i class="fas fa-check"></i></a>
+                            <a href="{% url 'admin_cancel_booking'  b.id %}" class="btn btn-danger  btn-xs" onclick="return confirm('Cancel?')"><i class="fas fa-times"></i></a>
+                        </div>
+                        {% else %}<span style="color:var(--text-muted);font-size:12px;">—</span>{% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9"><div class="empty-state"><i class="fas fa-calendar"></i><p>No bookings found.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% elif active_tab == 'defaulters' %}
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-exclamation-triangle"></i> Payment Defaulters</span>
+        <span class="badge badge-danger">{{ defaulters|length }} residents</span>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>Resident</th><th>Unit</th><th>Pending Payments</th><th>Total Due</th><th>Last Payment</th></tr></thead>
+            <tbody>
+                {% for d in defaulters %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar" style="background:var(--danger-light);color:var(--danger);">{{ d.first_name|first|upper }}{{ d.last_name|first|upper }}</div>
+                            <div class="info"><div class="name">{{ d.first_name }} {{ d.last_name }}</div><div class="sub">{{ d.email }}</div></div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-gray">{{ d.unit_number|default:"—" }}</span></td>
+                    <td><span class="badge badge-danger">{{ d.pending_count }}</span></td>
+                    <td class="fw amount" style="color:var(--danger);">₹{{ d.total_due|floatformat:0 }}</td>
+                    <td style="font-size:12px;color:var(--text-muted);">{{ d.last_payment|date:"d M Y"|default:"Never" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-trophy" style="color:var(--success);"></i><p>No defaulters! All payments up to date.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Record Payment Modal — uses {{ payment_form.field }} -->
+<div class="modal-overlay" id="addPaymentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-plus-circle" style="color:var(--primary);margin-right:8px;"></i>Record Payment</span>
+            <button class="modal-close" onclick="closeModal('addPaymentModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_add_payment' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if payment_form.non_field_errors %}
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ payment_form.non_field_errors.0 }}</div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label class="form-label">{{ payment_form.resident.label }} <span class="req">*</span></label>
+                    {{ payment_form.resident }}
+                    {% if payment_form.resident.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ payment_form.resident.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ payment_form.payment_type.label }} <span class="req">*</span></label>
+                        {{ payment_form.payment_type }}
+                        {% if payment_form.payment_type.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ payment_form.payment_type.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ payment_form.amount.label }} <span class="req">*</span></label>
+                        {{ payment_form.amount }}
+                        {% if payment_form.amount.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ payment_form.amount.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">{{ payment_form.payment_date.label }} <span class="req">*</span></label>
+                        {{ payment_form.payment_date }}
+                        {% if payment_form.payment_date.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ payment_form.payment_date.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ payment_form.payment_status.label }}</label>
+                        {{ payment_form.payment_status }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ payment_form.transaction_id.label }}</label>
+                    {{ payment_form.transaction_id }}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('addPaymentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Record Payment</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'css/resident.css' %}">
+
+<div class="section-header">
+    <h2 class="section-title">Visitor Approvals</h2>
+    <p class="section-sub">Visitors logged by the security guard are waiting for your decision.</p>
+</div>
+
+{% if messages %}
+    {% for msg in messages %}
+        <div style="
+            padding:12px 18px; border-radius:8px; margin-bottom:16px;
+            background:{% if 'success' in msg.tags %}#d1fae5{% elif 'error' in msg.tags %}#fee2e2{% else %}#fef3c7{% endif %};
+            color:{% if 'success' in msg.tags %}#065f46{% elif 'error' in msg.tags %}#991b1b{% else %}#92400e{% endif %};
+            border-left:4px solid {% if 'success' in msg.tags %}#10b981{% elif 'error' in msg.tags %}#ef4444{% else %}#f59e0b{% endif %};
+        ">{{ msg }}</div>
+    {% endfor %}
+{% endif %}
+
+<!-- Pending Approvals -->
+<div class="card">
+    <h3 class="card-title">
+        ⏳ Waiting for Your Approval
+        {% if pending %}
+            <span style="
+                background:#ef4444; color:white; border-radius:999px;
+                font-size:12px; padding:2px 8px; margin-left:8px; font-weight:700;
+            ">{{ pending.count }}</span>
+        {% endif %}
+    </h3>
+
+    {% if pending %}
+        <div style="display:flex; flex-direction:column; gap:12px;">
+        {% for v in pending %}
+            <div style="
+                border:1px solid #e5e7eb; border-radius:12px; padding:16px 20px;
+                display:flex; align-items:center; justify-content:space-between;
+                flex-wrap:wrap; gap:12px;
+                background:#fffbeb; border-left:4px solid #f59e0b;
+            ">
+                <div style="flex:1; min-width:200px;">
+                    <div style="font-weight:700; font-size:16px; color:#111827;">
+                        {{ v.visitor_name }}
+                    </div>
+                    <div style="color:#6b7280; font-size:13px; margin-top:4px;">
+                        📞 {{ v.mobile_number }}
+                        &nbsp;·&nbsp;
+                        🏷️ {{ v.get_visitor_type_display }}
+                        {% if v.vehicle_number %}&nbsp;·&nbsp; 🚗 {{ v.vehicle_number }}{% endif %}
+                    </div>
+                    <div style="color:#9ca3af; font-size:12px; margin-top:4px;">
+                        Logged by guard at {{ v.created_at|date:"h:i A" }} today
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <a href="{% url 'visitor_decision' v.id 'approve' %}"
+                       onclick="return confirm('Approve {{ v.visitor_name }}?')"
+                       style="padding:8px 20px; background:#10b981; color:white;
+                              border-radius:8px; font-weight:600; text-decoration:none; font-size:14px;">
+                        ✅ Approve
+                    </a>
+                    <a href="{% url 'visitor_decision' v.id 'reject' %}"
+                       onclick="return confirm('Reject {{ v.visitor_name }}?')"
+                       style="padding:8px 20px; background:#ef4444; color:white;
+                              border-radius:8px; font-weight:600; text-decoration:none; font-size:14px;">
+                        ❌ Reject
+                    </a>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+
+    {% else %}
+        <div style="text-align:center; padding:32px; color:#9ca3af;">
+            <div style="font-size:40px; margin-bottom:8px;">✅</div>
+            <div>No pending approvals. You're all caught up!</div>
+        </div>
+    {% endif %}
+</div>
+
+
+<!-- History -->
+<div class="card" style="margin-top:24px;">
+    <h3 class="card-title">Recent History</h3>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Visitor</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Your Decision</th>
+                <th>Entry Status</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for v in history %}
+            <tr>
+                <td>
+                    <div style="font-weight:600;">{{ v.visitor_name }}</div>
+                    <div style="font-size:12px;color:#9ca3af;">{{ v.mobile_number }}</div>
+                </td>
+                <td>{{ v.get_visitor_type_display }}</td>
+                <td>{{ v.expected_date|date:"M d" }}</td>
+                <td>
+                    {% if v.approval_status == "approved" %}
+                        <span class="badge badge-success">Approved</span>
+                    {% else %}
+                        <span class="badge badge-danger">Rejected</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if v.entry_status == "inside" %}
+                        <span class="badge badge-success">Inside</span>
+                    {% elif v.entry_status == "exited" %}
+                        <span class="badge" style="background:#e5e7eb;color:#374151;">Exited</span>
+                    {% elif v.entry_status == "denied" %}
+                        <span class="badge badge-danger">Denied</span>
+                    {% else %}
+                        <span class="badge badge-warning">Waiting</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5" style="text-align:center;padding:20px;color:#9ca3af;">
+                    No history yet.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

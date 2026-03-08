@@ -1,0 +1,180 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Community — SocietySync Admin{% endblock %}
+{% block page_title %}Community{% endblock %}
+{% block page_subtitle %}Manage notices, announcements and polls{% endblock %}
+
+{% block topbar_actions %}
+<button class="topbar-btn topbar-btn-outline" onclick="openModal('addPollModal')"><i class="fas fa-poll"></i> New Poll</button>
+<button class="topbar-btn topbar-btn-primary" onclick="openModal('addNoticeModal')"><i class="fas fa-plus"></i> Post Notice</button>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+    <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-bullhorn"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ total_notices }}</div><div class="stat-label">Total Notices</div></div></div>
+    <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-users"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ resident_notices }}</div><div class="stat-label">For Residents</div></div></div>
+    <div class="stat-card purple"><div class="stat-icon purple"><i class="fas fa-poll"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ active_polls }}</div><div class="stat-label">Active Polls</div></div></div>
+    <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-vote-yea"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ total_votes }}</div><div class="stat-label">Total Votes</div></div></div>
+</div>
+
+<div class="two-col">
+
+    <!-- Notices -->
+    <div>
+        <div class="section-heading"><i class="fas fa-bullhorn"></i> Notices & Announcements</div>
+        <div class="tab-pills" style="margin-bottom:16px;">
+            <a href="?notice_tab=all"      class="tab-pill {% if notice_tab == 'all'      %}active{% endif %}">All</a>
+            <a href="?notice_tab=resident" class="tab-pill {% if notice_tab == 'resident' %}active{% endif %}">Residents</a>
+            <a href="?notice_tab=security" class="tab-pill {% if notice_tab == 'security' %}active{% endif %}">Security</a>
+        </div>
+        {% for notice in notices %}
+        <div class="notice-card">
+            <div class="notice-card-header">
+                <div>
+                    <div class="notice-card-title">{{ notice.title }}</div>
+                    <div class="notice-meta" style="margin-top:3px;">{{ notice.created_by.first_name }} · {{ notice.created_at|date:"d M Y, g:i A" }}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                    <span class="badge {% if notice.target_audience == 'all' %}badge-info{% elif notice.target_audience == 'resident' %}badge-success{% else %}badge-warning{% endif %}">
+                        {{ notice.get_target_audience_display }}
+                    </span>
+                    <a href="{% url 'admin_delete_notice' notice.id %}" class="btn btn-outline btn-icon btn-xs"
+                       style="color:var(--danger);" onclick="return confirm('Delete this notice?')">
+                        <i class="fas fa-trash-alt"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="notice-card-body">{{ notice.message }}</div>
+        </div>
+        {% empty %}
+        <div class="empty-state card" style="padding:40px;"><i class="fas fa-bullhorn"></i><p>No notices posted yet.</p></div>
+        {% endfor %}
+    </div>
+
+    <!-- Polls -->
+    <div>
+        <div class="section-heading"><i class="fas fa-poll"></i> Community Polls</div>
+        {% for poll in polls %}
+        <div class="poll-card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                <div class="poll-question">{{ poll.question }}</div>
+                <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:10px;">
+                    {% if poll.status == 'active' %}
+                        <span class="badge badge-success">Active</span>
+                        <a href="{% url 'admin_close_poll' poll.id %}" class="btn btn-warning btn-xs" onclick="return confirm('Close poll?')"><i class="fas fa-lock"></i> Close</a>
+                    {% else %}
+                        <span class="badge badge-gray">Closed</span>
+                    {% endif %}
+                    <a href="{% url 'admin_delete_poll' poll.id %}" class="btn btn-outline btn-xs" style="color:var(--danger);" onclick="return confirm('Delete poll?')"><i class="fas fa-trash-alt"></i></a>
+                </div>
+            </div>
+            <div class="poll-options">
+                <div class="poll-option">
+                    <label style="min-width:36px;font-weight:600;color:var(--success);">Yes</label>
+                    <div class="poll-bar-wrap"><div class="poll-bar"><div class="poll-bar-fill" style="width:{{ poll.yes_pct }}%;background:var(--success);"></div></div></div>
+                    <span class="poll-percent">{{ poll.yes_pct }}%</span>
+                    <span style="font-size:11px;color:var(--text-muted);min-width:28px;text-align:right;">{{ poll.yes_count }}</span>
+                </div>
+                <div class="poll-option">
+                    <label style="min-width:36px;font-weight:600;color:var(--danger);">No</label>
+                    <div class="poll-bar-wrap"><div class="poll-bar"><div class="poll-bar-fill" style="width:{{ poll.no_pct }}%;background:var(--danger);"></div></div></div>
+                    <span class="poll-percent">{{ poll.no_pct }}%</span>
+                    <span style="font-size:11px;color:var(--text-muted);min-width:28px;text-align:right;">{{ poll.no_count }}</span>
+                </div>
+            </div>
+            <div class="poll-meta">
+                <span><i class="fas fa-vote-yea"></i> {{ poll.total_votes }} votes</span>
+                <span><i class="fas fa-calendar"></i> {{ poll.created_at|date:"d M Y" }}</span>
+                {% if poll.closed_at %}<span><i class="fas fa-lock"></i> Closed {{ poll.closed_at|date:"d M Y" }}</span>{% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <div class="empty-state card" style="padding:40px;"><i class="fas fa-poll"></i><p>No polls created yet.</p></div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<!-- Post Notice Modal — uses {{ notice_form.field }} -->
+<div class="modal-overlay" id="addNoticeModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px;"></i>Post Notice</span>
+            <button class="modal-close" onclick="closeModal('addNoticeModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_add_notice' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if notice_form.non_field_errors %}
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ notice_form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label class="form-label">{{ notice_form.title.label }} <span class="req">*</span></label>
+                    {{ notice_form.title }}
+                    {% if notice_form.title.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ notice_form.title.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ notice_form.message.label }} <span class="req">*</span></label>
+                    {{ notice_form.message }}
+                    {% if notice_form.message.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ notice_form.message.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ notice_form.target_audience.label }} <span class="req">*</span></label>
+                    {{ notice_form.target_audience }}
+                    {% if notice_form.target_audience.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ notice_form.target_audience.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('addNoticeModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-bullhorn"></i> Post Notice</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create Poll Modal — uses {{ poll_form.field }} -->
+<div class="modal-overlay" id="addPollModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-poll" style="color:var(--primary);margin-right:8px;"></i>Create Poll</span>
+            <button class="modal-close" onclick="closeModal('addPollModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_add_poll' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if poll_form.non_field_errors %}
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ poll_form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label class="form-label">{{ poll_form.question.label }} <span class="req">*</span></label>
+                    {{ poll_form.question }}
+                    {% if poll_form.question.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ poll_form.question.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="alert alert-info" style="margin-top:8px;">
+                    <i class="fas fa-info-circle"></i> Residents vote Yes or No. Results visible in real-time.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('addPollModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-poll"></i> Create Poll</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+{% endblock %}

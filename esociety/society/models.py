@@ -1,10 +1,6 @@
-
 from django.contrib.auth.hashers import make_password, check_password
 from django.db import models
 from django.conf import settings
-
-
-
 
 
 # ==============================
@@ -31,6 +27,12 @@ class Visitor(models.Model):
         ("inside", "Inside"),
         ("exited", "Exited"),
         ("denied", "Denied"),
+    ]
+
+    # ── NEW: tracks who created this visitor record ──────────────
+    REGISTERED_BY_CHOICES = [
+        ("resident", "Resident"),   # resident pre-registered (visitor pass)
+        ("guard", "Guard"),         # guard logged on arrival
     ]
 
     visitor_name = models.CharField(max_length=100)
@@ -78,13 +80,22 @@ class Visitor(models.Model):
         limit_choices_to={"role": "security"},
     )
 
+    # ── NEW: who created this visitor record ─────────────────────
+    # "resident" = pre-registered via Visitor Pass (auto-approved)
+    # "guard"    = logged on arrival (needs resident approval)
+    registered_by = models.CharField(
+        max_length=20,
+        choices=REGISTERED_BY_CHOICES,
+        default="resident",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "visitors"
 
     def __str__(self):
-        return f"{self.visitor_name} visiting {self.resident.full_name}"
+        return f"{self.visitor_name} visiting {self.resident.first_name} {self.resident.last_name}"
 
 
 # ==============================
@@ -217,7 +228,7 @@ class FacilityBooking(models.Model):
         db_table = "facility_bookings"
 
     def __str__(self):
-        return f"{self.facility.facility_name} - {self.booked_by.full_name}"
+        return f"{self.facility.facility_name} - {self.booked_by.first_name} {self.booked_by.last_name}"
 
 
 # ==============================
@@ -263,7 +274,7 @@ class Payment(models.Model):
         db_table = "payments"
 
     def __str__(self):
-        return f"{self.payment_type} payment by {self.resident.full_name}"
+        return f"{self.payment_type} payment by {self.resident.first_name} {self.resident.last_name}"
 
 
 # ==============================
@@ -281,7 +292,6 @@ class Notice(models.Model):
 
     message = models.TextField()
 
-    # Restrict who can see this notice
     target_audience = models.CharField(
         max_length=20,
         choices=TARGET_CHOICES,
@@ -430,7 +440,7 @@ class PollVote(models.Model):
 
     class Meta:
         db_table = "poll_votes"
-        unique_together = ("poll", "voter")  # One vote per resident per poll
+        unique_together = ("poll", "voter")
 
     def __str__(self):
-        return f"{self.voter.full_name} voted {self.vote} on '{self.poll.question}'"
+        return f"{self.voter.first_name} {self.voter.last_name} voted {self.vote} on '{self.poll.question}'"

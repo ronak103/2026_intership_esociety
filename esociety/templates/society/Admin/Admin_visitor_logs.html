@@ -1,0 +1,279 @@
+{% extends "society/Admin/Admin_base.html" %}
+{% load static %}
+
+{% block title %}Visitor Logs{% endblock %}
+
+
+
+{% block content %}
+
+<!-- ── SECTION HEADER ── -->
+<div class="section-header">
+  <h2 class="section-title">Visitor Logs</h2>
+  <p class="section-sub">All society entries and exits are recorded here. Click any row to view full details.</p>
+</div>
+
+<!-- ── STAT CARDS ── -->
+<div class="stats-grid">
+  <div class="stat-card" style="--stat-color:#0F4C81">
+    <div class="stat-icon" style="background:#0F4C8115;color:#0F4C81">🚶</div>
+    <div>
+      <div class="stat-value">{{ total_today }}</div>
+      <div class="stat-label">Visitors Today</div>
+      <div class="stat-sub">Total entries</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--stat-color:#10B981">
+    <div class="stat-icon" style="background:#10B98115;color:#10B981">✅</div>
+    <div>
+      <div class="stat-value">{{ currently_inside }}</div>
+      <div class="stat-label">Currently Inside</div>
+      <div class="stat-sub">Active visits</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--stat-color:#F59E0B">
+    <div class="stat-icon" style="background:#F59E0B15;color:#F59E0B">📦</div>
+    <div>
+      <div class="stat-value">{{ total_deliveries }}</div>
+      <div class="stat-label">Deliveries Today</div>
+      <div class="stat-sub">All delivery types</div>
+    </div>
+  </div>
+  <div class="stat-card" style="--stat-color:#EF4444">
+    <div class="stat-icon" style="background:#EF444415;color:#EF4444">🚫</div>
+    <div>
+      <div class="stat-value">{{ total_denied }}</div>
+      <div class="stat-label">Denied Entry</div>
+      <div class="stat-sub">Blocked at gate</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN CARD ── -->
+<div class="card">
+
+  <!-- Card header -->
+  <div class="card-header-row">
+    <div>
+      <p class="card-title">Visitor Log</p>
+      <p class="card-sub">All entries and exits recorded here.</p>
+    </div>
+    <a href="?export=csv{% if date_filter %}&date={{ date_filter }}{% endif %}{% if type_filter != 'all' %}&type={{ type_filter }}{% endif %}{% if status_filter != 'all' %}&status={{ status_filter }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+       class="btn-export">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Export CSV
+    </a>
+  </div>
+
+  <!-- Filters -->
+  <form method="GET" id="filter-form" class="filter-bar">
+    <div class="filter-group">
+      <label class="filter-label">Date</label>
+      <input type="date" name="date" class="filter-input" value="{{ date_filter }}">
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Visitor Type</label>
+      <select name="type" class="filter-input">
+        <option value="all"         {% if type_filter == "all" %}selected{% endif %}>All Types</option>
+        <option value="guest"       {% if type_filter == "guest" %}selected{% endif %}>Guest</option>
+        <option value="delivery"    {% if type_filter == "delivery" %}selected{% endif %}>Delivery</option>
+        <option value="maintenance" {% if type_filter == "maintenance" %}selected{% endif %}>Maintenance</option>
+        <option value="staff"       {% if type_filter == "staff" %}selected{% endif %}>Staff</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Status</label>
+      <select name="status" class="filter-input">
+        <option value="all"     {% if status_filter == "all" %}selected{% endif %}>All Status</option>
+        <option value="waiting" {% if status_filter == "waiting" %}selected{% endif %}>Waiting</option>
+        <option value="inside"  {% if status_filter == "inside" %}selected{% endif %}>Inside</option>
+        <option value="exited"  {% if status_filter == "exited" %}selected{% endif %}>Exited</option>
+        <option value="denied"  {% if status_filter == "denied" %}selected{% endif %}>Denied</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Search</label>
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input type="text" name="q" class="filter-input search-input"
+               placeholder="Name or mobile..." value="{{ search_query }}">
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button type="submit" class="btn-filter">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+        </svg>
+        Filter
+      </button>
+      <a href="{% url 'admin_visitor_logs' %}" class="btn-reset">Reset</a>
+    </div>
+  </form>
+
+  <!-- Results count -->
+  <div class="results-bar">
+    <span class="results-count">
+      Showing <strong>{{ visitors|length }}</strong> record{{ visitors|length|pluralize }}
+      {% if date_filter %} for <strong>{{ date_filter }}</strong>{% endif %}
+    </span>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Visitor Name</th>
+          <th>Mobile</th>
+          <th>Unit</th>
+          <th>Resident</th>
+          <th>Type</th>
+          <th>Expected Date</th>
+          <th>Entry Time</th>
+          <th>Exit Time</th>
+          <th>Vehicle</th>
+          <th>Guard</th>
+          <th>Approval</th>
+          <th>Entry Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for v in visitors %}
+        <tr
+          data-id="{{ v.id }}"
+          data-visitor-name="{{ v.visitor_name }}"
+          data-mobile="{{ v.mobile_number }}"
+          data-unit="{{ v.resident.unit_number|default:'' }}"
+          data-resident="{{ v.resident.full_name }}"
+          data-visitor-type="{{ v.visitor_type }}"
+          data-expected-date="{{ v.expected_date|date:'d M Y' }}"
+          data-entry-time="{% if v.entry_time %}{{ v.entry_time|date:'h:i A' }}{% endif %}"
+          data-exit-time="{% if v.exit_time %}{{ v.exit_time|date:'h:i A' }}{% endif %}"
+          data-vehicle="{{ v.vehicle_number|default:'' }}"
+          data-guard="{{ v.guard.full_name|default:'' }}"
+          data-approval-status="{{ v.approval_status }}"
+          data-entry-status="{{ v.entry_status }}"
+        >
+          <td class="td-num">{{ forloop.counter }}</td>
+          <td class="td-name">{{ v.visitor_name }}</td>
+          <td class="td-mono">{{ v.mobile_number }}</td>
+          <td><strong>{{ v.resident.unit_number|default:"—" }}</strong></td>
+          <td>{{ v.resident.full_name }}</td>
+
+          <!-- Type badge -->
+          <td>
+            {% if v.visitor_type == "guest" %}
+              <span class="badge badge-info">Guest</span>
+            {% elif v.visitor_type == "delivery" %}
+              <span class="badge badge-purple">Delivery</span>
+            {% elif v.visitor_type == "maintenance" %}
+              <span class="badge badge-warning">Maintenance</span>
+            {% else %}
+              <span class="badge badge-default">Staff</span>
+            {% endif %}
+          </td>
+
+          <td>{{ v.expected_date|date:"d M Y" }}</td>
+
+          <!-- Entry time -->
+          <td>
+            {% if v.entry_time %}
+              <span class="time-chip time-in">{{ v.entry_time|date:"h:i A" }}</span>
+            {% else %}
+              <span class="td-null">—</span>
+            {% endif %}
+          </td>
+
+          <!-- Exit time -->
+          <td>
+            {% if v.exit_time %}
+              <span class="time-chip time-out">{{ v.exit_time|date:"h:i A" }}</span>
+            {% else %}
+              <span class="td-null">—</span>
+            {% endif %}
+          </td>
+
+          <td>{{ v.vehicle_number|default:"—" }}</td>
+          <td>{{ v.guard.full_name|default:"—" }}</td>
+
+          <!-- Approval status -->
+          <td>
+            {% if v.approval_status == "approved" %}
+              <span class="badge badge-success">Approved</span>
+            {% elif v.approval_status == "rejected" %}
+              <span class="badge badge-danger">Rejected</span>
+            {% else %}
+              <span class="badge badge-warning">Pending</span>
+            {% endif %}
+          </td>
+
+          <!-- Entry status -->
+          <td>
+            {% if v.entry_status == "inside" %}
+              <span class="badge badge-success badge-dot">Inside</span>
+            {% elif v.entry_status == "exited" %}
+              <span class="badge badge-default">Exited</span>
+            {% elif v.entry_status == "denied" %}
+              <span class="badge badge-danger">Denied</span>
+            {% else %}
+              <span class="badge badge-warning">Waiting</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="13">
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <div class="empty-title">No visitors found</div>
+              <div class="empty-sub">Try changing the filters or date range.</div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&date={{ date_filter }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_query }}"
+         class="page-btn">← Prev</a>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <span class="page-btn page-active">{{ num }}</span>
+      {% elif num > page_obj.number|add:"-3" and num < page_obj.number|add:"3" %}
+        <a href="?page={{ num }}&date={{ date_filter }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_query }}"
+           class="page-btn">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&date={{ date_filter }}&type={{ type_filter }}&status={{ status_filter }}&q={{ search_query }}"
+         class="page-btn">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div><!-- /card -->
+
+{% endblock %}
+
+{% block extra_js %}
+  <script src="{% static 'js/visitor_log.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Settings — SocietySync Admin{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Manage society configuration and your account{% endblock %}
+
+{% block content %}
+<div class="two-col">
+
+    <!-- Left column -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Society Profile — uses AdminSocietySettingsForm -->
+        <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fas fa-building"></i> Society Profile</span></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'admin_save_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="society">
+
+                    {% if society_form.non_field_errors %}
+                    <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ society_form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label">{{ society_form.society_name.label }}</label>
+                        {{ society_form.society_name }}
+                        {% if society_form.society_name.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ society_form.society_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">{{ society_form.total_units.label }}</label>
+                            {{ society_form.total_units }}
+                            {% if society_form.total_units.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ society_form.total_units.errors.0 }}</div>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">{{ society_form.maintenance_fee.label }}</label>
+                            {{ society_form.maintenance_fee }}
+                            {% if society_form.maintenance_fee.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ society_form.maintenance_fee.errors.0 }}</div>{% endif %}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ society_form.address.label }}</label>
+                        {{ society_form.address }}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ society_form.contact_email.label }}</label>
+                        {{ society_form.contact_email }}
+                        {% if society_form.contact_email.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ society_form.contact_email.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ society_form.contact_phone.label }}</label>
+                        {{ society_form.contact_phone }}
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Password — uses AdminChangePasswordForm -->
+        <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fas fa-lock"></i> Change Password</span></div>
+            <div class="card-body">
+                <form method="post" action="{% url 'admin_change_password' %}">
+                    {% csrf_token %}
+
+                    {% if password_form.non_field_errors %}
+                    <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ password_form.non_field_errors.0 }}</div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label class="form-label">{{ password_form.current_password.label }} <span class="req">*</span></label>
+                        {{ password_form.current_password }}
+                        {% if password_form.current_password.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ password_form.current_password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ password_form.new_password.label }} <span class="req">*</span></label>
+                        {{ password_form.new_password }}
+                        {% if password_form.new_password.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ password_form.new_password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">{{ password_form.confirm_password.label }} <span class="req">*</span></label>
+                        {{ password_form.confirm_password }}
+                        {% if password_form.confirm_password.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ password_form.confirm_password.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div style="display:flex;justify-content:flex-end;">
+                        <button type="submit" class="btn btn-warning"><i class="fas fa-key"></i> Update Password</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right column -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Notification Preferences (checkboxes — no ModelForm needed) -->
+        <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fas fa-bell"></i> Notification Preferences</span></div>
+            <div class="card-body" style="padding:0 22px;">
+                <form method="post" action="{% url 'admin_save_settings' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="section" value="notifications">
+                    <div class="settings-section">
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="title">New Complaint Alert</div>
+                                <div class="desc">Notify when a resident submits a complaint</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="notify_complaint" {% if settings.notify_complaint %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="title">Payment Received</div>
+                                <div class="desc">Alert when a resident completes a payment</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="notify_payment" {% if settings.notify_payment %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="title">New Visitor Log</div>
+                                <div class="desc">Alert on guard-logged visitor entries</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="notify_visitor" {% if settings.notify_visitor %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="settings-row">
+                            <div class="settings-row-info">
+                                <div class="title">Facility Booking</div>
+                                <div class="desc">Alert when a facility booking is made</div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" name="notify_booking" {% if settings.notify_booking %}checked{% endif %}>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="padding-bottom:16px;display:flex;justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Facilities — uses AdminFacilityForm -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-swimming-pool"></i> Facilities</span>
+                <button class="btn btn-primary btn-sm" onclick="openModal('addFacilityModal')"><i class="fas fa-plus"></i> Add</button>
+            </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Facility</th><th>Fee (₹)</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                        {% for f in facilities %}
+                        <tr>
+                            <td class="fw">{{ f.facility_name }}</td>
+                            <td class="amount">₹{{ f.booking_fee }}</td>
+                            <td>
+                                {% if f.availability_status == 'available' %}<span class="badge badge-success">Available</span>
+                                {% else %}<span class="badge badge-danger">Unavailable</span>{% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'admin_toggle_facility' f.id %}" class="btn btn-outline btn-xs"
+                                   onclick="return confirm('Toggle availability?')">
+                                    <i class="fas fa-toggle-on"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4"><div class="empty-state" style="padding:20px;"><i class="fas fa-swimming-pool"></i><p>No facilities added yet.</p></div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card" style="border-color:var(--danger-light);">
+            <div class="card-header" style="background:var(--danger-light);">
+                <span class="card-title" style="color:var(--danger);"><i class="fas fa-exclamation-triangle"></i> Danger Zone</span>
+            </div>
+            <div class="card-body">
+                <div style="display:flex;align-items:center;justify-content:space-between;">
+                    <div>
+                        <div style="font-size:14px;font-weight:600;">Export All Data</div>
+                        <div style="font-size:12px;color:var(--text-muted);">Full CSV of all residents, payments and complaints</div>
+                    </div>
+                    <a href="{% url 'admin_export_all' %}" class="btn btn-outline btn-sm"><i class="fas fa-download"></i> Export</a>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Add Facility Modal — uses {{ facility_form.field }} -->
+<div class="modal-overlay" id="addFacilityModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-plus-circle" style="color:var(--primary);margin-right:8px;"></i>Add Facility</span>
+            <button class="modal-close" onclick="closeModal('addFacilityModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_add_facility' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if facility_form.non_field_errors %}
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ facility_form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="form-group">
+                    <label class="form-label">{{ facility_form.facility_name.label }} <span class="req">*</span></label>
+                    {{ facility_form.facility_name }}
+                    {% if facility_form.facility_name.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ facility_form.facility_name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ facility_form.description.label }}</label>
+                    {{ facility_form.description }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ facility_form.booking_fee.label }}</label>
+                    {{ facility_form.booking_fee }}
+                    {% if facility_form.booking_fee.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ facility_form.booking_fee.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('addFacilityModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Facility</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+</script>
+{% endblock %}

@@ -1,5 +1,139 @@
 {% extends "base.html" %}
+{% load static %}
+
 {% block content %}
-<h1>security dashboard</h1>
-<p>{{request.user}}</p>
+<link rel="stylesheet" href="{% static 'css/resident.css' %}">
+
+<div class="section-header">
+    <h2 class="section-title">Security Dashboard</h2>
+    <p class="section-sub">Welcome back! Here is today's gate activity overview.</p>
+</div>
+
+<!-- Stat Cards -->
+<div class="stats-grid">
+
+    <div class="stat-card">
+        <div class="stat-icon">🚶</div>
+        <div>
+            <div class="stat-value">{{ total_today }}</div>
+            <div class="stat-label">Visitors Today</div>
+            <div class="stat-sub">Total logged today</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🏠</div>
+        <div>
+            <div class="stat-value">{{ currently_inside }}</div>
+            <div class="stat-label">Currently Inside</div>
+            <div class="stat-sub">Active on premises</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div>
+            <div class="stat-value">{{ pending_approval }}</div>
+            <div class="stat-label">Pending Approval</div>
+            <div class="stat-sub">Awaiting resident decision</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon">🚫</div>
+        <div>
+            <div class="stat-value">{{ total_denied }}</div>
+            <div class="stat-label">Denied Today</div>
+            <div class="stat-sub">Entry not allowed</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Bottom Grid -->
+<div class="grid-2">
+
+    <!-- Today's Visitor Summary -->
+    <div class="card">
+        <p class="card-title">Today's Visitor Summary</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Resident</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in today_visitors %}
+                <tr>
+                    <td>{{ v.visitor_name }}</td>
+                    <td>{{ v.get_visitor_type_display }}</td>
+                    <td>{{ v.resident.first_name }} {{ v.resident.last_name }}</td>
+                    <td>
+                        {% if v.entry_status == "inside" %}
+                            <span class="badge badge-success">Inside</span>
+                        {% elif v.entry_status == "exited" %}
+                            <span class="badge" style="background:#e5e7eb;color:#374151;">Exited</span>
+                        {% elif v.entry_status == "denied" %}
+                            <span class="badge badge-danger">Denied</span>
+                        {% else %}
+                            <span class="badge badge-warning">Waiting</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" style="text-align:center; padding:20px; color:#9ca3af;">
+                        No visitors logged today.
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <div style="margin-top:12px;">
+            <a href="{% url 'guard_log_visitor' %}"
+               style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">
+                → Go to Visitor Log
+            </a>
+        </div>
+    </div>
+
+    <!-- Pending Resident Approvals -->
+    <div class="card">
+        <p class="card-title">Waiting for Resident Approval</p>
+
+        {% for v in pending_visitors %}
+            <div class="notice-item" style="align-items:flex-start; gap:10px;">
+                <div class="notice-dot" style="margin-top:5px; background:#f59e0b;"></div>
+                <div>
+                    <div style="font-weight:600; font-size:14px;">{{ v.visitor_name }}</div>
+                    <div style="font-size:12px; color:#6b7280;">
+                        {{ v.get_visitor_type_display }} &nbsp;·&nbsp;
+                        For {{ v.resident.first_name }} {{ v.resident.last_name }}
+                    </div>
+                    <div style="font-size:11px; color:#9ca3af;">
+                        Logged at {{ v.created_at|date:"h:i A" }}
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div style="text-align:center; padding:20px; color:#9ca3af;">
+                No pending approvals right now.
+            </div>
+        {% endfor %}
+
+        <div style="margin-top:12px;">
+            <a href="{% url 'guard_log_visitor' %}"
+               style="font-size:13px; color:#6366f1; font-weight:600; text-decoration:none;">
+                → Manage Visitors
+            </a>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

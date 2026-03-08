@@ -1,0 +1,158 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Complaints — SocietySync Admin{% endblock %}
+{% block page_title %}Complaints{% endblock %}
+{% block page_subtitle %}Track and manage all society complaints{% endblock %}
+
+{% block topbar_actions %}
+<a href="?export=csv" class="topbar-btn topbar-btn-outline"><i class="fas fa-download"></i> Export CSV</a>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+    <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-clock"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ pending_count }}</div><div class="stat-label">Pending</div></div></div>
+    <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-spinner"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ in_progress_count }}</div><div class="stat-label">In Progress</div></div></div>
+    <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ resolved_count }}</div><div class="stat-label">Resolved</div></div></div>
+    <div class="stat-card red"><div class="stat-icon red"><i class="fas fa-fire"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ urgent_count }}</div><div class="stat-label">Urgent</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-exclamation-circle"></i> All Complaints</span>
+    </div>
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <form method="get" class="filter-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by type or resident…">
+            </div>
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="all"         {% if status_filter == 'all'          %}selected{% endif %}>All Status</option>
+                <option value="pending"     {% if status_filter == 'pending'      %}selected{% endif %}>Pending</option>
+                <option value="in_progress" {% if status_filter == 'in_progress'  %}selected{% endif %}>In Progress</option>
+                <option value="resolved"    {% if status_filter == 'resolved'     %}selected{% endif %}>Resolved</option>
+            </select>
+            <select name="priority" class="filter-select" onchange="this.form.submit()">
+                <option value="all"    {% if priority_filter == 'all'    %}selected{% endif %}>All Priority</option>
+                <option value="urgent" {% if priority_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                <option value="high"   {% if priority_filter == 'high'   %}selected{% endif %}>High</option>
+                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Medium</option>
+                <option value="low"    {% if priority_filter == 'low'    %}selected{% endif %}>Low</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Search</button>
+            {% if search_query or status_filter != 'all' or priority_filter != 'all' %}
+            <a href="{% url 'admin_complaints' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>Resident</th><th>Complaint Type</th><th>Description</th><th>Priority</th><th>Assigned Staff</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for c in complaints %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar sm">{{ c.resident.first_name|first|upper }}{{ c.resident.last_name|first|upper }}</div>
+                            <div class="info">
+                                <div class="name">{{ c.resident.first_name }} {{ c.resident.last_name }}</div>
+                                <div class="sub">{{ c.resident.unit_number|default:"—" }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="fw">{{ c.complaint_type }}</td>
+                    <td style="max-width:180px;color:var(--text-secondary);font-size:12.5px;">{{ c.description|truncatechars:60 }}</td>
+                    <td>
+                        {% if c.priority == 'urgent' %}<span class="badge badge-danger">🔴 Urgent</span>
+                        {% elif c.priority == 'high' %}<span class="badge badge-warning">🟠 High</span>
+                        {% elif c.priority == 'medium' %}<span class="badge badge-info">🔵 Medium</span>
+                        {% else %}<span class="badge badge-gray">⚪ Low</span>{% endif %}
+                    </td>
+                    <td style="font-size:12.5px;">{{ c.assigned_staff|default:"—" }}</td>
+                    <td>
+                        {% if c.status == 'resolved' %}<span class="badge badge-success">Resolved</span>
+                        {% elif c.status == 'in_progress' %}<span class="badge badge-info">In Progress</span>
+                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted);">{{ c.created_at|date:"d M Y" }}</td>
+                    <td>
+                        <button class="btn btn-outline btn-sm"
+                                onclick="openUpdateModal({{ c.id }}, '{{ c.status }}', '{{ c.assigned_staff|default:'' }}')">
+                            <i class="fas fa-edit"></i> Update
+                        </button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9"><div class="empty-state"><i class="fas fa-check-double"></i><p>No complaints found.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+        <div class="pagination-controls">
+            {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<a href="?page={{ num }}" class="page-btn">{{ num }}</a>{% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Update Complaint Modal — uses {{ update_form.field }} -->
+<div class="modal-overlay" id="updateComplaintModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-edit" style="color:var(--primary);margin-right:8px;"></i>Update Complaint</span>
+            <button class="modal-close" onclick="closeModal('updateComplaintModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_update_complaint' %}" id="updateForm">
+            {% csrf_token %}
+            <input type="hidden" name="complaint_id" id="complaintIdField">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">{{ update_form.status.label }} <span class="req">*</span></label>
+                    {{ update_form.status }}
+                    {% if update_form.status.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ update_form.status.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">{{ update_form.assigned_staff.label }}</label>
+                    {{ update_form.assigned_staff }}
+                    {% if update_form.assigned_staff.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ update_form.assigned_staff.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('updateComplaintModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+function openUpdateModal(id, status, staff) {
+    document.getElementById('complaintIdField').value = id;
+    document.getElementById('id_status').value        = status;
+    document.getElementById('id_assigned_staff').value = staff;
+    openModal('updateComplaintModal');
+}
+</script>
+{% endblock %}

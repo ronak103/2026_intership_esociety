@@ -2,44 +2,121 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/resident.css' %}">  
+
+<link rel="stylesheet" href="{% static 'css/visitor.css' %}">
 
 <div class="section-header">
-<h2 class="section-title">Visitor Management</h2>
-<p class="section-sub">Approve visitors before entry</p>
+    <h2 class="section-title">Visitor Pass</h2>
+    <p class="section-sub">Pre-register visitors before they arrive — the guard will see them as pre-approved.</p>
 </div>
 
+{% if messages %}
+    {% for msg in messages %}
+        <div style="
+            padding: 12px 18px; border-radius: 8px; margin-bottom: 16px;
+            background: #d1fae5; color: #065f46;
+            border-left: 4px solid #10b981;
+        ">{{ msg }}</div>
+    {% endfor %}
+{% endif %}
 
+<!-- Create Visitor Pass Form -->
 <div class="card">
+    <p class="card-title">Create Visitor Pass</p>
 
-<p class="card-title">Pre Approve Visitor</p>
+    <form method="POST">
+        {% csrf_token %}
 
-<div class="form-row">
+        <div class="form-row">
 
-<div>
-<label class="inner-label">Visitor Name</label>
-<input class="inner-input">
+            <div>
+                <label class="inner-label">Visitor Name</label>
+                {{ form.visitor_name }}
+            </div>
+
+            <div>
+                <label class="inner-label">Mobile Number</label>
+                {{ form.mobile_number }}
+            </div>
+
+            <div>
+                <label class="inner-label">Visitor Type</label>
+                {{ form.visitor_type }}
+            </div>
+
+            <div>
+                <label class="inner-label">Expected Date</label>
+                {{ form.expected_date }}
+            </div>
+
+            <div>
+                <label class="inner-label">Vehicle Number (optional)</label>
+                {{ form.vehicle_number }}
+            </div>
+
+        </div>
+
+        <button type="submit" class="btn-primary">
+            Generate Visitor Pass
+        </button>
+
+    </form>
 </div>
 
-<div>
-<label class="inner-label">Mobile</label>
-<input class="inner-input">
-</div>
 
-<div>
-<label class="inner-label">Date</label>
-<input type="date" class="inner-input">
-</div>
+<!-- My Pre-registered Visitors -->
+<div class="card">
+    <p class="card-title">My Pre-registered Visitors</p>
 
-<div>
-<label class="inner-label">Purpose</label>
-<input class="inner-input">
-</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Mobile</th>
+                <th>Type</th>
+                <th>Expected Date</th>
+                <th>Approval</th>
+                <th>Entry Status</th>
+            </tr>
+        </thead>
 
-</div>
+        <tbody>
+        {% for visitor in visitors %}
+            <tr>
+                <td>{{ visitor.visitor_name }}</td>
+                <td>{{ visitor.mobile_number }}</td>
+                <td>{{ visitor.get_visitor_type_display }}</td>
+                <td>{{ visitor.expected_date }}</td>
 
-<button class="btn btn-primary">Generate Pass</button>
+                <!-- Approval: always "Pre-approved" for resident-created passes -->
+                <td>
+                    <span class="badge badge-success">✅ Pre-approved</span>
+                </td>
 
+                <!-- Entry status -->
+                <td>
+                    {% if visitor.entry_status == "inside" %}
+                        <span class="badge badge-success">Inside</span>
+                    {% elif visitor.entry_status == "exited" %}
+                        <span class="badge" style="background:#e5e7eb;color:#374151;">Exited</span>
+                    {% elif visitor.entry_status == "denied" %}
+                        <span class="badge badge-danger">Denied</span>
+                    {% else %}
+                        <span class="badge badge-warning">Waiting</span>
+                    {% endif %}
+                </td>
+            </tr>
+
+        {% empty %}
+            <tr>
+                <td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">
+                    No visitor passes created yet.
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+
+    </table>
 </div>
 
 {% endblock %}

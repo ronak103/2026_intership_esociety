@@ -1,0 +1,227 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Residents — SocietySync Admin{% endblock %}
+{% block page_title %}Residents{% endblock %}
+{% block page_subtitle %}Manage all society residents{% endblock %}
+
+{% block topbar_actions %}
+<button class="topbar-btn topbar-btn-primary" onclick="openModal('addResidentModal')">
+    <i class="fas fa-user-plus"></i> Add Resident
+</button>
+{% endblock %}
+
+{% block content %}
+
+<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+    <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-users"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ total_residents }}</div><div class="stat-label">Total Residents</div></div></div>
+    <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ active_residents }}</div><div class="stat-label">Active</div></div></div>
+    <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-home"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ occupied_units }}</div><div class="stat-label">Occupied Units</div></div></div>
+    <div class="stat-card purple"><div class="stat-icon purple"><i class="fas fa-shield-alt"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ security_guards }}</div><div class="stat-label">Security Guards</div></div></div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-users"></i> All Residents</span>
+        <a href="?export=csv{% if search_query %}&q={{ search_query }}{% endif %}" class="btn btn-outline btn-sm">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <form method="get" class="filter-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search name, email, unit…">
+            </div>
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="all"      {% if status_filter == 'all'      %}selected{% endif %}>All Status</option>
+                <option value="active"   {% if status_filter == 'active'   %}selected{% endif %}>Active</option>
+                <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Search</button>
+            {% if search_query or status_filter != 'all' %}
+            <a href="{% url 'admin_residents' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead><tr><th>#</th><th>Resident</th><th>Unit</th><th>Mobile</th><th>Complaints</th><th>Payments</th><th>Status</th><th>Joined</th><th>Actions</th></tr></thead>
+            <tbody>
+                {% for r in residents %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar sm">{{ r.first_name|first|upper }}{{ r.last_name|first|upper }}</div>
+                            <div class="info">
+                                <div class="name">{{ r.first_name }} {{ r.last_name }}</div>
+                                <div class="sub">{{ r.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-gray">{{ r.unit_number|default:"—" }}</span></td>
+                    <td>{{ r.mobile_number|default:"—" }}</td>
+                    <td><span class="badge badge-{% if r.complaint_count > 0 %}warning{% else %}gray{% endif %}">{{ r.complaint_count }}</span></td>
+                    <td>
+                        <span class="badge badge-{% if r.pending_payment_count > 0 %}danger{% else %}success{% endif %}">
+                            {% if r.pending_payment_count > 0 %}{{ r.pending_payment_count }} pending{% else %}Clear{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        {% if r.is_active %}<span class="badge badge-success">Active</span>
+                        {% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted);">{{ r.date_joined|date:"d M Y" }}</td>
+                    <td>
+                        <div style="display:flex;gap:5px;">
+                            <button class="btn btn-outline btn-icon btn-sm" title="View"
+                                onclick="openResidentDetail('{{ r.first_name }} {{ r.last_name }}','{{ r.email }}','{{ r.unit_number|default:"—" }}','{{ r.mobile_number|default:"—" }}','{{ r.date_joined|date:"d M Y" }}',{{ r.complaint_count }},{{ r.pending_payment_count }})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <a href="{% url 'admin_toggle_resident' r.id %}"
+                               class="btn btn-{% if r.is_active %}warning{% else %}success{% endif %} btn-icon btn-sm"
+                               onclick="return confirm('Are you sure?')">
+                                <i class="fas fa-{% if r.is_active %}ban{% else %}check{% endif %}"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9"><div class="empty-state"><i class="fas fa-users"></i><p>No residents found.</p></div></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+        <div class="pagination-controls">
+            {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>{% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}<a href="?page={{ num }}" class="page-btn">{{ num }}</a>{% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>{% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Resident Modal — uses {{ add_form.field }} -->
+<div class="modal-overlay {% if show_add_modal %}open{% endif %}" id="addResidentModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-user-plus" style="color:var(--primary);margin-right:8px;"></i>Add New Resident</span>
+            <button class="modal-close" onclick="closeModal('addResidentModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="post" action="{% url 'admin_add_resident' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if add_form.non_field_errors %}
+                <div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> {{ add_form.non_field_errors.0 }}</div>
+                {% endif %}
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">First Name <span class="req">*</span></label>
+                        {{ add_form.first_name }}
+                        {% if add_form.first_name.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.first_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Last Name <span class="req">*</span></label>
+                        {{ add_form.last_name }}
+                        {% if add_form.last_name.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.last_name.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email Address <span class="req">*</span></label>
+                    {{ add_form.email }}
+                    {% if add_form.email.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.email.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Unit Number <span class="req">*</span></label>
+                        {{ add_form.unit_number }}
+                        {% if add_form.unit_number.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.unit_number.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobile Number</label>
+                        {{ add_form.mobile_number }}
+                        {% if add_form.mobile_number.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.mobile_number.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Temporary Password <span class="req">*</span></label>
+                    {{ add_form.password }}
+                    {% if add_form.password.errors %}<div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ add_form.password.errors.0 }}</div>{% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('addResidentModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-user-plus"></i> Add Resident</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Detail Modal (JS-populated, no form needed) -->
+<div class="modal-overlay" id="residentDetailModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title" id="detailName">Resident Details</span>
+            <button class="modal-close" onclick="closeModal('residentDetailModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--border);">
+                <div class="avatar lg" id="detailAvatar"></div>
+                <div>
+                    <div style="font-size:17px;font-weight:700;" id="detailNameFull"></div>
+                    <div style="font-size:13px;color:var(--text-muted);" id="detailEmail"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div><div class="form-label">Unit</div><div class="fw" id="detailUnit"></div></div>
+                <div><div class="form-label">Mobile</div><div class="fw" id="detailMobile"></div></div>
+                <div><div class="form-label">Joined</div><div class="fw" id="detailJoined"></div></div>
+            </div>
+            <div class="form-row" style="margin-top:16px;">
+                <div class="stat-card amber" style="padding:14px;">
+                    <div class="stat-icon amber"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="stat-info"><div class="stat-value" id="detailComplaints"></div><div class="stat-label">Complaints</div></div>
+                </div>
+                <div class="stat-card red" style="padding:14px;">
+                    <div class="stat-icon red"><i class="fas fa-wallet"></i></div>
+                    <div class="stat-info"><div class="stat-value" id="detailPending"></div><div class="stat-label">Pending Dues</div></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('residentDetailModal')">Close</button></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+function openResidentDetail(name, email, unit, mobile, joined, complaints, pending) {
+    document.getElementById('detailName').textContent    = 'Resident — ' + name;
+    document.getElementById('detailNameFull').textContent = name;
+    document.getElementById('detailEmail').textContent   = email;
+    document.getElementById('detailUnit').textContent    = unit;
+    document.getElementById('detailMobile').textContent  = mobile;
+    document.getElementById('detailJoined').textContent  = joined;
+    document.getElementById('detailComplaints').textContent = complaints;
+    document.getElementById('detailPending').textContent = pending;
+    document.getElementById('detailAvatar').textContent  = name.split(' ').map(n=>n[0]).join('').toUpperCase();
+    openModal('residentDetailModal');
+}
+</script>
+{% endblock %}

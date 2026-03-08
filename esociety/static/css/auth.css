@@ -5,15 +5,15 @@
 
 /* ── TOKENS (mirrors home.css :root exactly) ── */
 :root {
-    --primary:       #1a56db;
-    --primary-dark:  #1342b0;
-    --primary-light: #eef3ff;
-    --accent:        #06b6d4;
+    --primary:       #1a2e4a;
+    --primary-dark:  #0f1e33;
+    --primary-light: #e8f0f8;
+    --accent:        #0ea5a0;
     --text:          #0d1117;
     --text2:         #4b5563;
     --muted:         #9ca3af;
     --border:        #e5e7eb;
-    --surface:       #f9fafb;
+    --surface:       #f0f4f8;
     --white:         #ffffff;
     --error:         #ef4444;
 
@@ -49,9 +49,9 @@ body::before {
     position: fixed;
     inset: 0;
     background:
-        radial-gradient(ellipse 65% 55% at 15% 10%, #dbeafe 0%, transparent 60%),
-        radial-gradient(ellipse 50% 60% at 88% 85%, #bfdbfe 0%, transparent 55%),
-        radial-gradient(ellipse 38% 38% at 55% 48%, #ede9fe 0%, transparent 60%);
+        radial-gradient(ellipse 65% 55% at 15% 10%, #c8d9ee 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 88% 85%, #a8dbd8 0%, transparent 55%),
+        radial-gradient(ellipse 38% 38% at 55% 48%, #d4e5f5 0%, transparent 60%);
     filter: blur(60px);
     opacity: .65;
     z-index: 0;
@@ -69,7 +69,7 @@ body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background-image: radial-gradient(circle, #c7d7f0 1px, transparent 1px);
+    background-image: radial-gradient(circle, #a8bdd4 1px, transparent 1px);
     background-size: 36px 36px;
     opacity: .32;
     mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black, transparent);
@@ -125,7 +125,7 @@ body::after {
     background: var(--primary);
     border-radius: 100px;
     transition: transform .42s cubic-bezier(.65,0,.35,1);
-    box-shadow: 0 4px 18px rgba(26,86,219,.35);
+    box-shadow: 0 4px 18px rgba(26,46,74,.40);
     z-index: 1;
 }
 
@@ -228,7 +228,7 @@ body::after {
     outline: none;
     background: var(--white);
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(26,86,219,.12);
+    box-shadow: 0 0 0 3px rgba(26,46,74,.14);
 }
 
 input:-webkit-autofill {
@@ -274,7 +274,7 @@ input.error, select.error {
     font-family: var(--font);
     color: var(--white);
     background: var(--primary);
-    box-shadow: 0 4px 18px rgba(26,86,219,.35);
+    box-shadow: 0 4px 18px rgba(26,46,74,.40);
     cursor: pointer;
     transition: all .22s ease;
     margin-top: 8px;
@@ -284,7 +284,7 @@ input.error, select.error {
 .submit-btn:hover {
     background: var(--primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 26px rgba(26,86,219,.42);
+    box-shadow: 0 8px 26px rgba(26,46,74,.50);
 }
 
 .submit-btn:active { transform: scale(.97) translateY(0); }

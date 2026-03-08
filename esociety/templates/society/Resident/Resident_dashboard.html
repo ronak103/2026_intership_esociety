@@ -14,7 +14,7 @@
     <div class="stat-card">
         <div class="stat-icon">💳</div>
         <div>
-            <div class="stat-value">₹3,500</div>
+            <div class="stat-value">₹{{ maintenance_amount|default:"0" }}</div>
             <div class="stat-label">Maintenance Due</div>
             <div class="stat-sub">Due: Mar 5</div>
         </div>
@@ -23,16 +23,16 @@
     <div class="stat-card">
         <div class="stat-icon">⚠️</div>
         <div>
-            <div class="stat-value">2</div>
+            <div class="stat-value">{{ total_complaints }}</div>
             <div class="stat-label">My Complaints</div>
-            <div class="stat-sub">1 resolved</div>
+            <div class="stat-sub">{{ resolved_complaints }} resolved</div>
         </div>
     </div>
 
     <div class="stat-card">
         <div class="stat-icon">📅</div>
         <div>
-            <div class="stat-value">1</div>
+            <div class="stat-value">{{ active_booking }}</div>
             <div class="stat-label">Active Booking</div>
             <div class="stat-sub">Pool – Mar 3</div>
         </div>
@@ -41,7 +41,7 @@
     <div class="stat-card">
         <div class="stat-icon">🚶</div>
         <div>
-            <div class="stat-value">3</div>
+            <div class="stat-value">{{ pending_visitors }}</div>
             <div class="stat-label">Visitors Pending</div>
             <div class="stat-sub">Awaiting approval</div>
         </div>

@@ -48,6 +48,7 @@ class User(AbstractBaseUser):
     last_name = models.CharField(max_length=50,null=True)
     gender = models.CharField(max_length=10,choices=gender_choice,default="male")
     mobile_number = models.CharField(null=True)
+    unit_number = models.CharField(max_length=20, blank=True, default="")
     
     
     objects = UserManager()

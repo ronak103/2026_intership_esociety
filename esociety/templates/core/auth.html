@@ -184,6 +184,13 @@
                                 {% endfor %}
                             </div>
                         </div>
+                        <div class="form-group" id="unit-number-group" style="display:none;">
+                            <label>Unit Number</label>
+                            {{ signup_form.unit_number }}
+                            {% for error in signup_form.unit_number.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
+                        </div>
 
                         <div class="form-group password-group">
                             <label>Password</label>
@@ -227,6 +234,23 @@
 </div><!-- /.auth-wrapper -->
 
 <script src="{% static 'js/auth.js' %}"></script>
+<script>
+const roleSelect   = document.querySelector('[name="role"]');
+const unitGroup    = document.getElementById('unit-number-group');
+
+function toggleUnitNumber() {
+    if (roleSelect.value === 'Resident') {
+        unitGroup.style.display = 'block';
+    } else {
+        unitGroup.style.display = 'none';
+        unitGroup.querySelector('input').value = '';
+    }
+}
+
+// Run on page load (in case of form re-render with errors)
+toggleUnitNumber();
+roleSelect.addEventListener('change', toggleUnitNumber);
+</script>
 
 
 </body>
