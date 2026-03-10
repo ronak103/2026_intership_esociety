@@ -1,0 +1,109 @@
+{% extends "society/Securityguard/Security_base.html" %}
+{% load static %}
+
+{% block title %}Notifications — SocietySync Security{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block page_subtitle %}Resident approvals and system alerts{% endblock %}
+
+{% block topbar_actions %}
+{% if notifications %}
+<a href="{% url 'guard_mark_all_read' %}"
+   id="markAllRead"
+   data-url="{% url 'guard_mark_all_read' %}"
+   class="btn btn-outline btn-sm">
+    <i class="fas fa-check-double"></i> Mark All Read
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+<div class="real-content">
+
+<!-- Header stats -->
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+    <div class="stat-card amber">
+        <div class="stat-icon"><i class="fas fa-bell"></i></div>
+        <div>
+            <div class="stat-value">{{ total_count }}</div>
+            <div class="stat-label">Total Notifications</div>
+        </div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon"><i class="fas fa-circle-exclamation"></i></div>
+        <div>
+            <div class="stat-value">{{ unread_count }}</div>
+            <div class="stat-label">Unread</div>
+        </div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon"><i class="fas fa-circle-check"></i></div>
+        <div>
+            <div class="stat-value">{{ read_count }}</div>
+            <div class="stat-label">Read</div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-bell"></i> All Notifications</span>
+        <span style="font-size:12px;color:var(--text-muted);">
+            Most recent first &nbsp;·&nbsp; Auto-clears after 30 days
+        </span>
+    </div>
+
+    <div class="notif-page-list">
+        {% for n in notifications %}
+        <div class="notif-page-item {% if not n.is_read %}unread{% endif %}">
+            <div class="notif-page-icon">
+                {% if 'approved' in n.message|lower %}🟢
+                {% elif 'rejected' in n.message|lower or 'denied' in n.message|lower %}🔴
+                {% elif 'entered' in n.message|lower %}🚶
+                {% elif 'exited' in n.message|lower %}👋
+                {% else %}🔔{% endif %}
+            </div>
+            <div style="flex:1;min-width:0;">
+                <div class="notif-page-msg">{{ n.message }}</div>
+                <div class="notif-page-time">
+                    <i class="fas fa-clock" style="font-size:10px;"></i>
+                    {{ n.created_at|date:"d M Y, h:i A" }}
+                    &nbsp;·&nbsp; {{ n.created_at|timesince }} ago
+                </div>
+            </div>
+            {% if not n.is_read %}
+            <div class="notif-unread-dot" title="Unread"></div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="empty-state" style="padding:64px 20px;">
+            <i class="fas fa-bell-slash"></i>
+            <p>No notifications yet. When residents approve or reject visitors, you'll see alerts here.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </span>
+        <div class="pagination-controls">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="page-btn"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}<span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}" class="page-btn">{{ num }}</a>{% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="page-btn"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</div>
+{% endblock %}

@@ -785,6 +785,16 @@ def AdminVisitorLogsView(request):
     }
     return render(request, "society/Admin/Admin_visitor_logs.html", context)
 
+@role_required(allowed_roles=["Admin"])
+def AdminMarkAllReadView(request):
+    """Mark all admin notifications as read. Supports AJAX and GET."""
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        from django.http import JsonResponse
+        return JsonResponse({"status": "ok"})
+    return redirect(request.META.get("HTTP_REFERER", "admin_dashboard"))
+
 
 # ================================================================
 # RESIDENT VIEWS  
@@ -868,10 +878,15 @@ def visitor_approvals(request):
 
 @role_required(allowed_roles=["Resident"])
 def visitor_decision(request, visitor_id, decision):
+    from django.http import JsonResponse
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
     visitor = get_object_or_404(
         Visitor, id=visitor_id, resident=request.user,
         registered_by="guard", approval_status="pending"
     )
+
     if decision == "approve":
         visitor.approval_status = "approved"
         visitor.save()
@@ -880,7 +895,10 @@ def visitor_decision(request, visitor_id, decision):
                 user=visitor.guard,
                 message=f"Resident approved '{visitor.visitor_name}'. You may allow entry."
             )
+        if is_ajax:
+            return JsonResponse({"status": "approved", "visitor": visitor.visitor_name})
         messages.success(request, f"'{visitor.visitor_name}' approved.")
+
     elif decision == "reject":
         visitor.approval_status = "rejected"
         visitor.entry_status    = "denied"
@@ -890,7 +908,14 @@ def visitor_decision(request, visitor_id, decision):
                 user=visitor.guard,
                 message=f"Resident rejected '{visitor.visitor_name}'. Do not allow entry."
             )
+        if is_ajax:
+            return JsonResponse({"status": "rejected", "visitor": visitor.visitor_name})
         messages.warning(request, f"'{visitor.visitor_name}' rejected.")
+
+    else:
+        if is_ajax:
+            return JsonResponse({"error": "invalid_decision"}, status=400)
+
     return redirect("resident_visitor_approval")
 
 
@@ -922,10 +947,57 @@ def complaints(request):
 
 @role_required(allowed_roles=["Resident"])
 def facility_booking(request):
+    if request.method == "POST" and request.POST.get("action") == "book":
+        facility_id  = request.POST.get("facility_id")
+        booking_date = request.POST.get("booking_date")
+        time_slot    = request.POST.get("time_slot")
+        amount       = request.POST.get("amount", 0)
+
+        errors = []
+        if not facility_id:
+            errors.append("Please select a facility.")
+        if not booking_date:
+            errors.append("Please choose a booking date.")
+        if not time_slot:
+            errors.append("Please choose a time slot.")
+
+        if not errors:
+            try:
+                facility = Facility.objects.get(id=facility_id, availability_status="available")
+                # Check for duplicate booking
+                duplicate = FacilityBooking.objects.filter(
+                    facility=facility,
+                    booking_date=booking_date,
+                    time_slot=time_slot,
+                    booking_status__in=["pending", "confirmed"],
+                ).exists()
+                if duplicate:
+                    messages.error(request, "That time slot is already booked. Please choose another.")
+                else:
+                    FacilityBooking.objects.create(
+                        facility=facility,
+                        booked_by=request.user,
+                        booking_date=booking_date,
+                        time_slot=time_slot,
+                        amount=amount,
+                        booking_status="pending",
+                        payment_status="pending",
+                    )
+                    messages.success(request, f"Booking request submitted for '{facility.facility_name}'. Awaiting admin confirmation.")
+            except Facility.DoesNotExist:
+                messages.error(request, "Invalid facility selected.")
+        else:
+            for e in errors:
+                messages.error(request, e)
+
+        return redirect("facility_booking")
+
+    # GET — original logic
     facilities = Facility.objects.all().order_by("facility_name")
     bookings   = FacilityBooking.objects.filter(
         booked_by=request.user
     ).select_related("facility").order_by("-created_at")
+
     return render(request, "society/Resident/booking.html", {
         "facilities": facilities,
         "bookings":   bookings,
@@ -1010,46 +1082,90 @@ def resident_notifications(request):
 
 @role_required(allowed_roles=["Resident"])
 def resident_poll_vote(request, poll_id, vote):
+    from django.http import JsonResponse
+
     poll = get_object_or_404(Poll, id=poll_id, status="active")
+
+    is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
     # Prevent duplicate votes
     already_voted = PollVote.objects.filter(poll=poll, voter=request.user).exists()
     if already_voted:
+        if is_ajax:
+            return JsonResponse({"error": "already_voted"}, status=400)
         messages.warning(request, "You have already voted on this poll.")
         return redirect("community_notice")
 
     if vote in ["yes", "no"]:
-        PollVote.objects.create(
-            poll=poll,
-            voter=request.user,
-            vote=vote,
-        )
+        PollVote.objects.create(poll=poll, voter=request.user, vote=vote)
+
+        # Compute updated results
+        total  = poll.votes.count()
+        yes_ct = poll.votes.filter(vote="yes").count()
+        no_ct  = poll.votes.filter(vote="no").count()
+        yes_pct = round((yes_ct / total * 100) if total else 0)
+        no_pct  = round((no_ct  / total * 100) if total else 0)
+
+        if is_ajax:
+            return JsonResponse({
+                "yes_pct":   yes_pct,
+                "no_pct":    no_pct,
+                "yes_count": yes_ct,
+                "no_count":  no_ct,
+                "total":     total,
+            })
+
         messages.success(request, f"Your vote '{vote}' has been recorded.")
     else:
+        if is_ajax:
+            return JsonResponse({"error": "invalid_vote"}, status=400)
         messages.error(request, "Invalid vote.")
 
     return redirect("community_notice")
+
+@role_required(allowed_roles=["Resident"])
+def ResidentMarkAllReadView(request):
+    from .models import Notification
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        from django.http import JsonResponse
+        return JsonResponse({"status": "ok"})
+    return redirect(request.META.get("HTTP_REFERER", "resident_dashboard"))
 # ================================================================
 # SECURITY GUARD VIEWS  (unchanged from original)
 # ================================================================
 
-@role_required(allowed_roles=["Securityguard"])
+role_required(allowed_roles=["Securityguard"])
 def SecurityDashboardView(request):
     today = date.today()
     today_visitors_qs = (
         Visitor.objects.filter(expected_date=today)
-        .select_related("resident")
+        .select_related("resident", "guard")
         .order_by("-created_at")
     )
+
+    # Visitor breakdown for the stat panel
+    visitor_breakdown = [
+        {"label": "Guests",      "count": today_visitors_qs.filter(visitor_type="guest").count(),       "badge": "badge-info"},
+        {"label": "Deliveries",  "count": today_visitors_qs.filter(visitor_type="delivery").count(),    "badge": "badge-purple"},
+        {"label": "Maintenance", "count": today_visitors_qs.filter(visitor_type="maintenance").count(), "badge": "badge-warning"},
+        {"label": "Staff",       "count": today_visitors_qs.filter(visitor_type="staff").count(),       "badge": "badge-gray"},
+        {"label": "Pre-Registered", "count": today_visitors_qs.filter(registered_by="resident").count(), "badge": "badge-info"},
+        {"label": "Guard-Logged",   "count": today_visitors_qs.filter(registered_by="guard").count(),    "badge": "badge-warning"},
+    ]
+
     context = {
-        "total_today":      today_visitors_qs.count(),
-        "currently_inside": today_visitors_qs.filter(entry_status="inside").count(),
-        "pending_approval": today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
-        "total_denied":     today_visitors_qs.filter(entry_status="denied").count(),
-        "today_visitors":   today_visitors_qs[:5],
-        "pending_visitors": today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
+        "today_date":        today,
+        "total_today":       today_visitors_qs.count(),
+        "currently_inside":  today_visitors_qs.filter(entry_status="inside").count(),
+        "pending_approval":  today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
+        "total_denied":      today_visitors_qs.filter(entry_status="denied").count(),
+        "today_visitors":    today_visitors_qs[:8],
+        "pending_visitors":  today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
+        "visitor_breakdown": visitor_breakdown,
     }
     return render(request, "society/Securityguard/Security_dashboard.html", context)
+
 
 
 @role_required(allowed_roles=["Securityguard"])
@@ -1064,49 +1180,226 @@ def guard_log_visitor(request):
             visitor.approval_status = "pending"
             visitor.entry_status    = "waiting"
             visitor.save()
+
+            # Notify resident
             Notification.objects.create(
                 user=visitor.resident,
                 message=(
-                    f"Visitor '{visitor.visitor_name}' "
+                    f"🔔 Visitor '{visitor.visitor_name}' "
                     f"({visitor.get_visitor_type_display()}) "
-                    f"has arrived at the gate. Please approve or reject."
+                    f"has arrived at the gate and is waiting for your approval."
                 )
             )
-            messages.success(request, f"'{visitor.visitor_name}' logged. Waiting for resident approval.")
+            messages.success(
+                request,
+                f"'{visitor.visitor_name}' logged successfully. Resident has been notified."
+            )
             return redirect("guard_log_visitor")
+        else:
+            # Re-render with form errors — auto-open modal via JS flag
+            today_visitors = (
+                Visitor.objects.filter(expected_date=date.today())
+                .select_related("resident", "guard")
+                .order_by("-created_at")
+            )
+            return render(request, "society/Securityguard/guard_log_visitor.html", {
+                "form":               form,
+                "today_visitors":     today_visitors,
+                "show_log_modal":     True,
+                "total_today":        today_visitors.count(),
+                "currently_inside":   today_visitors.filter(entry_status="inside").count(),
+                "pending_approval_count": today_visitors.filter(approval_status="pending", registered_by="guard").count(),
+                "total_denied":       today_visitors.filter(entry_status="denied").count(),
+                "search_query":       "",
+                "type_filter":        "all",
+                "status_filter":      "all",
+            })
     else:
         form = GuardVisitorForm()
 
-    today_visitors = (
+    # Build queryset with optional filters
+    search_query  = request.GET.get("q", "").strip()
+    type_filter   = request.GET.get("type", "all")
+    status_filter = request.GET.get("status", "all")
+
+    today_visitors_qs = (
         Visitor.objects.filter(expected_date=date.today())
-        .select_related("resident")
+        .select_related("resident", "guard")
         .order_by("-created_at")
     )
-    return render(request, "society/Securityguard/guard_log_visitor.html", {
-        "form": form, "today_visitors": today_visitors
-    })
+
+    if search_query:
+        today_visitors_qs = today_visitors_qs.filter(
+            Q(visitor_name__icontains=search_query) |
+            Q(mobile_number__icontains=search_query)
+        )
+    if type_filter != "all":
+        today_visitors_qs = today_visitors_qs.filter(visitor_type=type_filter)
+    if status_filter != "all":
+        today_visitors_qs = today_visitors_qs.filter(entry_status=status_filter)
+
+    # CSV export
+    if request.GET.get("export") == "csv":
+        response = HttpResponse(content_type="text/csv")
+        response["Content-Disposition"] = 'attachment; filename="visitor_log_today.csv"'
+        writer = csv.writer(response)
+        writer.writerow([
+            "Visitor Name", "Mobile", "Type", "Vehicle",
+            "Resident", "Unit", "Registered By",
+            "Approval Status", "Entry Status", "Entry Time", "Exit Time"
+        ])
+        for v in today_visitors_qs:
+            writer.writerow([
+                v.visitor_name,
+                v.mobile_number,
+                v.get_visitor_type_display(),
+                v.vehicle_number or "—",
+                f"{v.resident.first_name} {v.resident.last_name}",
+                getattr(v.resident, "unit_number", "—"),
+                v.registered_by,
+                v.get_approval_status_display(),
+                v.get_entry_status_display(),
+                v.entry_time.strftime("%d %b %Y %I:%M %p") if v.entry_time else "—",
+                v.exit_time.strftime("%d %b %Y %I:%M %p")  if v.exit_time  else "—",
+            ])
+        return response
+
+    paginator = Paginator(today_visitors_qs, 20)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+
+    context = {
+        "form":               form,
+        "today_visitors":     page_obj,
+        "page_obj":           page_obj,
+        "is_paginated":       page_obj.has_other_pages(),
+        "search_query":       search_query,
+        "type_filter":        type_filter,
+        "status_filter":      status_filter,
+        # stats
+        "total_today":        Visitor.objects.filter(expected_date=date.today()).count(),
+        "currently_inside":   Visitor.objects.filter(expected_date=date.today(), entry_status="inside").count(),
+        "pending_approval_count": Visitor.objects.filter(expected_date=date.today(), registered_by="guard", approval_status="pending").count(),
+        "total_denied":       Visitor.objects.filter(expected_date=date.today(), entry_status="denied").count(),
+    }
+    return render(request, "society/Securityguard/guard_log_visitor.html", context)
 
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_update_entry(request, visitor_id, action):
     visitor = get_object_or_404(Visitor, id=visitor_id)
+
     if action == "enter":
         if visitor.approval_status != "approved":
-            messages.error(request, f"Cannot allow entry — '{visitor.visitor_name}' is not approved yet.")
+            messages.error(
+                request,
+                f"Cannot allow entry — '{visitor.visitor_name}' has not been approved by the resident yet."
+            )
             return redirect("guard_log_visitor")
         visitor.entry_status = "inside"
         visitor.entry_time   = timezone.now()
         visitor.guard        = request.user
         visitor.save()
+
+        # Notify resident that visitor has entered
+        Notification.objects.create(
+            user=visitor.resident,
+            message=(
+                f"🚶 Your visitor '{visitor.visitor_name}' has entered the society "
+                f"at {visitor.entry_time.strftime('%I:%M %p')}."
+            )
+        )
         messages.success(request, f"'{visitor.visitor_name}' marked as entered.")
+
     elif action == "exit":
         visitor.entry_status = "exited"
         visitor.exit_time    = timezone.now()
         visitor.save()
+
+        # Notify resident that visitor has exited
+        Notification.objects.create(
+            user=visitor.resident,
+            message=(
+                f"👋 Your visitor '{visitor.visitor_name}' has exited the society "
+                f"at {visitor.exit_time.strftime('%I:%M %p')}."
+            )
+        )
         messages.success(request, f"'{visitor.visitor_name}' marked as exited.")
+
     elif action == "deny":
         visitor.entry_status    = "denied"
         visitor.approval_status = "rejected"
         visitor.save()
         messages.warning(request, f"'{visitor.visitor_name}' denied entry.")
+
     return redirect("guard_log_visitor")
+
+
+@role_required(allowed_roles=["Securityguard"])
+def guard_notifications(request):
+    """Full notifications page for security guard."""
+    notifications_qs = (
+        Notification.objects
+        .filter(user=request.user)
+        .order_by("-created_at")
+    )
+
+    total_count  = notifications_qs.count()
+    unread_count = notifications_qs.filter(is_read=False).count()
+    read_count   = total_count - unread_count
+
+    # Mark all as read when this page is opened
+    notifications_qs.filter(is_read=False).update(is_read=True)
+
+    paginator = Paginator(notifications_qs, 20)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+
+    return render(request, "society/Securityguard/guard_notifications.html", {
+        "notifications": page_obj,
+        "page_obj":      page_obj,
+        "is_paginated":  page_obj.has_other_pages(),
+        "total_count":   total_count,
+        "unread_count":  unread_count,
+        "read_count":    read_count,
+    })
+
+
+@role_required(allowed_roles=["Securityguard"])
+def guard_mark_all_read(request):
+    """Mark all guard notifications as read. Supports both AJAX and direct GET."""
+    Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+
+    # AJAX request from JS
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        from django.http import JsonResponse
+        return JsonResponse({"status": "ok"})
+
+    return redirect(request.META.get("HTTP_REFERER", "security_dashboard"))
+
+
+@role_required(allowed_roles=["Securityguard"])
+def guard_settings(request):
+    """Guard settings / profile page."""
+    return render(request, "society/Securityguard/guard_settings.html")
+
+
+@role_required(allowed_roles=["Securityguard"])
+def guard_change_password(request):
+    """Guard changes their own password."""
+    if request.method == "POST":
+        current  = request.POST.get("current_password", "")
+        new_pwd  = request.POST.get("new_password", "")
+        confirm  = request.POST.get("confirm_password", "")
+
+        if not request.user.check_password(current):
+            messages.error(request, "Current password is incorrect.")
+        elif new_pwd != confirm:
+            messages.error(request, "New passwords do not match.")
+        elif len(new_pwd) < 8:
+            messages.error(request, "Password must be at least 8 characters.")
+        else:
+            request.user.set_password(new_pwd)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Password updated successfully.")
+
+    return redirect("guard_settings")

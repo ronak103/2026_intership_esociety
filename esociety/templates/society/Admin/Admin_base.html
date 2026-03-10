@@ -63,6 +63,7 @@
     <script>document.addEventListener('DOMContentLoaded',function(){var pb=document.querySelector('.page-body');if(pb)pb.classList.add('sk-active');});</script>
 </head>
 <body>
+{% csrf_token %}
 
 <!-- Mobile overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -80,7 +81,7 @@
         <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-left" style="display:flex;align-items:center;gap:14px;">
-                <button class="topbar-hamburger" id="sidebarToggle">
+                <button class="topbar-hamburger" id="sidebarToggle" aria-label="Toggle sidebar">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div>
@@ -90,6 +91,53 @@
             </div>
             <div class="topbar-right">
                 {% block topbar_actions %}{% endblock %}
+
+                <!-- Notification Bell -->
+                <div class="notif-wrapper" style="position:relative;">
+                    <button class="topbar-icon-btn notif-btn" id="notifBtn"
+                            aria-label="Notifications" aria-expanded="false">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notif_count|default:0 > 0 %}
+                        <span class="notif-count">{{ unread_notif_count }}</span>
+                        {% endif %}
+                    </button>
+
+                    <div class="notif-dropdown" id="notifDropdown" role="menu">
+                        <div class="notif-drop-header">
+                            <span class="notif-drop-title">
+                                <i class="fas fa-bell" style="color:#f59e0b;margin-right:6px;"></i>Notifications
+                            </span>
+                            {% if unread_notif_count|default:0 > 0 %}
+                            <a href="#" id="markAllRead"
+                               data-url="{% url 'admin_mark_all_read' %}">Mark all read</a>
+                            {% endif %}
+                        </div>
+                        <div class="notif-list">
+                            {% for notif in admin_notifications %}
+                            <div class="notif-item {% if not notif.is_read %}unread{% endif %}">
+                                <span class="notif-item-icon">
+                                    {% if notif.notif_type == 'visitor' %}🔔
+                                    {% elif notif.notif_type == 'complaint' %}💬
+                                    {% elif notif.notif_type == 'payment' %}💳
+                                    {% else %}📢{% endif %}
+                                </span>
+                                <div class="notif-item-body">
+                                    <div class="notif-item-msg">{{ notif.message|truncatechars:60 }}</div>
+                                    <div class="notif-item-time">{{ notif.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="notif-empty">
+                                <i class="fas fa-check-circle" style="font-size:22px;opacity:.3;display:block;margin-bottom:8px;"></i>
+                                All caught up!
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="notif-drop-footer">
+                            <a href="{% url 'admin_dashboard' %}">View dashboard →</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </header>
 

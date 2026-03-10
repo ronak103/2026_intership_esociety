@@ -4,26 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>
-    // Show skeleton on page load
-    document.body.classList.add('page-loading');
-
-    // Remove skeleton once page is fully ready
-    window.addEventListener('load', function () {
-        document.body.classList.remove('page-loading');
-    });
-</script>
-
     <title>{% block title %}SocietySync — Resident{% endblock %}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <link rel="stylesheet" href="{% static 'css/resident.css' %}">
 </head>
 <body>
 
-<!-- Mobile overlay (used by sidebar.js) -->
+{% csrf_token %}
+
+<!-- Mobile overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
 <div class="app-shell">
@@ -33,21 +26,89 @@
         {% include "society/Resident/Resident_sidebar.html" %}
     </aside>
 
-    <!-- Main -->
+    <!-- Main area -->
     <div class="main-wrap">
 
         <!-- Topbar -->
-        <header class="topbar">
-            <button class="topbar-toggle" id="sidebarToggle">
+        <header class="topbar" id="topbar">
+            <button class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
                 <i class="fas fa-bars"></i>
             </button>
+
             <div class="topbar-left">
                 <div class="topbar-breadcrumb">
                     <span class="breadcrumb-page">{% block page_title %}Dashboard{% endblock %}</span>
                 </div>
             </div>
+
             <div class="topbar-right">
                 {% block topbar_actions %}{% endblock %}
+
+                <!-- Notification Bell -->
+                <div class="notif-wrap" style="position:relative;">
+                    <button class="topbar-btn" id="notifBtn" aria-expanded="false" aria-label="Notifications" style="position:relative;">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_notif_count|default:0 > 0 %}
+                        <span class="notif-count" style="
+                            position:absolute;top:-4px;right:-4px;
+                            background:#ef4444;color:#fff;
+                            border-radius:50%;width:17px;height:17px;
+                            font-size:10px;font-weight:700;
+                            display:flex;align-items:center;justify-content:center;
+                            border:2px solid #fff;
+                        ">{{ unread_notif_count }}</span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div id="notifDropdown" style="
+                        display:none;position:absolute;right:0;top:calc(100% + 10px);
+                        width:320px;background:#fff;border-radius:12px;
+                        box-shadow:0 8px 32px rgba(0,0,0,.14);border:1px solid #e2e8f0;
+                        z-index:2000;overflow:hidden;
+                    ">
+                        <div style="padding:14px 16px 10px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">
+                            <span style="font-weight:700;font-size:14px;color:#0f172a;">Notifications</span>
+                            {% if unread_notif_count|default:0 > 0 %}
+                            <a href="{% url 'resident_mark_all_read' %}" id="markAllRead"
+                               data-url="{% url 'resident_mark_all_read' %}"
+                               style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none;">
+                                Mark all read
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div style="max-height:340px;overflow-y:auto;">
+                            {% for notif in resident_notifications %}
+                            <div class="notif-item {% if not notif.is_read %}unread{% endif %}" style="
+                                padding:12px 16px;border-bottom:1px solid #f8fafc;
+                                background:{% if not notif.is_read %}#eff6ff{% else %}#fff{% endif %};
+                                display:flex;gap:10px;align-items:flex-start;
+                            ">
+                                <span style="
+                                    width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0;
+                                    background:{% if not notif.is_read %}#2563eb{% else %}#cbd5e1{% endif %};
+                                " class="notif-unread-dot"></span>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;color:#1e293b;line-height:1.4;">{{ notif.message }}</div>
+                                    <div style="font-size:11px;color:#94a3b8;margin-top:3px;">{{ notif.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div style="padding:32px 16px;text-align:center;color:#94a3b8;">
+                                <i class="fas fa-bell-slash" style="font-size:28px;display:block;margin-bottom:8px;opacity:.4;"></i>
+                                <span style="font-size:13px;">No notifications yet</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div style="padding:10px 16px;border-top:1px solid #f1f5f9;text-align:center;">
+                            <a href="{% url 'resident_notifications' %}" style="font-size:12px;color:#2563eb;font-weight:600;text-decoration:none;">
+                                View all notifications →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Avatar -->
                 <div class="topbar-user">
                     <div class="topbar-avatar">
                         {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
@@ -57,33 +118,112 @@
             </div>
         </header>
 
-        <!-- Messages -->
+        <!-- Django Messages -->
         {% if messages %}
         <div class="messages-wrap">
             {% for message in messages %}
             <div class="alert alert-{{ message.tags }}">
-                <i class="fas fa-{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                <i class="fas fa-{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags %}exclamation-circle{% elif 'warning' in message.tags %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
                 {{ message }}
-                <button class="alert-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+                <button class="alert-close" aria-label="Dismiss"><i class="fas fa-times"></i></button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
 
         <!-- Page Content -->
-        <main class="main-content">
+        <main class="page-content">
             {% block content %}{% endblock %}
         </main>
 
+    </div><!-- /main-wrap -->
+</div><!-- /app-shell -->
+
+<!-- Booking Modal (global, used by booking.html) -->
+<div id="bookingModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">
+    <div class="modal-box" style="max-width:500px;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="bookingModalTitle"><i class="fas fa-calendar-plus"></i> Book Facility</h3>
+            <button class="modal-close" onclick="closeModal('bookingModal')" aria-label="Close">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'facility_booking' %}" id="bookingForm">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="book">
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Facility <span class="req">*</span></label>
+                    <input type="text" class="inner-input" id="bookingFacilityName" readonly style="background:#f8fafc;">
+                    <input type="hidden" name="facility_id" id="bookingFacilityId">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Booking Date <span class="req">*</span></label>
+                        <input type="date" name="booking_date" class="inner-input" id="bookingDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Time Slot <span class="req">*</span></label>
+                        <select name="time_slot" class="inner-input" id="bookingTimeSlot" required>
+                            <option value="">Select time slot</option>
+                            <option value="06:00 AM - 08:00 AM">06:00 AM – 08:00 AM</option>
+                            <option value="08:00 AM - 10:00 AM">08:00 AM – 10:00 AM</option>
+                            <option value="10:00 AM - 12:00 PM">10:00 AM – 12:00 PM</option>
+                            <option value="12:00 PM - 02:00 PM">12:00 PM – 02:00 PM</option>
+                            <option value="02:00 PM - 04:00 PM">02:00 PM – 04:00 PM</option>
+                            <option value="04:00 PM - 06:00 PM">04:00 PM – 06:00 PM</option>
+                            <option value="06:00 PM - 08:00 PM">06:00 PM – 08:00 PM</option>
+                            <option value="08:00 PM - 10:00 PM">08:00 PM – 10:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Booking Fee</label>
+                    <input type="text" class="inner-input" id="bookingFeeDisplay" readonly style="background:#f8fafc;font-weight:600;color:#2563eb;">
+                    <input type="hidden" name="amount" id="bookingFeeHidden">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('bookingModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Confirm Booking</button>
+            </div>
+        </form>
     </div>
 </div>
 
 <script>
-    setTimeout(() => {
-        document.querySelectorAll('.alert').forEach(a => a.remove());
-    }, 5000);
+    // Expose booking modal opener for facility cards
+    window.openBookingModal = function(facilityId, facilityName, fee) {
+        document.getElementById('bookingFacilityId').value   = facilityId;
+        document.getElementById('bookingFacilityName').value = facilityName;
+        document.getElementById('bookingFeeHidden').value    = fee;
+        document.getElementById('bookingFeeDisplay').value   = fee == 0 ? 'Free' : '₹' + fee;
+        // Set min date to today
+        document.getElementById('bookingDate').min = new Date().toISOString().split('T')[0];
+        document.getElementById('bookingDate').value = '';
+        document.getElementById('bookingTimeSlot').value = '';
+        openModal('bookingModal');
+    };
+
+    // Notification dropdown toggle (mirrors resident.js init but works even if JS loads late)
+    document.addEventListener('DOMContentLoaded', function() {
+        var btn  = document.getElementById('notifBtn');
+        var drop = document.getElementById('notifDropdown');
+        if (btn && drop) {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isOpen = drop.style.display === 'block';
+                drop.style.display = isOpen ? 'none' : 'block';
+                btn.setAttribute('aria-expanded', !isOpen);
+            });
+            document.addEventListener('click', function(e) {
+                if (!drop.contains(e.target) && e.target !== btn) {
+                    drop.style.display = 'none';
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+    });
 </script>
-<script src="{% static 'js/sidebar.js' %}"></script>
+<script src="{% static 'js/resident.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

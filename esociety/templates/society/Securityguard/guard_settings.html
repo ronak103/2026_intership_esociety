@@ -1,0 +1,107 @@
+{% extends "society/Securityguard/Security_base.html" %}
+{% load static %}
+
+{% block title %}Settings — SocietySync Security{% endblock %}
+{% block page_title %}Settings{% endblock %}
+{% block page_subtitle %}Manage your profile and account security{% endblock %}
+
+{% block content %}
+<div class="real-content">
+
+<div style="max-width:640px;">
+
+    <!-- Profile Card -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-user-shield"></i> My Profile</span>
+        </div>
+        <div class="card-body">
+            <div class="profile-avatar-wrap">
+                <div class="profile-avatar-large">
+                    {{ user.first_name|first|upper }}{% if user.last_name %}{{ user.last_name|first|upper }}{% endif %}
+                </div>
+                <div>
+                    <div class="profile-info-name">
+                        {% if user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.email }}{% endif %}
+                    </div>
+                    <div class="profile-info-role">Security Guard</div>
+                    <div class="profile-info-email">{{ user.email }}</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">
+                    <i class="fas fa-id-card"></i> Account Information
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                    <div>
+                        <div class="form-label">First Name</div>
+                        <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-primary);">
+                            {{ user.first_name|default:"—" }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-label">Last Name</div>
+                        <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-primary);">
+                            {{ user.last_name|default:"—" }}
+                        </div>
+                    </div>
+                    <div style="grid-column:span 2;">
+                        <div class="form-label">Email Address</div>
+                        <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">
+                            {{ user.email }}
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-label">Role</div>
+                        <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;">
+                            <span class="badge badge-warning">Security Guard</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="form-label">Member Since</div>
+                        <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-secondary);">
+                            {{ user.date_joined|date:"d M Y" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Card -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-lock"></i> Change Password</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{% url 'guard_change_password' %}">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Current Password <span class="req">*</span></label>
+                    <input type="password" name="current_password" class="inner-input" placeholder="Enter current password" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">New Password <span class="req">*</span></label>
+                        <input type="password" name="new_password" class="inner-input" placeholder="At least 8 characters" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm New Password <span class="req">*</span></label>
+                        <input type="password" name="confirm_password" class="inner-input" placeholder="Repeat new password" required>
+                    </div>
+                </div>
+                <div class="alert alert-info" style="margin-bottom:16px;">
+                    <i class="fas fa-info-circle"></i>
+                    Password must be at least 8 characters. After changing, you'll remain logged in.
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-key"></i> Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+</div>
+{% endblock %}

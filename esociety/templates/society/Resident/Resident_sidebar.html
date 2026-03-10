@@ -1,108 +1,110 @@
 {% load static %}
 
-    <!-- Logo Section -->
-    <div class="sidebar-header">
-        <div class="sidebar-logo">
-            <i class="fas fa-building"></i>
-            <span class="sidebar-logo-text">SocietySync</span>
-        </div>
-        <span class="sidebar-role-badge resident">Resident</span>
-    </div>
+<!-- Logo / Brand -->
+<div class="sidebar-header">
+    <a href="{% url 'resident_dashboard' %}" class="sidebar-logo">
+        <i class="fas fa-building"></i>
+        <span class="sidebar-logo-text">SocietySync</span>
+    </a>
+    <span class="sidebar-role-badge resident">Resident</span>
+</div>
 
-    <!-- Navigation -->
-    <nav class="sidebar-nav">
-        <ul class="sidebar-menu">
+<!-- Navigation -->
+<nav class="sidebar-nav" aria-label="Resident navigation">
+    <ul class="sidebar-menu">
 
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_dashboard' %}active{% endif %}">
-                <a href="{% url 'resident_dashboard' %}" class="sidebar-link">
-                    <i class="fas fa-tachometer-alt sidebar-icon"></i>
-                    <span class="sidebar-link-text">My Dashboard</span>
-                </a>
-            </li>
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_dashboard' %}active{% endif %}">
+            <a href="{% url 'resident_dashboard' %}" class="sidebar-link" data-tooltip="Dashboard">
+                <i class="fas fa-tachometer-alt sidebar-icon"></i>
+                <span class="sidebar-link-text">My Dashboard</span>
+            </a>
+        </li>
 
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'complaints' %}active{% endif %}">
-                <a href="{% url 'complaints' %}" class="sidebar-link">
-                    <i class="fas fa-exclamation-circle sidebar-icon"></i>
-                    <span class="sidebar-link-text">My Complaints</span>
-                </a>
-            </li>
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'complaints' %}active{% endif %}">
+            <a href="{% url 'complaints' %}" class="sidebar-link" data-tooltip="Complaints">
+                <i class="fas fa-exclamation-circle sidebar-icon"></i>
+                <span class="sidebar-link-text">My Complaints</span>
+            </a>
+        </li>
 
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'facility_booking' %}active{% endif %}">
-                <a href="{% url 'facility_booking' %}" class="sidebar-link">
-                    <i class="fas fa-calendar-check sidebar-icon"></i>
-                    <span class="sidebar-link-text">Facility Booking</span>
-                </a>
-            </li>
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'facility_booking' %}active{% endif %}">
+            <a href="{% url 'facility_booking' %}" class="sidebar-link" data-tooltip="Bookings">
+                <i class="fas fa-calendar-check sidebar-icon"></i>
+                <span class="sidebar-link-text">Facility Booking</span>
+            </a>
+        </li>
 
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'visitor_pass' %}active{% endif %}">
-                <a href="{% url 'visitor_pass' %}" class="sidebar-link">
-                    <i class="fas fa-id-badge sidebar-icon"></i>
-                    <span class="sidebar-link-text">Visitor Pass</span>
-                </a>
-            </li>
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'visitor_pass' %}active{% endif %}">
+            <a href="{% url 'visitor_pass' %}" class="sidebar-link" data-tooltip="Visitor Pass">
+                <i class="fas fa-id-badge sidebar-icon"></i>
+                <span class="sidebar-link-text">Visitor Pass</span>
+            </a>
+        </li>
 
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_visitor_approval' %}active{% endif %}">
-                <a href="{% url 'resident_visitor_approval' %}" class="sidebar-link">
-                    <i class="fas fa-user-check sidebar-icon"></i>
-                    <span class="sidebar-link-text">
-                        Visitor Approvals
-                        {% if pending_visitors > 0 %}
-                        <span style="background:#ef4444;color:white;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700;">{{ pending_visitors }}</span>
-                        {% endif %}
-                    </span>
-                </a>
-            </li>
-
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_payments' %}active{% endif %}">
-                <a href="{% url 'resident_payments' %}" class="sidebar-link">
-                    <i class="fas fa-receipt sidebar-icon"></i>
-                    <span class="sidebar-link-text">My Payments</span>
-                </a>
-            </li>
-
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'community_notice' %}active{% endif %}">
-                <a href="{% url 'community_notice' %}" class="sidebar-link">
-                    <i class="fas fa-people-group sidebar-icon"></i>
-                    <span class="sidebar-link-text">Community</span>
-                </a>
-            </li>
-
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_notifications' %}active{% endif %}">
-                <a href="{% url 'resident_notifications' %}" class="sidebar-link">
-                    <i class="fas fa-bell sidebar-icon"></i>
-                    <span class="sidebar-link-text">
-                        Notifications
-                        {% if unread_notifications > 0 %}
-                        <span style="background:#ef4444;color:white;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700;">{{ unread_notifications }}</span>
-                        {% endif %}
-                    </span>
-                </a>
-            </li>
-
-            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_settings' %}active{% endif %}">
-                <a href="{% url 'resident_settings' %}" class="sidebar-link">
-                    <i class="fas fa-cog sidebar-icon"></i>
-                    <span class="sidebar-link-text">Settings</span>
-                </a>
-            </li>
-
-        </ul>
-    </nav>
-
-    <!-- User Section -->
-    <div class="sidebar-footer">
-        <div class="sidebar-user">
-            <div class="sidebar-user-avatar"><i class="fas fa-user"></i></div>
-            <div class="sidebar-user-info">
-                <span class="sidebar-user-name">
-                    {% if user.first_name %}{{ user.first_name }} {{ user.last_name }}
-                    {% else %}{{ user.email }}{% endif %}
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_visitor_approval' %}active{% endif %}">
+            <a href="{% url 'resident_visitor_approval' %}" class="sidebar-link" data-tooltip="Approvals">
+                <i class="fas fa-user-check sidebar-icon"></i>
+                <span class="sidebar-link-text">
+                    Visitor Approvals
+                    {% if pending_visitors|default:0 > 0 %}
+                    <span class="nav-badge">{{ pending_visitors }}</span>
+                    {% endif %}
                 </span>
-                <span class="sidebar-user-email">{{ user.email }}</span>
-            </div>
+            </a>
+        </li>
+
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_payments' %}active{% endif %}">
+            <a href="{% url 'resident_payments' %}" class="sidebar-link" data-tooltip="Payments">
+                <i class="fas fa-receipt sidebar-icon"></i>
+                <span class="sidebar-link-text">My Payments</span>
+            </a>
+        </li>
+
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'community_notice' %}active{% endif %}">
+            <a href="{% url 'community_notice' %}" class="sidebar-link" data-tooltip="Community">
+                <i class="fas fa-people-group sidebar-icon"></i>
+                <span class="sidebar-link-text">Community</span>
+            </a>
+        </li>
+
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_notifications' %}active{% endif %}">
+            <a href="{% url 'resident_notifications' %}" class="sidebar-link" data-tooltip="Notifications">
+                <i class="fas fa-bell sidebar-icon"></i>
+                <span class="sidebar-link-text">
+                    Notifications
+                    {% if unread_notif_count|default:0 > 0 %}
+                    <span class="nav-badge">{{ unread_notif_count }}</span>
+                    {% endif %}
+                </span>
+            </a>
+        </li>
+
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_settings' %}active{% endif %}">
+            <a href="{% url 'resident_settings' %}" class="sidebar-link" data-tooltip="Settings">
+                <i class="fas fa-cog sidebar-icon"></i>
+                <span class="sidebar-link-text">Settings</span>
+            </a>
+        </li>
+
+    </ul>
+</nav>
+
+<!-- User Footer -->
+<div class="sidebar-footer">
+    <div class="sidebar-user">
+        <div class="sidebar-user-avatar">
+            {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
         </div>
-        <a href="{% url 'logout' %}" class="sidebar-signout">
-            <i class="fas fa-sign-out-alt sidebar-icon"></i>
-            <span class="sidebar-link-text">Sign Out</span>
-        </a>
+        <div class="sidebar-user-info">
+            <span class="sidebar-user-name">
+                {% if request.user.first_name %}{{ request.user.first_name }} {{ request.user.last_name }}
+                {% else %}{{ request.user.email }}{% endif %}
+            </span>
+            <span class="sidebar-user-email">{{ request.user.email }}</span>
+        </div>
     </div>
+    <a href="{% url 'logout' %}" class="sidebar-signout" data-tooltip="Sign Out">
+        <i class="fas fa-sign-out-alt sidebar-icon"></i>
+        <span class="sidebar-link-text">Sign Out</span>
+    </a>
+</div>

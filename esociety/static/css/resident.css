@@ -718,3 +718,144 @@ button { cursor: pointer; font-family: var(--font); }
 .page-loading .real-content { display: none; }
 .page-loading .skeleton-content { display: block; }
 .skeleton-content { display: none; }
+
+/* ============================================================
+   MODAL SYSTEM
+   Used by booking modal in Resident_base.html
+   Opened/closed via resident.js window.openModal / closeModal
+   ============================================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease;
+}
+.modal-overlay.open {
+    display: flex;
+    opacity: 1;
+    pointer-events: all;
+}
+.modal-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(12px) scale(0.97);
+    transition: transform 0.22s ease;
+}
+.modal-overlay.open .modal-box {
+    transform: translateY(0) scale(1);
+}
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.modal-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text, #0f172a);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.modal-title i { color: var(--primary, #2563eb); }
+.modal-close {
+    background: none;
+    border: 1px solid var(--border, #e2e8f0);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-muted, #94a3b8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+}
+.modal-close:hover { background: var(--danger-light, #fee2e2); color: var(--danger, #ef4444); border-color: var(--danger, #ef4444); }
+.modal-body { padding: 20px 24px; }
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--border, #e2e8f0);
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   Created dynamically by resident.js window.showToast()
+   ============================================================ */
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+    pointer-events: all;
+    animation: toastIn 0.28s ease;
+    max-width: 340px;
+    border: 1px solid transparent;
+}
+@keyframes toastIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+.toast.success { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.toast.error   { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.toast.info    { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.toast.warning { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+.toast-close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: auto;
+    color: inherit;
+    opacity: 0.6;
+    font-size: 14px;
+    padding: 0 2px;
+    flex-shrink: 0;
+}
+.toast-close:hover { opacity: 1; }
+
+/* ============================================================
+   MAIN CONTENT vs PAGE CONTENT fix
+   Resident_base uses .page-content, not .main-content
+   ============================================================ */
+.page-content { padding: 24px; }
+
+@media (max-width: 640px) {
+    .page-content { padding: 14px; }
+    .modal-box { max-height: 95vh; border-radius: 12px; }
+    #toast-container { bottom: 14px; right: 14px; left: 14px; }
+    .toast { max-width: 100%; }
+}

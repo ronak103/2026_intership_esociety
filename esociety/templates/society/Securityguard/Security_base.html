@@ -1,0 +1,219 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SocietySync Security{% endblock %}</title>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Security CSS -->
+    <link rel="stylesheet" href="{% static 'css/security.css' %}">
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- ── FIX 1: was .layout → must be .admin-layout so body gets display:flex ── -->
+<div class="admin-layout">
+
+    <!-- ══════════════ SIDEBAR ══════════════ -->
+    <aside class="sidebar" id="sidebar">
+
+        <!-- ── FIX 2: sidebar-header must contain .sidebar-logo + .sidebar-role-badge
+                       Old code had .sidebar-brand which has no CSS rule            ── -->
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <i class="fas fa-building"></i>
+                <span class="sidebar-logo-text">SocietySync</span>
+            </div>
+            <span class="sidebar-role-badge security">Security</span>
+        </div>
+
+        <!-- Navigation -->
+        <!-- ── FIX 3: nav links must use .sidebar-menu / .sidebar-menu-item / .sidebar-link
+                       Old code used .nav-section / .nav-item / .nav-icon / .nav-label
+                       which are not defined anywhere in Security.css               ── -->
+        <nav class="sidebar-nav">
+            <ul class="sidebar-menu">
+
+                <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'security_dashboard' %}active{% endif %}">
+                    <a href="{% url 'security_dashboard' %}"
+                       class="sidebar-link"
+                       data-tooltip="Dashboard">
+                        <i class="fas fa-tachometer-alt sidebar-icon"></i>
+                        <span class="sidebar-link-text">Dashboard</span>
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'guard_log_visitor' %}active{% endif %}">
+                    <a href="{% url 'guard_log_visitor' %}"
+                       class="sidebar-link"
+                       data-tooltip="Visitor Log">
+                        <i class="fas fa-clipboard-list sidebar-icon"></i>
+                        <span class="sidebar-link-text">Visitor Log</span>
+                        {% if pending_approval_count > 0 %}
+                        <span class="nav-badge">{{ pending_approval_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'guard_notifications' %}active{% endif %}">
+                    <a href="{% url 'guard_notifications' %}"
+                       class="sidebar-link"
+                       data-tooltip="Notifications">
+                        <i class="fas fa-bell sidebar-icon"></i>
+                        <span class="sidebar-link-text">Notifications</span>
+                        {% if unread_notif_count > 0 %}
+                        <span class="nav-badge">{{ unread_notif_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+
+                <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'guard_settings' %}active{% endif %}">
+                    <a href="{% url 'guard_settings' %}"
+                       class="sidebar-link"
+                       data-tooltip="Settings">
+                        <i class="fas fa-cog sidebar-icon"></i>
+                        <span class="sidebar-link-text">Settings</span>
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+        <!-- Footer / User -->
+        <!-- ── FIX 4: avatar must be .sidebar-user-avatar, not .sidebar-avatar ── -->
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <div class="sidebar-user-avatar">
+                    <i class="fas fa-user-lock"></i>
+                </div>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name">
+                        {% if user.first_name %}{{ user.first_name }} {{ user.last_name }}{% else %}{{ user.email }}{% endif %}
+                    </span>
+                    <span class="sidebar-user-email">{{ user.email }}</span>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="sidebar-signout">
+                <i class="fas fa-sign-out-alt sidebar-icon"></i>
+                <span class="sidebar-link-text">Sign Out</span>
+            </a>
+        </div>
+
+    </aside>
+    <!-- ══════════════ END SIDEBAR ══════════════ -->
+
+    <!-- ══════════════ MAIN ══════════════
+         FIX 5: was .main → must be .main-content so CSS margin-left:260px applies
+         FIX 6: JS looks for id="mainContent" → keep that id               ── -->
+    <div class="main-content" id="mainContent">
+
+        <!-- Topbar -->
+        <!-- ── FIX 7: toggle button was .topbar-toggle → must be .sidebar-toggle
+                       topbar right section was .topbar-actions → must be .topbar-right ── -->
+        <header class="topbar">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <div class="topbar-left">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                <p>{% block page_subtitle %}Security Portal{% endblock %}</p>
+            </div>
+
+            <div class="topbar-right">
+
+                <!-- Live clock -->
+                <span id="topbarClock"
+                      style="font-family:'DM Mono',monospace;font-size:12px;color:var(--text-muted);">
+                </span>
+
+                <!-- Notification Bell -->
+                <div style="position:relative;">
+                    <button class="notif-btn" id="notifBtn" title="Notifications">
+                        <i class="fas fa-bell" style="font-size:15px;"></i>
+                        {% if unread_notif_count > 0 %}
+                        <span class="notif-count">{{ unread_notif_count }}</span>
+                        {% endif %}
+                    </button>
+
+                    <!-- Dropdown -->
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-drop-header">
+                            <span class="notif-drop-title">
+                                <i class="fas fa-bell"></i> Notifications
+                            </span>
+                            <a href="{% url 'guard_mark_all_read' %}"
+                               id="markAllRead"
+                               data-url="{% url 'guard_mark_all_read' %}"
+                               class="notif-mark-read">Mark all read</a>
+                        </div>
+                        <div class="notif-list">
+                            {% for n in guard_notifications %}
+                            <div class="notif-item {% if not n.is_read %}unread{% endif %}">
+                                <div class="notif-item-icon">
+                                    {% if 'approved' in n.message|lower %}🟢
+                                    {% elif 'rejected' in n.message|lower or 'denied' in n.message|lower %}🔴
+                                    {% else %}🔔{% endif %}
+                                </div>
+                                <div>
+                                    <div class="notif-item-msg">{{ n.message }}</div>
+                                    <div class="notif-item-time">{{ n.created_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <div class="notif-empty">
+                                <i class="fas fa-bell-slash"></i>
+                                No notifications yet
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="notif-drop-footer">
+                            <a href="{% url 'guard_notifications' %}">View all notifications →</a>
+                        </div>
+                    </div>
+                </div>
+
+                {% block topbar_actions %}{% endblock %}
+
+            </div>
+        </header>
+
+        <!-- Page Body -->
+        <!-- ── FIX 8: Security.js skeletonReveal() adds .sk-active to .page-body
+                       and reveals .real-content — this class must stay .page-body ── -->
+        <main class="page-body">
+
+            <!-- Django messages -->
+            {% if messages %}
+            <div class="messages-wrap">
+                {% for message in messages %}
+                <div class="msg-alert msg-{% if message.tags == 'error' %}error{% else %}{{ message.tags }}{% endif %}">
+                    <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+
+        </main>
+
+    </div>
+    <!-- ══════════════ END MAIN ══════════════ -->
+
+</div>
+
+<!-- Security JS -->
+<script src="{% static 'js/security.js' %}"></script>
+{% block extra_js %}{% endblock %}
+
+</body>
+</html>

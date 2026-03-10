@@ -14,6 +14,7 @@ urlpatterns = [
     path("resident/visitor/<int:visitor_id>/decision/<str:decision>/",views.visitor_decision,name="visitor_decision"),
     path("resident/payments/", views.resident_payments,name="resident_payments"),
     path("resident/notifications/",views.resident_notifications, name="resident_notifications"),
+    path("resident/notifications/mark-read/", views.ResidentMarkAllReadView, name="resident_mark_all_read"),
     path("resident/settings/",views.resident_settings,name="resident_settings"),
     path("resident/changepassword/",views.resident_change_password,name="resident_change_password"),
     path("resident/poll/<int:poll_id>/vote/<str:vote>/", views.resident_poll_vote, name="poll_vote"),
@@ -53,7 +54,15 @@ urlpatterns = [
     path("admin/settings/facility/add/",views.AdminAddFacilityView,name="admin_add_facility"),
     path("admin/settings/facility/<int:facility_id>/toggle/", views.AdminToggleFacilityView, name="admin_toggle_facility"),
     path("admin/export-all/",views.AdminExportAllView,name="admin_export_all"),
+    path("admin/notifications/mark-read/", views.AdminMarkAllReadView, name="admin_mark_all_read"),
+
+    # guard urls
+    path("guard/notifications/",views.guard_notifications,name="guard_notifications"),
+    path("guard/notifications/mark-read/",views.guard_mark_all_read,name="guard_mark_all_read"),
+    path("guard/settings/",views.guard_settings,name="guard_settings"),
+    path("guard/settings/password/",views.guard_change_password,name="guard_change_password"),
+
+
+    
 ]
-
-
 

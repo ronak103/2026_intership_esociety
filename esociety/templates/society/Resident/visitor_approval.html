@@ -7,55 +7,64 @@
 {% block content %}
 
 <!-- Pending Approvals -->
-<div class="card" style="{% if pending %}border-left:4px solid var(--warning);{% endif %}">
+<div class="card" {% if pending %}style="border-left:4px solid var(--warning);"{% endif %}>
     <div class="card-header">
         <span class="card-title">
             <i class="fas fa-user-clock" style="color:var(--warning);"></i>
             Waiting for Your Approval
             {% if pending %}
-                <span class="badge badge-warning" style="margin-left:4px;">{{ pending.count }}</span>
+                <span class="badge badge-warning" style="margin-left:4px;">{{ pending|length }}</span>
             {% endif %}
         </span>
     </div>
 
     {% if pending %}
+        <div id="pendingList">
         {% for v in pending %}
-        <div class="approval-card">
+        <div class="approval-card" id="approval-{{ v.id }}">
             <div class="visitor-info">
                 <div class="visitor-name">{{ v.visitor_name }}</div>
                 <div class="visitor-meta">
                     <span><i class="fas fa-phone"></i> {{ v.mobile_number }}</span>
                     <span><i class="fas fa-tag"></i> {{ v.get_visitor_type_display }}</span>
                     {% if v.vehicle_number %}<span><i class="fas fa-car"></i> {{ v.vehicle_number }}</span>{% endif %}
-                    <span><i class="fas fa-clock"></i> Logged at {{ v.created_at|date:"h:i A" }}</span>
+                    <span><i class="fas fa-clock"></i> {{ v.created_at|date:"h:i A, d M" }}</span>
                 </div>
             </div>
             <div class="approval-actions">
-                <a href="{% url 'visitor_decision' v.id 'approve' %}"
-                   onclick="return confirm('Approve {{ v.visitor_name }}?')"
-                   class="btn btn-success btn-sm">
+                <!-- AJAX buttons wired to resident.js module 8 -->
+                <button class="btn btn-success btn-sm"
+                    data-action="approve"
+                    data-url="{% url 'visitor_decision' v.id 'approve' %}"
+                    data-visitor-id="{{ v.id }}">
                     <i class="fas fa-check"></i> Approve
-                </a>
-                <a href="{% url 'visitor_decision' v.id 'reject' %}"
-                   onclick="return confirm('Reject {{ v.visitor_name }}?')"
-                   class="btn btn-danger btn-sm">
+                </button>
+                <button class="btn btn-danger btn-sm"
+                    data-action="reject"
+                    data-url="{% url 'visitor_decision' v.id 'reject' %}"
+                    data-visitor-id="{{ v.id }}">
                     <i class="fas fa-times"></i> Reject
-                </a>
+                </button>
             </div>
         </div>
         {% endfor %}
+        </div>
     {% else %}
-        <div class="empty-state">
-            <i class="fas fa-check-circle" style="color:var(--success);opacity:1;"></i>
-            <p>No pending approvals. You're all caught up!</p>
+        <div class="empty-state" style="padding:40px;">
+            <i class="fas fa-check-circle" style="color:var(--success);opacity:1;font-size:44px;"></i>
+            <p style="margin-top:10px;font-weight:600;color:var(--text);">All clear!</p>
+            <p style="font-size:13px;">No pending approvals right now.</p>
         </div>
     {% endif %}
 </div>
 
-<!-- History -->
+<!-- Approval History -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-history"></i> Recent History</span>
+        {% if history %}
+        <span class="badge badge-gray">Last {{ history|length }}</span>
+        {% endif %}
     </div>
     <div class="table-wrap">
         <table class="data-table">
@@ -86,7 +95,7 @@
                     </td>
                     <td>
                         {% if v.entry_status == "inside" %}
-                            <span class="badge badge-success">Inside</span>
+                            <span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
                         {% elif v.entry_status == "exited" %}
                             <span class="badge badge-gray">Exited</span>
                         {% elif v.entry_status == "denied" %}

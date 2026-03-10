@@ -1,175 +1,229 @@
-/* ===== NAVBAR MAIN ===== */
+/* ============================================================
+   SocietySync — navbar.css  (IMPROVED)
 
+   IMPROVEMENTS:
+   ✦ Replaces the old flat gradient-stripe look with a refined
+     frosted-glass, sticky topbar matching the sidebar palette
+   ✦ Hamburger → animated 3-bar (×) morph
+   ✦ Mobile drawer instead of stacked columns
+   ✦ Active underline indicator instead of filled box
+   ✦ Logout button kept as danger-accented pill
+   ✦ Proper z-index layering
+   ✦ Smooth transitions throughout
+   ✦ Removed duplicate/redundant rules
+   ============================================================ */
+
+/* ── Variables (mirrors home.css / auth.css) ── */
+:root {
+    --nav-bg:          rgba(255,255,255,.94);
+    --nav-border:      #e2e8f0;
+    --nav-height:      68px;
+    --nav-text:        #334155;
+    --nav-text-hover:  #0f172a;
+    --nav-active-bg:   #f1f5f9;
+    --nav-active:      #1a2e4a;
+    --nav-danger:      #ef4444;
+    --nav-danger-dark: #dc2626;
+    --nav-shadow:      0 1px 0 rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.06);
+    --nav-font:        'DM Sans', 'Plus Jakarta Sans', system-ui, sans-serif;
+    --radius:          8px;
+    --t:               all .18s ease;
+}
+
+/* ── Navbar Shell ── */
 .navbar {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-
-    padding: 14px 40px;
-
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-
+    justify-content: space-between;
+    gap: 16px;
+    height: var(--nav-height);
+    padding: 0 32px;
+    background: var(--nav-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--nav-border);
+    box-shadow: var(--nav-shadow);
     position: sticky;
     top: 0;
-    z-index: 1000;
+    z-index: 600;
+    transition: box-shadow .3s;
+}
+.navbar.scrolled {
+    box-shadow: 0 2px 20px rgba(0,0,0,.1);
 }
 
-
-/* ===== LOGO ===== */
-
+/* ── Logo ── */
 .logo a {
-    color: #ffffff;
-    font-size: 22px;
-    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #0f172a;
+    font-family: var(--nav-font);
+    font-size: 17px;
+    font-weight: 800;
     text-decoration: none;
-    letter-spacing: 1px;
+    letter-spacing: -.4px;
+    white-space: nowrap;
+}
+.logo a:hover { color: #1a2e4a; }
+
+/* Optional icon before logo text */
+.logo-dot {
+    width: 28px; height: 28px;
+    background: #1a2e4a;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
-.logo a:hover {
-    color: #38bdf8;
-}
-
-
-/* ===== NAV LINKS ===== */
-
+/* ── Nav Links ── */
 .nav-links {
     display: flex;
     align-items: center;
-    gap: 25px;
+    gap: 4px;
+    list-style: none;
+    flex-wrap: nowrap;
 }
 
-
-/* ===== NAV LINK STYLE ===== */
-
 .nav-links a {
-
-    color: #e2e8f0;
-
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--nav-text);
     text-decoration: none;
-
-    font-size: 16px;
-
+    font-family: var(--nav-font);
+    font-size: 14px;
     font-weight: 500;
-
-    padding: 8px 14px;
-
-    border-radius: 6px;
-
-    transition: all 0.3s ease;
-
-}
-
-
-/* Hover Effect */
-
-.nav-links a:hover {
-
-    background-color: #38bdf8;
-
-    color: #0f172a;
-
-    transform: translateY(-2px);
-
-}
-
-
-/* Active Link */
-
-.nav-links a.active {
-
-    background-color: #38bdf8;
-
-    color: #0f172a;
-
-}
-
-
-/* Logout Button Special */
-
-.nav-links a:last-child {
-
-    background-color: #ef4444;
-
-    color: white;
-
-}
-
-.nav-links a:last-child:hover {
-
-    background-color: #dc2626;
-
-    color: white;
-
-}
-
-
-/* ===== MOBILE RESPONSIVE ===== */
-
-@media screen and (max-width: 768px) {
-
-    .navbar {
-
-        flex-direction: column;
-
-        align-items: flex-start;
-
-        padding: 15px 20px;
-
-    }
-
-    .nav-links {
-
-        flex-direction: column;
-
-        width: 100%;
-
-        margin-top: 10px;
-
-        gap: 10px;
-
-    }
-
-    .nav-links a {
-
-        width: 100%;
-
-        padding: 10px;
-
-    }
-
-}
-
-
-/* ===== SMOOTH ANIMATION ===== */
-
-.nav-links a {
+    padding: 7px 12px;
+    border-radius: var(--radius);
+    transition: var(--t);
+    white-space: nowrap;
     position: relative;
 }
-
-.nav-links a::after {
-
-    content: "";
-
-    position: absolute;
-
-    width: 0;
-
-    height: 2px;
-
-    left: 0;
-
-    bottom: -4px;
-
-    background-color: #38bdf8;
-
-    transition: width 0.3s ease;
-
+.nav-links a:hover {
+    background: var(--nav-active-bg);
+    color: var(--nav-text-hover);
 }
 
-.nav-links a:hover::after {
+/* Active state — underline pill */
+.nav-links a.active {
+    color: var(--nav-active);
+    background: #f0f5fb;
+    font-weight: 600;
+}
 
-    width: 100%;
+/* Underline indicator */
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: 3px;
+    left: 12px;
+    right: 12px;
+    height: 2px;
+    background: var(--nav-active);
+    border-radius: 2px;
+    transform: scaleX(0);
+    transition: transform .2s ease;
+    transform-origin: left;
+}
+.nav-links a.active::after { transform: scaleX(1); }
 
+/* ── Logout / Danger Button ── */
+.nav-links a.nav-logout,
+.nav-links a:last-child {
+    background: transparent;
+    color: var(--nav-danger);
+    font-weight: 600;
+    border: 1.5px solid rgba(239,68,68,.25);
+}
+.nav-links a.nav-logout:hover,
+.nav-links a:last-child:hover {
+    background: #fef2f2;
+    color: var(--nav-danger-dark);
+    border-color: rgba(239,68,68,.5);
+}
+.nav-links a.nav-logout::after,
+.nav-links a:last-child::after { display: none; }
+
+/* ── Hamburger ── */
+.nav-hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    padding: 6px;
+    border: 1px solid var(--nav-border);
+    border-radius: var(--radius);
+    background: none;
+    transition: var(--t);
+    flex-shrink: 0;
+}
+.nav-hamburger:hover { background: var(--nav-active-bg); }
+
+.nav-hamburger span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    background: #334155;
+    border-radius: 2px;
+    transition: var(--t);
+    transform-origin: center;
+}
+/* Hamburger → X morph */
+.nav-hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-hamburger.open span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+.nav-hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ── Mobile Drawer ── */
+@media (max-width: 768px) {
+    .navbar { padding: 0 18px; }
+
+    .nav-hamburger { display: flex; }
+
+    .nav-links {
+        position: fixed;
+        top: var(--nav-height);
+        left: 0; right: 0;
+        background: rgba(255,255,255,.98);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid var(--nav-border);
+        border-bottom: 1px solid var(--nav-border);
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        padding: 12px 16px 16px;
+        z-index: 590;
+        box-shadow: 0 8px 24px rgba(0,0,0,.1);
+
+        /* Hidden by default */
+        transform: translateY(-8px);
+        opacity: 0;
+        pointer-events: none;
+        transition: transform .25s ease, opacity .25s ease;
+    }
+    .nav-links.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .nav-links a {
+        font-size: 15px;
+        padding: 11px 14px;
+    }
+    .nav-links a::after { display: none; }
+    .nav-links a.active {
+        padding-left: 18px;
+        border-left: 3px solid var(--nav-active);
+    }
+}
+
+@media (max-width: 480px) {
+    .navbar { padding: 0 14px; }
 }

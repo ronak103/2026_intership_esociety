@@ -8,14 +8,17 @@
 
 <div class="grid-2">
 
-    <!-- Notices -->
+    <!-- ── Notices ── -->
     <div class="card">
         <div class="card-header">
             <span class="card-title"><i class="fas fa-bullhorn"></i> Announcements</span>
+            {% if notices %}
+            <span class="badge badge-gray">{{ notices|length }}</span>
+            {% endif %}
         </div>
         <div class="notice-list">
             {% for notice in notices %}
-            <div class="notice-item">
+            <div class="notice-item" data-expandable>
                 <div class="notice-dot" style="
                     {% if notice.target_audience == 'resident' %}background:var(--primary);
                     {% elif notice.target_audience == 'security' %}background:var(--warning);
@@ -23,10 +26,11 @@
                 "></div>
                 <div class="notice-content">
                     <div class="notice-title">{{ notice.title }}</div>
-                    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;">
-                        {{ notice.message|truncatechars:120 }}
+                    <div class="notice-body" style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;max-height:56px;overflow:hidden;transition:max-height .3s ease;">
+                        {{ notice.message }}
                     </div>
                     <div class="notice-meta" style="margin-top:6px;">
+                        <i class="fas fa-calendar" style="font-size:10px;"></i>
                         {{ notice.created_at|date:"d M Y" }}
                         &nbsp;·&nbsp;
                         <span class="notice-audience">{{ notice.get_target_audience_display }}</span>
@@ -34,7 +38,7 @@
                 </div>
             </div>
             {% empty %}
-            <div class="empty-state">
+            <div class="empty-state" style="padding:40px;">
                 <i class="fas fa-bullhorn"></i>
                 <p>No announcements yet.</p>
             </div>
@@ -42,48 +46,92 @@
         </div>
     </div>
 
-    <!-- Polls -->
+    <!-- ── Polls ── -->
     <div>
         <div class="card">
             <div class="card-header">
                 <span class="card-title"><i class="fas fa-poll"></i> Active Polls</span>
+                {% if polls %}
+                <span class="badge badge-info">{{ polls|length }} active</span>
+                {% endif %}
             </div>
-            <div style="padding:16px;">
+            <div style="padding:16px;display:flex;flex-direction:column;gap:12px;">
                 {% for poll in polls %}
-                <div class="poll-card">
+                <div class="poll-card" id="poll-{{ poll.id }}">
                     <div class="poll-question">{{ poll.question }}</div>
 
                     {% if poll.user_vote %}
-                        <!-- Already voted — show results -->
-                        <div class="poll-result">
-                            <div class="poll-bar-wrap">
-                                <span style="width:28px;font-weight:600;color:var(--success);">Yes</span>
-                                <div class="poll-bar-bg">
-                                    <div class="poll-bar yes" style="width:{{ poll.yes_pct }}%;"></div>
-                                </div>
-                                <span style="width:36px;font-size:12px;color:var(--text-muted);">{{ poll.yes_pct }}%</span>
+                    <!-- Already voted — show live results -->
+                    <div class="poll-result" data-poll-result="{{ poll.id }}" style="display:block;">
+                        <div class="poll-bar-wrap">
+                            <span style="width:32px;font-size:12px;font-weight:700;color:var(--success);">Yes</span>
+                            <div class="poll-bar-bg">
+                                <div class="poll-bar yes" style="width:{{ poll.yes_pct }}%;"></div>
                             </div>
-                            <div class="poll-bar-wrap">
-                                <span style="width:28px;font-weight:600;color:var(--danger);">No</span>
-                                <div class="poll-bar-bg">
-                                    <div class="poll-bar no" style="width:{{ poll.no_pct }}%;"></div>
-                                </div>
-                                <span style="width:36px;font-size:12px;color:var(--text-muted);">{{ poll.no_pct }}%</span>
-                            </div>
-                            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
-                                You voted <strong>{{ poll.user_vote }}</strong> · {{ poll.total_votes }} total votes
-                            </div>
+                            <span class="poll-pct yes" style="width:36px;font-size:12px;color:var(--text-muted);text-align:right;">{{ poll.yes_pct }}%</span>
                         </div>
+                        <div class="poll-bar-wrap">
+                            <span style="width:32px;font-size:12px;font-weight:700;color:var(--danger);">No</span>
+                            <div class="poll-bar-bg">
+                                <div class="poll-bar no" style="width:{{ poll.no_pct }}%;"></div>
+                            </div>
+                            <span class="poll-pct no" style="width:36px;font-size:12px;color:var(--text-muted);text-align:right;">{{ poll.no_pct }}%</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;display:flex;align-items:center;gap:6px;">
+                            <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                            You voted <strong>{{ poll.user_vote }}</strong>
+                            &nbsp;·&nbsp;
+                            {{ poll.total_votes }} total vote{{ poll.total_votes|pluralize }}
+                        </div>
+                    </div>
+
                     {% else %}
-                        <!-- Not voted yet -->
+                    <!-- Not voted — show AJAX vote form (resident.js module 6) -->
+                    <form data-poll-form data-poll-id="{{ poll.id }}"
+                          action="{% url 'poll_vote' poll.id 'yes' %}"
+                          style="display:contents;">
+                        {% csrf_token %}
                         <div class="poll-actions">
-                            <a href="{% url 'poll_vote' poll.id 'yes' %}" class="poll-btn yes">👍 Yes</a>
-                            <a href="{% url 'poll_vote' poll.id 'no' %}"  class="poll-btn no">👎 No</a>
+                            <button type="submit" name="choice" value="yes" class="poll-btn yes">
+                                <i class="fas fa-thumbs-up"></i> Yes
+                            </button>
+                            <button type="submit" name="choice" value="no"
+                                    class="poll-btn no"
+                                    formaction="{% url 'poll_vote' poll.id 'no' %}">
+                                <i class="fas fa-thumbs-down"></i> No
+                            </button>
                         </div>
+                    </form>
+
+                    <!-- Result bars (hidden until vote submitted via AJAX) -->
+                    <div class="poll-result" data-poll-result="{{ poll.id }}" style="display:none;margin-top:12px;">
+                        <div class="poll-bar-wrap">
+                            <span style="width:32px;font-size:12px;font-weight:700;color:var(--success);">Yes</span>
+                            <div class="poll-bar-bg">
+                                <div class="poll-bar yes" style="width:0%;"></div>
+                            </div>
+                            <span class="poll-pct yes" style="width:36px;font-size:12px;color:var(--text-muted);text-align:right;">0%</span>
+                        </div>
+                        <div class="poll-bar-wrap">
+                            <span style="width:32px;font-size:12px;font-weight:700;color:var(--danger);">No</span>
+                            <div class="poll-bar-bg">
+                                <div class="poll-bar no" style="width:0%;"></div>
+                            </div>
+                            <span class="poll-pct no" style="width:36px;font-size:12px;color:var(--text-muted);text-align:right;">0%</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                            <i class="fas fa-check-circle" style="color:var(--success);"></i>
+                            Vote recorded &nbsp;·&nbsp; <span class="poll-total-votes"></span>
+                        </div>
+                    </div>
                     {% endif %}
+
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:10px;">
+                        {{ poll.total_votes }} vote{{ poll.total_votes|pluralize }} so far
+                    </div>
                 </div>
                 {% empty %}
-                <div class="empty-state">
+                <div class="empty-state" style="padding:32px 0;">
                     <i class="fas fa-poll"></i>
                     <p>No active polls right now.</p>
                 </div>

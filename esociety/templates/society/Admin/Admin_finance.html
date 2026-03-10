@@ -268,11 +268,4 @@
 
 {% block extra_js %}
 <script>skeletonReveal(1500);</script>
-<script>
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o => {
-    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
-</script>
 {% endblock %}

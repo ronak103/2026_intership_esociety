@@ -228,21 +228,17 @@
 {% block extra_js %}
 <script>skeletonReveal(1500);</script>
 <script>
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o => {
-    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
 function openResidentDetail(name, email, unit, mobile, joined, complaints, pending) {
-    document.getElementById('detailName').textContent    = 'Resident — ' + name;
+    document.getElementById('detailName').textContent     = 'Resident — ' + name;
     document.getElementById('detailNameFull').textContent = name;
-    document.getElementById('detailEmail').textContent   = email;
-    document.getElementById('detailUnit').textContent    = unit;
-    document.getElementById('detailMobile').textContent  = mobile;
-    document.getElementById('detailJoined').textContent  = joined;
+    document.getElementById('detailEmail').textContent    = email;
+    document.getElementById('detailUnit').textContent     = unit;
+    document.getElementById('detailMobile').textContent   = mobile;
+    document.getElementById('detailJoined').textContent   = joined;
     document.getElementById('detailComplaints').textContent = complaints;
-    document.getElementById('detailPending').textContent = pending;
-    document.getElementById('detailAvatar').textContent  = name.split(' ').map(n=>n[0]).join('').toUpperCase();
+    document.getElementById('detailPending').textContent  = pending;
+    const av = document.getElementById('detailAvatar');
+    if (av) av.textContent = name.split(' ').map(n => n[0] || '').join('').toUpperCase().slice(0,2);
     openModal('residentDetailModal');
 }
 </script>

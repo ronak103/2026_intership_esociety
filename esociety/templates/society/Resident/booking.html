@@ -6,76 +6,106 @@
 
 {% block content %}
 
+<!-- Available Facilities -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-building"></i> Available Facilities</span>
+        <span style="font-size:13px;color:var(--text-muted);">{{ facilities.count }} facilit{{ facilities.count|pluralize:"y,ies" }}</span>
     </div>
-    <div class="facility-grid">
 
+    {% if facilities %}
+    <div class="facility-grid" style="padding:20px;">
         {% for facility in facilities %}
         <div class="facility-card {% if facility.availability_status == 'unavailable' %}facility-unavailable{% endif %}">
             <div class="facility-icon">
                 {% if "pool" in facility.facility_name|lower or "swim" in facility.facility_name|lower %}🏊
-                {% elif "gym" in facility.facility_name|lower %}🏋️
-                {% elif "club" in facility.facility_name|lower %}🏛️
-                {% elif "park" in facility.facility_name|lower %}🌳
-                {% elif "court" in facility.facility_name|lower %}🏸
+                {% elif "gym" in facility.facility_name|lower or "fitness" in facility.facility_name|lower %}🏋️
+                {% elif "club" in facility.facility_name|lower or "hall" in facility.facility_name|lower %}🏛️
+                {% elif "park" in facility.facility_name|lower or "garden" in facility.facility_name|lower %}🌳
+                {% elif "court" in facility.facility_name|lower or "tennis" in facility.facility_name|lower or "badminton" in facility.facility_name|lower %}🏸
+                {% elif "terrace" in facility.facility_name|lower or "roof" in facility.facility_name|lower %}🌇
                 {% else %}🏢{% endif %}
             </div>
             <div class="facility-name">{{ facility.facility_name }}</div>
-            <div class="facility-slots" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">{{ facility.description|truncatechars:50 }}</div>
-            <div class="facility-fee">
-                {% if facility.booking_fee == 0 %}Free{% else %}₹{{ facility.booking_fee }}{% endif %}
+            {% if facility.description %}
+            <div class="facility-slots" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;line-height:1.4;">
+                {{ facility.description|truncatechars:55 }}
             </div>
+            {% endif %}
+            <div class="facility-fee">
+                {% if facility.booking_fee == 0 %}Free{% else %}₹{{ facility.booking_fee }}/booking{% endif %}
+            </div>
+
             {% if facility.availability_status == "available" %}
-                <span class="badge badge-success" style="margin-bottom:12px;">Available</span>
-                <button class="btn btn-primary btn-sm" style="width:100%;">Book Now</button>
+                <span class="badge badge-success" style="margin-bottom:14px;">
+                    <i class="fas fa-circle" style="font-size:7px;"></i> Available
+                </span>
+                <button class="btn btn-primary btn-sm" style="width:100%;"
+                    onclick="openBookingModal('{{ facility.id }}', '{{ facility.facility_name }}', '{{ facility.booking_fee }}')">
+                    <i class="fas fa-calendar-plus"></i> Book Now
+                </button>
             {% else %}
-                <span class="badge badge-danger" style="margin-bottom:12px;">Unavailable</span>
-                <button class="btn btn-outline btn-sm" style="width:100%;" disabled>Unavailable</button>
+                <span class="badge badge-danger" style="margin-bottom:14px;">
+                    <i class="fas fa-ban" style="font-size:8px;"></i> Unavailable
+                </span>
+                <button class="btn btn-outline btn-sm" style="width:100%;opacity:.5;cursor:not-allowed;" disabled>
+                    Unavailable
+                </button>
             {% endif %}
         </div>
-        {% empty %}
+        {% endfor %}
+    </div>
 
-        <!-- Static fallback if no facilities in DB yet -->
+    {% else %}
+    <!-- Fallback static cards if no facilities in DB -->
+    <div class="facility-grid" style="padding:20px;">
         <div class="facility-card">
             <div class="facility-icon">🏊</div>
             <div class="facility-name">Swimming Pool</div>
-            <div class="facility-slots">6 slots/day</div>
-            <div class="facility-fee">₹200/hr</div>
-            <span class="badge badge-success" style="margin-bottom:12px;">Available</span>
-            <button class="btn btn-primary btn-sm" style="width:100%;">Book Now</button>
+            <div class="facility-slots" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Open daily, limited slots</div>
+            <div class="facility-fee">₹200/booking</div>
+            <span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span>
+            <button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button>
         </div>
         <div class="facility-card">
             <div class="facility-icon">🏋️</div>
             <div class="facility-name">Gym</div>
-            <div class="facility-slots">Open 5AM – 10PM</div>
+            <div class="facility-slots" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Open 5AM – 10PM</div>
             <div class="facility-fee">Free</div>
-            <span class="badge badge-success" style="margin-bottom:12px;">Available</span>
-            <button class="btn btn-primary btn-sm" style="width:100%;">Book Now</button>
+            <span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span>
+            <button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button>
         </div>
         <div class="facility-card">
             <div class="facility-icon">🏛️</div>
             <div class="facility-name">Clubhouse</div>
-            <div class="facility-slots">Events only</div>
+            <div class="facility-slots" style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">Events & gatherings</div>
             <div class="facility-fee">₹1,000/day</div>
-            <span class="badge badge-success" style="margin-bottom:12px;">Available</span>
-            <button class="btn btn-primary btn-sm" style="width:100%;">Book Now</button>
+            <span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span>
+            <button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button>
         </div>
-
-        {% endfor %}
     </div>
+    <div style="padding:0 20px 16px;">
+        <div class="empty-state" style="background:#fffbeb;border:1px solid #fef3c7;border-radius:8px;padding:16px 20px;">
+            <i class="fas fa-info-circle" style="color:var(--warning);font-size:20px;margin-bottom:6px;"></i>
+            <p style="color:#92400e;font-size:13px;">No facilities have been added yet. Ask your society admin to configure them.</p>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- My Bookings -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-calendar-alt"></i> My Bookings</span>
+        {% if bookings %}
+        <span class="badge badge-gray">{{ bookings.count }}</span>
+        {% endif %}
     </div>
     <div class="table-wrap">
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Facility</th>
                     <th>Date</th>
                     <th>Time Slot</th>
@@ -87,25 +117,35 @@
             <tbody>
             {% for b in bookings %}
                 <tr>
+                    <td style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">#{{ b.id|stringformat:"03d" }}</td>
                     <td style="font-weight:600;">{{ b.facility.facility_name }}</td>
                     <td style="font-size:13px;color:var(--text-muted);">{{ b.booking_date|date:"d M Y" }}</td>
-                    <td>{{ b.time_slot }}</td>
-                    <td style="font-family:var(--font-mono);">₹{{ b.amount }}</td>
-                    <td>
-                        {% if b.booking_status == "confirmed" %}<span class="badge badge-success">Confirmed</span>
-                        {% elif b.booking_status == "cancelled" %}<span class="badge badge-danger">Cancelled</span>
-                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    <td style="font-size:13px;">{{ b.time_slot }}</td>
+                    <td style="font-family:var(--font-mono);font-weight:600;">
+                        {% if b.amount == 0 %}Free{% else %}₹{{ b.amount }}{% endif %}
                     </td>
                     <td>
-                        {% if b.payment_status == "completed" %}<span class="badge badge-success">Paid</span>
-                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                        {% if b.booking_status == "confirmed" %}
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Confirmed</span>
+                        {% elif b.booking_status == "cancelled" %}
+                            <span class="badge badge-danger"><i class="fas fa-times"></i> Cancelled</span>
+                        {% else %}
+                            <span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if b.payment_status == "completed" %}
+                            <span class="badge badge-success">Paid</span>
+                        {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% endif %}
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">
+                <tr><td colspan="7">
                     <div class="empty-state">
                         <i class="fas fa-calendar-times"></i>
-                        <p>No bookings yet.</p>
+                        <p>No bookings yet. Use the cards above to book a facility.</p>
                     </div>
                 </td></tr>
             {% endfor %}

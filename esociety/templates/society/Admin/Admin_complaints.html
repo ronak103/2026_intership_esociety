@@ -165,15 +165,10 @@
 {% block extra_js %}
 <script>skeletonReveal(1500);</script>
 <script>
-function openModal(id)  { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(o => {
-    o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
-});
 function openUpdateModal(id, status, staff) {
-    document.getElementById('complaintIdField').value = id;
-    document.getElementById('id_status').value        = status;
-    document.getElementById('id_assigned_staff').value = staff;
+    document.getElementById('complaintIdField').value  = id;
+    document.getElementById('id_status').value         = status;
+    document.getElementById('id_assigned_staff').value = staff || '';
     openModal('updateComplaintModal');
 }
 </script>

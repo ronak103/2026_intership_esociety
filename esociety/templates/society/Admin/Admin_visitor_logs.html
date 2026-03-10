@@ -174,13 +174,13 @@
           data-visitor-name="{{ v.visitor_name }}"
           data-mobile="{{ v.mobile_number }}"
           data-unit="{{ v.resident.unit_number|default:'' }}"
-          data-resident="{{ v.resident.full_name }}"
+          data-resident="{{ v.resident.first_name }} {{ v.resident.last_name }}"
           data-visitor-type="{{ v.visitor_type }}"
           data-expected-date="{{ v.expected_date|date:'d M Y' }}"
           data-entry-time="{% if v.entry_time %}{{ v.entry_time|date:'h:i A' }}{% endif %}"
           data-exit-time="{% if v.exit_time %}{{ v.exit_time|date:'h:i A' }}{% endif %}"
           data-vehicle="{{ v.vehicle_number|default:'' }}"
-          data-guard="{{ v.guard.full_name|default:'' }}"
+          data-guard="{{ v.guard.first_name|default:'' }} {{ v.guard.last_name|default:'' }}"
           data-approval-status="{{ v.approval_status }}"
           data-entry-status="{{ v.entry_status }}"
         >
@@ -188,7 +188,7 @@
           <td class="td-name">{{ v.visitor_name }}</td>
           <td class="td-mono">{{ v.mobile_number }}</td>
           <td><strong>{{ v.resident.unit_number|default:"—" }}</strong></td>
-          <td>{{ v.resident.full_name }}</td>
+          <td>{{ v.resident.first_name }} {{ v.resident.last_name }}</td>
 
           <!-- Type badge -->
           <td>
@@ -224,7 +224,7 @@
           </td>
 
           <td>{{ v.vehicle_number|default:"—" }}</td>
-          <td>{{ v.guard.full_name|default:"—" }}</td>
+          <td>{{ v.guard.first_name|default:"—" }} {{ v.guard.last_name|default:"" }}</td>
 
           <!-- Approval status -->
           <td>

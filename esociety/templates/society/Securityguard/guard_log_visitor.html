@@ -1,187 +1,326 @@
-{% extends "base.html" %}
+{% extends "society/Securityguard/Security_base.html" %}
 {% load static %}
 
+{% block title %}Visitor Log — SocietySync Security{% endblock %}
+{% block page_title %}Visitor Log{% endblock %}
+{% block page_subtitle %}Log arrivals and manage gate entry / exit{% endblock %}
+
+{% block topbar_actions %}
+<button class="btn btn-primary btn-sm" onclick="openModal('logVisitorModal')">
+    <i class="fas fa-user-plus"></i> Log Visitor
+</button>
+{% endblock %}
+
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/resident.css' %}">
 
-<div class="section-header">
-    <h2 class="section-title">Gate — Visitor Log</h2>
-    <p class="section-sub">Log unannounced visitors. Pre-registered visitors appear below automatically.</p>
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-card">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-row" style="height:50px;margin-bottom:16px;"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div>
+    </div>
 </div>
 
-{% if messages %}
-    {% for msg in messages %}
-        <div style="
-            padding:12px 18px; border-radius:8px; margin-bottom:16px;
-            background:{% if 'success' in msg.tags %}#d1fae5{% elif 'error' in msg.tags %}#fee2e2{% else %}#fef3c7{% endif %};
-            color:{% if 'success' in msg.tags %}#065f46{% elif 'error' in msg.tags %}#991b1b{% else %}#92400e{% endif %};
-            border-left:4px solid {% if 'success' in msg.tags %}#10b981{% elif 'error' in msg.tags %}#ef4444{% else %}#f59e0b{% endif %};
-        ">{{ msg }}</div>
-    {% endfor %}
-{% endif %}
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
 
-<!-- Log Unannounced Visitor Form -->
-<div class="card">
-    <h3 class="card-title">Log Unannounced Visitor</h3>
-    <p style="color:#6b7280; font-size:13px; margin-bottom:16px;">
-        Use this form only when a visitor arrives <strong>without a pre-registered pass</strong>.
-        The resident will be notified and must approve before you can allow entry.
-    </p>
-
-    <form method="POST">
-        {% csrf_token %}
-
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-
-            <div class="form-group">
-                <label class="inner-label">Visitor Name</label>
-                {{ form.visitor_name }}
-            </div>
-
-            <div class="form-group">
-                <label class="inner-label">Mobile Number</label>
-                {{ form.mobile_number }}
-            </div>
-
-            <div class="form-group">
-                <label class="inner-label">Visitor Type</label>
-                {{ form.visitor_type }}
-            </div>
-
-            <div class="form-group">
-                <label class="inner-label">Vehicle Number (optional)</label>
-                {{ form.vehicle_number }}
-            </div>
-
-            <div class="form-group" style="grid-column:span 2;">
-                <label class="inner-label">Resident Being Visited</label>
-                {{ form.resident }}
-            </div>
-
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card amber">
+        <div class="stat-icon"><i class="fas fa-person-walking-arrow-right"></i></div>
+        <div>
+            <div class="stat-value">{{ total_today }}</div>
+            <div class="stat-label">Today's Visitors</div>
         </div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon"><i class="fas fa-house-user"></i></div>
+        <div>
+            <div class="stat-value">{{ currently_inside }}</div>
+            <div class="stat-label">Currently Inside</div>
+        </div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+        <div>
+            <div class="stat-value">{{ pending_approval_count }}</div>
+            <div class="stat-label">Awaiting Approval</div>
+        </div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon"><i class="fas fa-ban"></i></div>
+        <div>
+            <div class="stat-value">{{ total_denied }}</div>
+            <div class="stat-label">Denied Today</div>
+        </div>
+    </div>
+</div>
 
-        <button type="submit" class="submit-btn" style="margin-top:16px;">
-            🔔 Notify Resident & Log Visitor
-        </button>
+<!-- Main Table Card -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-clipboard-list"></i> Today's Visitor Log</span>
+        <a href="?export=csv" class="btn btn-outline btn-sm">
+            <i class="fas fa-download"></i> Export CSV
+        </a>
+    </div>
 
+    <!-- Filters -->
+    <form method="GET" class="filter-bar auto-submit" id="filterForm">
+        <div class="filter-group">
+            <label class="filter-label">Search</label>
+            <div class="search-wrap">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" name="q" class="filter-input search" value="{{ search_query }}" placeholder="Name or mobile…">
+            </div>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Type</label>
+            <select name="type" class="filter-input">
+                <option value="all"         {% if type_filter == 'all' %}selected{% endif %}>All Types</option>
+                <option value="guest"       {% if type_filter == 'guest' %}selected{% endif %}>Guest</option>
+                <option value="delivery"    {% if type_filter == 'delivery' %}selected{% endif %}>Delivery</option>
+                <option value="maintenance" {% if type_filter == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                <option value="staff"       {% if type_filter == 'staff' %}selected{% endif %}>Staff</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Status</label>
+            <select name="status" class="filter-input">
+                <option value="all"     {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                <option value="waiting" {% if status_filter == 'waiting' %}selected{% endif %}>Waiting</option>
+                <option value="inside"  {% if status_filter == 'inside' %}selected{% endif %}>Inside</option>
+                <option value="exited"  {% if status_filter == 'exited' %}selected{% endif %}>Exited</option>
+                <option value="denied"  {% if status_filter == 'denied' %}selected{% endif %}>Denied</option>
+            </select>
+        </div>
+        <div class="filter-group" style="flex-direction:row;align-items:flex-end;gap:8px;">
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> Filter</button>
+            {% if search_query or type_filter != 'all' or status_filter != 'all' %}
+            <a href="{% url 'guard_log_visitor' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+        </div>
     </form>
-</div>
 
-
-<!-- Today's All Visitors (pre-registered + guard-logged) -->
-<div class="card" style="margin-top:24px;">
-    <h3 class="card-title">Today's Visitors</h3>
-
-    <table class="table">
-        <thead>
+    <!-- Table -->
+    <div class="table-wrap">
+        <table class="data-table" id="visitorTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Visitor</th>
+                    <th>Type</th>
+                    <th>Resident</th>
+                    <th>Source</th>
+                    <th>Approval</th>
+                    <th>Entry</th>
+                    <th>Entry Time</th>
+                    <th>Exit Time</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in today_visitors %}
             <tr>
-                <th>Visitor</th>
-                <th>Type</th>
-                <th>Resident</th>
-                <th>Source</th>
-                <th>Approval</th>
-                <th>Entry Status</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-
-        <tbody>
-        {% for v in today_visitors %}
-            <tr>
+                <td style="color:var(--text-muted);font-size:11px;">{{ forloop.counter }}</td>
                 <td>
-                    <div style="font-weight:600;">{{ v.visitor_name }}</div>
-                    <div style="font-size:12px;color:#9ca3af;">{{ v.mobile_number }}</div>
+                    <div class="visitor-cell">
+                        <div class="visitor-avatar">{{ v.visitor_name|first|upper }}</div>
+                        <div>
+                            <div class="visitor-name">{{ v.visitor_name }}</div>
+                            <div class="visitor-mobile">{{ v.mobile_number }}</div>
+                            {% if v.vehicle_number %}<div class="visitor-mobile">🚗 {{ v.vehicle_number }}</div>{% endif %}
+                        </div>
+                    </div>
                 </td>
-                <td>{{ v.get_visitor_type_display }}</td>
-                <td>{{ v.resident.first_name }} {{ v.resident.last_name }}</td>
-
-                <!-- Source: who logged this visitor -->
                 <td>
-                    {% if v.registered_by == "resident" %}
-                        <span style="
-                            background:#dbeafe; color:#1e40af;
-                            border-radius:6px; padding:2px 8px; font-size:12px; font-weight:600;
-                        ">📋 Pre-registered</span>
+                    {% if v.visitor_type == 'guest' %}<span class="badge badge-info">Guest</span>
+                    {% elif v.visitor_type == 'delivery' %}<span class="badge badge-purple">Delivery</span>
+                    {% elif v.visitor_type == 'maintenance' %}<span class="badge badge-warning">Maintenance</span>
+                    {% else %}<span class="badge badge-gray">Staff</span>{% endif %}
+                </td>
+                <td>
+                    <div class="fw">{{ v.resident.first_name }} {{ v.resident.last_name }}</div>
+                    <div style="font-size:11px;color:var(--text-muted);">{{ v.resident.unit_number|default:"—" }}</div>
+                </td>
+                <td>
+                    {% if v.registered_by == 'resident' %}
+                        <span class="badge badge-info">📋 Pre-reg</span>
                     {% else %}
-                        <span style="
-                            background:#fef3c7; color:#92400e;
-                            border-radius:6px; padding:2px 8px; font-size:12px; font-weight:600;
-                        ">🛡️ Guard-logged</span>
+                        <span class="badge badge-warning">🛡️ Guard</span>
                     {% endif %}
                 </td>
-
-                <!-- Approval status -->
                 <td>
-                    {% if v.approval_status == "approved" %}
-                        <span class="badge badge-success">✅ Approved</span>
-                    {% elif v.approval_status == "rejected" %}
-                        <span class="badge badge-danger">❌ Rejected</span>
-                    {% else %}
-                        <span class="badge badge-warning">⏳ Pending</span>
-                    {% endif %}
+                    {% if v.approval_status == 'approved' %}<span class="badge badge-success">✅ Approved</span>
+                    {% elif v.approval_status == 'rejected' %}<span class="badge badge-danger">❌ Rejected</span>
+                    {% else %}<span class="badge badge-warning">⏳ Pending</span>{% endif %}
                 </td>
-
-                <!-- Entry status -->
                 <td>
-                    {% if v.entry_status == "inside" %}
-                        <span class="badge badge-success">Inside</span>
-                    {% elif v.entry_status == "exited" %}
-                        <span class="badge" style="background:#e5e7eb;color:#374151;">Exited</span>
-                    {% elif v.entry_status == "denied" %}
-                        <span class="badge badge-danger">Denied</span>
-                    {% else %}
-                        <span class="badge badge-warning">Waiting</span>
-                    {% endif %}
+                    {% if v.entry_status == 'inside' %}<span class="badge badge-success">Inside</span>
+                    {% elif v.entry_status == 'exited' %}<span class="badge badge-gray">Exited</span>
+                    {% elif v.entry_status == 'denied' %}<span class="badge badge-danger">Denied</span>
+                    {% else %}<span class="badge badge-warning">Waiting</span>{% endif %}
                 </td>
-
-                <!-- Actions -->
-                <td style="display:flex;gap:6px;flex-wrap:wrap;">
-
-                    {% if v.approval_status == "approved" and v.entry_status == "waiting" %}
+                <td>
+                    {% if v.entry_time %}<span class="time-chip time-in">{{ v.entry_time|date:"h:i A" }}</span>
+                    {% else %}<span style="color:var(--text-muted);">—</span>{% endif %}
+                </td>
+                <td>
+                    {% if v.exit_time %}<span class="time-chip time-out">{{ v.exit_time|date:"h:i A" }}</span>
+                    {% else %}<span style="color:var(--text-muted);">—</span>{% endif %}
+                </td>
+                <td>
+                    <div style="display:flex;gap:5px;flex-wrap:wrap;">
+                        {% if v.approval_status == 'approved' and v.entry_status == 'waiting' %}
                         <a href="{% url 'guard_update_entry' v.id 'enter' %}"
-                           class="btn-small btn-green"
-                           onclick="return confirm('Allow {{ v.visitor_name }} to enter?')">
-                            Allow In
+                           class="btn btn-success btn-xs"
+                           data-confirm="Allow {{ v.visitor_name }} to enter?">
+                            <i class="fas fa-door-open"></i> Allow In
                         </a>
-                    {% endif %}
+                        {% endif %}
 
-                    {% if v.entry_status == "inside" %}
+                        {% if v.entry_status == 'inside' %}
                         <a href="{% url 'guard_update_entry' v.id 'exit' %}"
-                           class="btn-small btn-blue"
-                           onclick="return confirm('Mark {{ v.visitor_name }} as exited?')">
-                            Mark Exit
+                           class="btn btn-outline btn-xs"
+                           data-confirm="Mark {{ v.visitor_name }} as exited?">
+                            <i class="fas fa-door-closed"></i> Exit
                         </a>
-                    {% endif %}
+                        {% endif %}
 
-                    {% if v.entry_status == "waiting" and v.approval_status != "rejected" %}
+                        {% if v.entry_status == 'waiting' and v.approval_status != 'rejected' %}
                         <a href="{% url 'guard_update_entry' v.id 'deny' %}"
-                           class="btn-small btn-red"
-                           onclick="return confirm('Deny entry for {{ v.visitor_name }}?')">
-                            Deny
+                           class="btn btn-danger btn-xs"
+                           data-confirm="Deny entry for {{ v.visitor_name }}?">
+                            <i class="fas fa-ban"></i> Deny
                         </a>
-                    {% endif %}
-
+                        {% endif %}
+                    </div>
                 </td>
             </tr>
-        {% empty %}
+            {% empty %}
             <tr>
-                <td colspan="7" style="text-align:center;padding:24px;color:#9ca3af;">
-                    No visitors logged today.
+                <td colspan="10">
+                    <div class="empty-state">
+                        <i class="fas fa-clipboard"></i>
+                        <p>No visitors logged today. Use the "Log Visitor" button above.</p>
+                    </div>
                 </td>
             </tr>
-        {% endfor %}
-        </tbody>
-    </table>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}
+        </span>
+        <div class="pagination-controls">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&q={{ search_query }}&type={{ type_filter }}&status={{ status_filter }}" class="page-btn">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                <span class="page-btn active">{{ num }}</span>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}&q={{ search_query }}&type={{ type_filter }}&status={{ status_filter }}" class="page-btn">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&q={{ search_query }}&type={{ type_filter }}&status={{ status_filter }}" class="page-btn">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
 
-<style>
-.btn-small { padding:5px 10px; border-radius:6px; font-size:12px; font-weight:600; text-decoration:none; white-space:nowrap; }
-.btn-green  { background:#d1fae5; color:#065f46; }
-.btn-blue   { background:#dbeafe; color:#1e40af; }
-.btn-red    { background:#fee2e2; color:#991b1b; }
-.btn-green:hover { background:#a7f3d0; }
-.btn-blue:hover  { background:#bfdbfe; }
-.btn-red:hover   { background:#fecaca; }
-</style>
+</div><!-- /real-content -->
 
+
+<!-- ═══ LOG VISITOR MODAL ═══ -->
+<div class="modal-overlay" id="logVisitorModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-user-plus"></i>
+                Log Unannounced Visitor
+            </span>
+            <button class="modal-close" onclick="closeModal('logVisitorModal')"><i class="fas fa-times"></i></button>
+        </div>
+        <form method="POST" action="{% url 'guard_log_visitor' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="alert alert-warning" style="margin-bottom:16px;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Use this form only for <strong>unannounced</strong> visitors.
+                    The resident will be notified and must approve entry.
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Visitor Name <span class="req">*</span></label>
+                        {{ form.visitor_name }}
+                        {% if form.visitor_name.errors %}
+                        <div class="form-error">{{ form.visitor_name.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Mobile Number <span class="req">*</span></label>
+                        {{ form.mobile_number }}
+                        {% if form.mobile_number.errors %}
+                        <div class="form-error">{{ form.mobile_number.errors.0 }}</div>{% endif %}
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Visitor Type <span class="req">*</span></label>
+                        {{ form.visitor_type }}
+                        {% if form.visitor_type.errors %}
+                        <div class="form-error">{{ form.visitor_type.errors.0 }}</div>{% endif %}
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Vehicle Number</label>
+                        {{ form.vehicle_number }}
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Resident Being Visited <span class="req">*</span></label>
+                    {{ form.resident }}
+                    {% if form.resident.errors %}
+                    <div class="form-error">{{ form.resident.errors.0 }}</div>{% endif %}
+                </div>
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('logVisitorModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-bell"></i> Notify Resident &amp; Log
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>skeletonReveal(1200);</script>
+<script>
+{% if show_log_modal %}
+document.addEventListener('DOMContentLoaded', () => openModal('logVisitorModal'));
+{% endif %}
+</script>
 {% endblock %}
