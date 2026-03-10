@@ -1197,3 +1197,103 @@ table.data-table {
     .filter-actions { justify-content: flex-end; }
     .search-input  { min-width: unset; width: 100%; }
 }
+
+/* ── Hamburger button ── */
+.topbar-hamburger {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 18px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .18s;
+    flex-shrink: 0;
+}
+.topbar-hamburger:hover { background: var(--hover); color: var(--text-primary); }
+
+/* ── Sidebar overlay (mobile) ── */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+}
+.sidebar-overlay.active { display: block; }
+
+/* ── Mobile open state (used by sidebar.js) ── */
+.sidebar.mobile-open {
+    transform: translateX(0) !important;
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+    .sidebar { transform: translateX(-100%); transition: transform .25s ease; }
+    .sidebar.collapsed { transform: translateX(-100%); }
+    .main-content { margin-left: 0 !important; }
+}
+
+/* ── Sidebar desktop collapse ── */
+.sidebar {
+    transition: transform .25s ease;
+}
+.sidebar.collapsed {
+    transform: translateX(-100%);
+}
+.main-content {
+    transition: margin-left .25s ease;
+}
+.sidebar.collapsed ~ * .main-content,
+.admin-layout:has(.sidebar.collapsed) .main-content {
+    margin-left: 0;
+}
+
+/* ── Topbar hamburger always visible ── */
+.topbar-hamburger {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 18px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .18s, color .18s;
+    flex-shrink: 0;
+}
+.topbar-hamburger:hover {
+    background: rgba(255,255,255,.06);
+    color: #e2e8f0;
+}
+/* ── Skeleton Loading ── */
+.skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: 6px;
+}
+@keyframes skeleton-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Skeleton shapes */
+.skeleton-text  { height: 14px; margin-bottom: 8px; }
+.skeleton-title { height: 22px; width: 40%; margin-bottom: 12px; }
+.skeleton-stat  { height: 80px; border-radius: 12px; }
+.skeleton-row   { height: 48px; margin-bottom: 4px; border-radius: 6px; }
+.skeleton-badge { height: 22px; width: 70px; border-radius: 20px; display: inline-block; }
+.skeleton-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Hide real content while loading */
+.page-loading .real-content { display: none; }
+.page-loading .skeleton-content { display: block; }
+.skeleton-content { display: none; }

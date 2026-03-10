@@ -104,7 +104,7 @@ class GuardVisitorForm(forms.ModelForm):
         # Import here to avoid circular imports
         from core.models import User
         # Only show residents in the dropdown
-        self.fields["resident"].queryset = User.objects.filter(role="resident")
+        self.fields["resident"].queryset = User.objects.filter(role="Resident")
         self.fields["resident"].label = "Resident Being Visited"
 
 class AdminAddResidentForm(forms.Form):
@@ -250,7 +250,7 @@ class AdminPaymentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         from core.models import User
         self.fields["resident"].queryset = (
-            User.objects.filter(role="resident")
+            User.objects.filter(role="Resident")
             .order_by("first_name", "last_name")
         )
         self.fields["resident"].label      = "Resident"

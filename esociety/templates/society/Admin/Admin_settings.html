@@ -6,6 +6,43 @@
 {% block page_subtitle %}Manage society configuration and your account{% endblock %}
 
 {% block content %}
+
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-2">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+            </div>
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+                <div class="sk sk-label"></div><div class="sk sk-field"></div>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:20px;">
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div>
+                <div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div>
+            </div>
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-row"></div><div class="sk sk-row"></div>
+                <div class="sk sk-row"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
 <div class="two-col">
 
     <!-- Left column -->
@@ -206,6 +243,8 @@
     </div>
 </div>
 
+
+</div><!-- /real-content -->
 <!-- Add Facility Modal — uses {{ facility_form.field }} -->
 <div class="modal-overlay" id="addFacilityModal">
     <div class="modal">
@@ -244,6 +283,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>skeletonReveal(1500);</script>
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

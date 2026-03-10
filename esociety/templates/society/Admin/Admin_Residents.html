@@ -13,6 +13,25 @@
 
 {% block content %}
 
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-card">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-row" style="margin-bottom:18px;"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
+
 <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
     <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-users"></i></div>
         <div class="stat-info"><div class="stat-value">{{ total_residents }}</div><div class="stat-label">Total Residents</div></div></div>
@@ -112,6 +131,8 @@
     {% endif %}
 </div>
 
+
+</div><!-- /real-content -->
 <!-- Add Resident Modal — uses {{ add_form.field }} -->
 <div class="modal-overlay {% if show_add_modal %}open{% endif %}" id="addResidentModal">
     <div class="modal">
@@ -205,6 +226,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>skeletonReveal(1500);</script>
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

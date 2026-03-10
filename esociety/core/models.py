@@ -44,10 +44,10 @@ class User(AbstractBaseUser):
     is_admin = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    first_name = models.CharField(max_length=50,null=True)
-    last_name = models.CharField(max_length=50,null=True)
+    first_name = models.CharField(max_length=50,blank=True,default="")
+    last_name = models.CharField(max_length=50,blank=True,default="")
     gender = models.CharField(max_length=10,choices=gender_choice,default="male")
-    mobile_number = models.CharField(null=True)
+    mobile_number = models.CharField(blank=True,default="")
     unit_number = models.CharField(max_length=20, blank=True, default="")
     
     

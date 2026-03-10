@@ -48,8 +48,8 @@ from core.models import User
 def AdminDashboardView(request):
     today = date.today()
 
-    total_residents   = User.objects.filter(role="resident").count()
-    security_guards   = User.objects.filter(role="security").count()
+    total_residents   = User.objects.filter(role="Resident").count()
+    security_guards   = User.objects.filter(role="Securityguard").count()
     pending_complaints  = Complaint.objects.filter(status="pending").count()
     resolved_complaints = Complaint.objects.filter(status="resolved").count()
 
@@ -114,7 +114,7 @@ def AdminResidentsView(request):
     search_query  = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "all")
 
-    residents = User.objects.filter(role="resident").order_by("first_name")
+    residents = User.objects.filter(role="Resident").order_by("first_name")
 
     if search_query:
         residents = residents.filter(
@@ -169,11 +169,11 @@ def AdminResidentsView(request):
         "search_query":     search_query,
         "status_filter":    status_filter,
         "add_form":         add_form,
-        "total_residents":  User.objects.filter(role="resident").count(),
-        "active_residents": User.objects.filter(role="resident", is_active=True).count(),
-        "occupied_units":   User.objects.filter(role="resident", is_active=True)
+        "total_residents":  User.objects.filter(role="Resident").count(),
+        "active_residents": User.objects.filter(role="Resident", is_active=True).count(),
+        "occupied_units":   User.objects.filter(role="Resident", is_active=True)
                                 .exclude(unit_number="").exclude(unit_number__isnull=True).count(),
-        "security_guards":  User.objects.filter(role="security").count(),
+        "security_guards":  User.objects.filter(role="Securityguard").count(),
     }
     return render(request, "society/Admin/Admin_Residents.html", context)
 
@@ -192,7 +192,7 @@ def AdminAddResidentView(request):
                     password=cd["password"],
                     first_name=cd["first_name"],
                     last_name=cd["last_name"],
-                    role="resident",
+                    role="Resident",
                 )
                 if hasattr(user, "unit_number"):
                     user.unit_number = cd["unit_number"]
@@ -217,11 +217,11 @@ def AdminAddResidentView(request):
                 "status_filter":    "all",
                 "add_form":         form,          # form WITH errors — modal will re-open via JS
                 "show_add_modal":   True,          # flag so template auto-opens the modal
-                "total_residents":  User.objects.filter(role="resident").count(),
-                "active_residents": User.objects.filter(role="resident", is_active=True).count(),
-                "occupied_units":   User.objects.filter(role="resident", is_active=True)
+                "total_residents":  User.objects.filter(role="Resident").count(),
+                "active_residents": User.objects.filter(role="Resident", is_active=True).count(),
+                "occupied_units":   User.objects.filter(role="Resident", is_active=True)
                                         .exclude(unit_number="").exclude(unit_number__isnull=True).count(),
-                "security_guards":  User.objects.filter(role="security").count(),
+                "security_guards":  User.objects.filter(role="Securityguard").count(),
             }
             return render(request, "society/Admin/Admin_Residents.html", context)
 
@@ -230,7 +230,7 @@ def AdminAddResidentView(request):
 
 @role_required(allowed_roles=["Admin"])
 def AdminToggleResidentView(request, resident_id):
-    resident = get_object_or_404(User, id=resident_id, role="resident")
+    resident = get_object_or_404(User, id=resident_id, role="Resident")
     resident.is_active = not resident.is_active
     resident.save()
     status = "activated" if resident.is_active else "deactivated"
@@ -403,7 +403,7 @@ def AdminFinanceView(request):
         defaulters = []
         for uid in defaulter_ids:
             try:
-                user = User.objects.get(id=uid, role="resident")
+                user = User.objects.get(id=uid, role="Resident")
                 pending_pmts  = Payment.objects.filter(resident=user, payment_status="pending")
                 total_due     = pending_pmts.aggregate(t=Sum("amount"))["t"] or 0
                 last_pay      = Payment.objects.filter(resident=user, payment_status="completed").order_by("-payment_date").first()
@@ -676,7 +676,7 @@ def AdminExportAllView(request):
 
     writer.writerow(["=== RESIDENTS ==="])
     writer.writerow(["Name", "Email", "Unit", "Mobile", "Active", "Complaints", "Pending Payments", "Joined"])
-    for r in User.objects.filter(role="resident").order_by("first_name"):
+    for r in User.objects.filter(role="Resident").order_by("first_name"):
         writer.writerow([
             f"{r.first_name} {r.last_name}",
             r.email,
@@ -718,7 +718,7 @@ def AdminVisitorLogsView(request):
 
     visitors = (
         Visitor.objects
-        .select_related("Resident", "guard")
+        .select_related("resident", "guard")
         .order_by("-created_at")
     )
 
@@ -787,24 +787,42 @@ def AdminVisitorLogsView(request):
 
 
 # ================================================================
-# RESIDENT VIEWS  (unchanged from original)
+# RESIDENT VIEWS  
+# ================================================================
+
+# ================================================================
+# RESIDENT VIEWS — Updated
 # ================================================================
 
 @role_required(allowed_roles=["Resident"])
 def ResidentDashboardView(request):
     user = request.user
-    complaints      = Complaint.objects.filter(resident=user)
-    total_complaints    = complaints.count()
-    resolved_complaints = complaints.filter(status="resolved").count()
+    user_complaints     = Complaint.objects.filter(resident=user)
+    total_complaints    = user_complaints.count()
+    resolved_complaints = user_complaints.filter(status="resolved").count()
     pending_visitors    = Visitor.objects.filter(
         resident=user, registered_by="guard", approval_status="pending"
     ).count()
+    active_booking = FacilityBooking.objects.filter(
+        booked_by=user, booking_status="confirmed"
+    ).count()
+
+    # Recent notices for resident
+    from .models import Notice, Payment
+    recent_notices  = Notice.objects.filter(
+        target_audience__in=["all", "resident"]
+    ).order_by("-created_at")[:5]
+
+    recent_payments = Payment.objects.filter(resident=user).order_by("-created_at")[:5]
+
     context = {
         "total_complaints":    total_complaints,
         "resolved_complaints": resolved_complaints,
-        "active_booking":      0,
+        "active_booking":      active_booking,
         "pending_visitors":    pending_visitors,
         "maintenance_amount":  0,
+        "recent_notices":      recent_notices,
+        "recent_payments":     recent_payments,
     }
     return render(request, "society/Resident/Resident_dashboard.html", context)
 
@@ -829,7 +847,7 @@ def visitor_pass(request):
         resident=request.user, registered_by="resident"
     ).order_by("-created_at")
 
-    return render(request, "society/Resident/visitor_approval.html", {
+    return render(request, "society/Resident/visitor_pass.html", {
         "form": form, "visitors": visitors
     })
 
@@ -878,37 +896,139 @@ def visitor_decision(request, visitor_id, decision):
 
 @role_required(allowed_roles=["Resident"])
 def complaints(request):
-    if isinstance(request.user, User):
-        user = request.user
-    else:
-        user = User.objects.get(email=request.user)
-
+    user = request.user
     if request.method == "POST":
         form = ComplaintForm(request.POST)
         if form.is_valid():
             complaint          = form.save(commit=False)
             complaint.resident = user
             complaint.save()
+            messages.success(request, "Complaint submitted successfully.")
             return redirect("complaints")
     else:
         form = ComplaintForm()
 
     complaints_qs = Complaint.objects.filter(resident=user).order_by("-created_at")
-    return render(request, "society/Resident/Resident_complaints.html", {
-        "form": form, "complaints": complaints_qs
-    })
+
+    context = {
+        "form":            form,
+        "complaints":      complaints_qs,
+        "pending_count":   complaints_qs.filter(status="pending").count(),
+        "inprogress_count":complaints_qs.filter(status="in_progress").count(),
+        "resolved_count":  complaints_qs.filter(status="resolved").count(),
+    }
+    return render(request, "society/Resident/Resident_complaints.html", context)
 
 
 @role_required(allowed_roles=["Resident"])
 def facility_booking(request):
-    return render(request, "society/Resident/booking.html")
+    facilities = Facility.objects.all().order_by("facility_name")
+    bookings   = FacilityBooking.objects.filter(
+        booked_by=request.user
+    ).select_related("facility").order_by("-created_at")
+    return render(request, "society/Resident/booking.html", {
+        "facilities": facilities,
+        "bookings":   bookings,
+    })
 
 
 @role_required(allowed_roles=["Resident"])
 def community_notice(request):
-    return render(request, "society/Resident/Resident_community.html")
+    from .models import Notice, Poll, PollVote
+    notices = Notice.objects.filter(
+        target_audience__in=["all", "resident"]
+    ).order_by("-created_at")
+
+    polls_qs = Poll.objects.filter(status="active").order_by("-created_at")
+
+    # Annotate each poll with user's vote and percentages
+    polls = []
+    for poll in polls_qs:
+        total   = poll.votes.count()
+        yes_ct  = poll.votes.filter(vote="yes").count()
+        no_ct   = poll.votes.filter(vote="no").count()
+        try:
+            user_vote = poll.votes.get(voter=request.user).vote
+        except PollVote.DoesNotExist:
+            user_vote = None
+        poll.total_votes = total
+        poll.yes_pct     = round((yes_ct / total * 100) if total else 0)
+        poll.no_pct      = round((no_ct  / total * 100) if total else 0)
+        poll.user_vote   = user_vote
+        polls.append(poll)
+
+    return render(request, "society/Resident/Resident_community.html", {
+        "notices": notices,
+        "polls":   polls,
+    })
 
 
+@role_required(allowed_roles=["Resident"])
+def resident_settings(request):
+    return render(request, "society/Resident/Resident_settings.html")
+
+
+@role_required(allowed_roles=["Resident"])
+def resident_change_password(request):
+    if request.method == "POST":
+        current  = request.POST.get("current_password", "")
+        new_pwd  = request.POST.get("new_password", "")
+        confirm  = request.POST.get("confirm_password", "")
+
+        if not request.user.check_password(current):
+            messages.error(request, "Current password is incorrect.")
+        elif new_pwd != confirm:
+            messages.error(request, "New passwords do not match.")
+        elif len(new_pwd) < 8:
+            messages.error(request, "New password must be at least 8 characters.")
+        else:
+            request.user.set_password(new_pwd)
+            request.user.save()
+            update_session_auth_hash(request, request.user)
+            messages.success(request, "Password changed successfully.")
+
+    return redirect("resident_settings")
+
+@role_required(allowed_roles=["Resident"])
+def resident_payments(request):
+    payments = Payment.objects.filter(resident=request.user).order_by("-created_at")
+    return render(request, "society/Resident/Resident_payments.html", {
+        "payments": payments,
+    })
+
+
+@role_required(allowed_roles=["Resident"])
+def resident_notifications(request):
+    notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
+    unread_count  = notifications.filter(is_read=False).count()
+    # Mark all as read when page is opened
+    notifications.filter(is_read=False).update(is_read=True)
+    return render(request, "society/Resident/Resident_notifications.html", {
+        "notifications":    notifications,
+        "unread_count":     unread_count,
+    })
+
+@role_required(allowed_roles=["Resident"])
+def resident_poll_vote(request, poll_id, vote):
+    poll = get_object_or_404(Poll, id=poll_id, status="active")
+
+    # Prevent duplicate votes
+    already_voted = PollVote.objects.filter(poll=poll, voter=request.user).exists()
+    if already_voted:
+        messages.warning(request, "You have already voted on this poll.")
+        return redirect("community_notice")
+
+    if vote in ["yes", "no"]:
+        PollVote.objects.create(
+            poll=poll,
+            voter=request.user,
+            vote=vote,
+        )
+        messages.success(request, f"Your vote '{vote}' has been recorded.")
+    else:
+        messages.error(request, "Invalid vote.")
+
+    return redirect("community_notice")
 # ================================================================
 # SECURITY GUARD VIEWS  (unchanged from original)
 # ================================================================

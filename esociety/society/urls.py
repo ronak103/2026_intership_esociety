@@ -9,9 +9,14 @@ urlpatterns = [
     path("complaints/",views.complaints,name="complaints"),
     path("facility_booking/",views.facility_booking,name="facility_booking"),
     path("community_notice/",views.community_notice,name="community_notice"),
-    path("admin/visitor-logs/",views.AdminVisitorLogsView,name="admin_visitor_logs"),
+   
     path("resident/visitor-approval/",views.visitor_approvals,name="resident_visitor_approval"),
     path("resident/visitor/<int:visitor_id>/decision/<str:decision>/",views.visitor_decision,name="visitor_decision"),
+    path("resident/payments/", views.resident_payments,name="resident_payments"),
+    path("resident/notifications/",views.resident_notifications, name="resident_notifications"),
+    path("resident/settings/",views.resident_settings,name="resident_settings"),
+    path("resident/changepassword/",views.resident_change_password,name="resident_change_password"),
+    path("resident/poll/<int:poll_id>/vote/<str:vote>/", views.resident_poll_vote, name="poll_vote"),
     path("guard/log-visitor/",views.guard_log_visitor,name="guard_log_visitor"),
     path("guard/visitor/<int:visitor_id>/entry/<str:action>/", views.guard_update_entry,name="guard_update_entry"),
 
@@ -19,9 +24,12 @@ urlpatterns = [
     path("admin/residents/add/",views.AdminAddResidentView,name="admin_add_resident"),
     path("admin/residents/<int:resident_id>/toggle/",views.AdminToggleResidentView, name="admin_toggle_resident"),
 
+
     # Complaints
     path("admin/complaints/", views.AdminComplaintsView, name="admin_complaints"),
     path("admin/complaints/update/",views.AdminUpdateComplaintView, name="admin_update_complaint"),
+
+    path("admin/visitor-logs/",views.AdminVisitorLogsView,name="admin_visitor_logs"),
 
     # Finance
     path("admin/finance/", views.AdminFinanceView,name="admin_finance"),

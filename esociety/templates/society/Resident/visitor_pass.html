@@ -1,122 +1,109 @@
-{% extends "base.html" %}
+{% extends "society/Resident/Resident_base.html" %}
 {% load static %}
+
+{% block title %}Visitor Pass — SocietySync{% endblock %}
+{% block page_title %}Visitor Pass{% endblock %}
 
 {% block content %}
 
-<link rel="stylesheet" href="{% static 'css/visitor.css' %}">
-
-<div class="section-header">
-    <h2 class="section-title">Visitor Pass</h2>
-    <p class="section-sub">Pre-register visitors before they arrive — the guard will see them as pre-approved.</p>
-</div>
-
-{% if messages %}
-    {% for msg in messages %}
-        <div style="
-            padding: 12px 18px; border-radius: 8px; margin-bottom: 16px;
-            background: #d1fae5; color: #065f46;
-            border-left: 4px solid #10b981;
-        ">{{ msg }}</div>
-    {% endfor %}
-{% endif %}
-
-<!-- Create Visitor Pass Form -->
+<!-- Create Pass Card -->
 <div class="card">
-    <p class="card-title">Create Visitor Pass</p>
-
-    <form method="POST">
-        {% csrf_token %}
-
-        <div class="form-row">
-
-            <div>
-                <label class="inner-label">Visitor Name</label>
-                {{ form.visitor_name }}
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-id-badge"></i> Create Visitor Pass</span>
+    </div>
+    <div class="card-body">
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">
+            Pre-register your visitor before they arrive. The security guard will see them as pre-approved.
+        </p>
+        <form method="POST" novalidate>
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Visitor Name <span class="req">*</span></label>
+                    {{ form.visitor_name }}
+                    {% if form.visitor_name.errors %}<span class="field-error">{{ form.visitor_name.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mobile Number <span class="req">*</span></label>
+                    {{ form.mobile_number }}
+                    {% if form.mobile_number.errors %}<span class="field-error">{{ form.mobile_number.errors.0 }}</span>{% endif %}
+                </div>
             </div>
-
-            <div>
-                <label class="inner-label">Mobile Number</label>
-                {{ form.mobile_number }}
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Visitor Type <span class="req">*</span></label>
+                    {{ form.visitor_type }}
+                    {% if form.visitor_type.errors %}<span class="field-error">{{ form.visitor_type.errors.0 }}</span>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Expected Date <span class="req">*</span></label>
+                    {{ form.expected_date }}
+                    {% if form.expected_date.errors %}<span class="field-error">{{ form.expected_date.errors.0 }}</span>{% endif %}
+                </div>
             </div>
-
-            <div>
-                <label class="inner-label">Visitor Type</label>
-                {{ form.visitor_type }}
-            </div>
-
-            <div>
-                <label class="inner-label">Expected Date</label>
-                {{ form.expected_date }}
-            </div>
-
-            <div>
-                <label class="inner-label">Vehicle Number (optional)</label>
+            <div class="form-group" style="max-width:320px;">
+                <label class="form-label">Vehicle Number <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
                 {{ form.vehicle_number }}
             </div>
-
-        </div>
-
-        <button type="submit" class="btn-primary">
-            Generate Visitor Pass
-        </button>
-
-    </form>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-id-badge"></i> Generate Visitor Pass
+            </button>
+        </form>
+    </div>
 </div>
-
 
 <!-- My Pre-registered Visitors -->
 <div class="card">
-    <p class="card-title">My Pre-registered Visitors</p>
-
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Mobile</th>
-                <th>Type</th>
-                <th>Expected Date</th>
-                <th>Approval</th>
-                <th>Entry Status</th>
-            </tr>
-        </thead>
-
-        <tbody>
-        {% for visitor in visitors %}
-            <tr>
-                <td>{{ visitor.visitor_name }}</td>
-                <td>{{ visitor.mobile_number }}</td>
-                <td>{{ visitor.get_visitor_type_display }}</td>
-                <td>{{ visitor.expected_date }}</td>
-
-                <!-- Approval: always "Pre-approved" for resident-created passes -->
-                <td>
-                    <span class="badge badge-success">✅ Pre-approved</span>
-                </td>
-
-                <!-- Entry status -->
-                <td>
-                    {% if visitor.entry_status == "inside" %}
-                        <span class="badge badge-success">Inside</span>
-                    {% elif visitor.entry_status == "exited" %}
-                        <span class="badge" style="background:#e5e7eb;color:#374151;">Exited</span>
-                    {% elif visitor.entry_status == "denied" %}
-                        <span class="badge badge-danger">Denied</span>
-                    {% else %}
-                        <span class="badge badge-warning">Waiting</span>
-                    {% endif %}
-                </td>
-            </tr>
-
-        {% empty %}
-            <tr>
-                <td colspan="6" style="text-align:center; padding:20px; color:#9ca3af;">
-                    No visitor passes created yet.
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-
-    </table>
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-list"></i> My Pre-registered Visitors</span>
+        <span class="badge badge-gray">{{ visitors.count }} total</span>
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Visitor</th>
+                    <th>Type</th>
+                    <th>Expected Date</th>
+                    <th>Vehicle</th>
+                    <th>Approval</th>
+                    <th>Entry Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for v in visitors %}
+                <tr>
+                    <td>
+                        <div style="font-weight:600;">{{ v.visitor_name }}</div>
+                        <div style="font-size:12px;color:var(--text-muted);">{{ v.mobile_number }}</div>
+                    </td>
+                    <td><span class="badge badge-gray">{{ v.get_visitor_type_display }}</span></td>
+                    <td style="font-size:13px;color:var(--text-muted);">{{ v.expected_date|date:"d M Y" }}</td>
+                    <td style="font-size:13px;font-family:var(--font-mono);">{{ v.vehicle_number|default:"—" }}</td>
+                    <td><span class="badge badge-success"><i class="fas fa-check"></i> Pre-approved</span></td>
+                    <td>
+                        {% if v.entry_status == "inside" %}
+                            <span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
+                        {% elif v.entry_status == "exited" %}
+                            <span class="badge badge-gray">Exited</span>
+                        {% elif v.entry_status == "denied" %}
+                            <span class="badge badge-danger">Denied</span>
+                        {% else %}
+                            <span class="badge badge-warning">Waiting</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% empty %}
+                <tr><td colspan="6">
+                    <div class="empty-state">
+                        <i class="fas fa-id-badge"></i>
+                        <p>No visitor passes created yet.</p>
+                    </div>
+                </td></tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 {% endblock %}

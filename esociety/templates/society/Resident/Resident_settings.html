@@ -1,0 +1,114 @@
+{% extends "society/Resident/Resident_base.html" %}
+{% load static %}
+
+{% block title %}Settings — SocietySync{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+
+<div class="grid-2">
+
+    <!-- Profile Settings -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-user-circle"></i> My Profile</span>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid var(--border);">
+                <div style="
+                    width:64px;height:64px;border-radius:50%;
+                    background:var(--primary);color:#fff;
+                    display:flex;align-items:center;justify-content:center;
+                    font-size:22px;font-weight:700;
+                ">
+                    {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                </div>
+                <div>
+                    <div style="font-size:17px;font-weight:700;">{{ request.user.first_name }} {{ request.user.last_name }}</div>
+                    <div style="font-size:13px;color:var(--text-muted);">{{ request.user.email }}</div>
+                    <span class="badge badge-cyan" style="margin-top:4px;">Resident</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="inner-input" value="{{ request.user.first_name }} {{ request.user.last_name }}" readonly>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="inner-input" value="{{ request.user.email }}" readonly>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Unit Number</label>
+                    <input type="text" class="inner-input" value="{{ request.user.unit_number|default:'—' }}" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mobile Number</label>
+                    <input type="text" class="inner-input" value="{{ request.user.mobile_number|default:'—' }}" readonly>
+                </div>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);">
+                <i class="fas fa-info-circle"></i>
+                To update your profile details, please contact the society admin.
+            </p>
+        </div>
+    </div>
+
+    <!-- Change Password -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-lock"></i> Change Password</span>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{% url 'resident_change_password' %}" novalidate>
+                {% csrf_token %}
+                <div class="form-group">
+                    <label class="form-label">Current Password <span class="req">*</span></label>
+                    <input type="password" name="current_password" class="inner-input" placeholder="Enter current password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">New Password <span class="req">*</span></label>
+                    <input type="password" name="new_password" class="inner-input" placeholder="Enter new password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm New Password <span class="req">*</span></label>
+                    <input type="password" name="confirm_password" class="inner-input" placeholder="Confirm new password">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Update Password
+                </button>
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<!-- Account Info -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-info-circle"></i> Account Information</span>
+    </div>
+    <div class="card-body">
+        <div class="form-row form-row-3">
+            <div>
+                <div class="form-label">Member Since</div>
+                <div style="font-weight:600;">{{ request.user.date_joined|date:"d M Y" }}</div>
+            </div>
+            <div>
+                <div class="form-label">Account Status</div>
+                {% if request.user.is_active %}
+                    <span class="badge badge-success">Active</span>
+                {% else %}
+                    <span class="badge badge-danger">Inactive</span>
+                {% endif %}
+            </div>
+            <div>
+                <div class="form-label">Role</div>
+                <span class="badge badge-cyan">{{ request.user.role }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

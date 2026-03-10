@@ -12,6 +12,29 @@
 
 {% block content %}
 
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-grid-2">
+        <div>
+            <div class="sk sk-title"></div>
+            <div class="sk sk-notice"></div><div class="sk sk-notice"></div>
+            <div class="sk sk-notice"></div><div class="sk sk-notice"></div>
+        </div>
+        <div>
+            <div class="sk sk-title"></div>
+            <div class="sk sk-poll"></div><div class="sk sk-poll"></div>
+            <div class="sk sk-poll"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
+
 <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
     <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-bullhorn"></i></div>
         <div class="stat-info"><div class="stat-value">{{ total_notices }}</div><div class="stat-label">Total Notices</div></div></div>
@@ -101,6 +124,8 @@
 
 </div>
 
+
+</div><!-- /real-content -->
 <!-- Post Notice Modal — uses {{ notice_form.field }} -->
 <div class="modal-overlay" id="addNoticeModal">
     <div class="modal">
@@ -170,6 +195,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>skeletonReveal(1500);</script>
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

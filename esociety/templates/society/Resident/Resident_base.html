@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+    // Show skeleton on page load
+    document.body.classList.add('page-loading');
+
+    // Remove skeleton once page is fully ready
+    window.addEventListener('load', function () {
+        document.body.classList.remove('page-loading');
+    });
+</script>
+
+    <title>{% block title %}SocietySync — Resident{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/resident.css' %}">
+</head>
+<body>
+
+<!-- Mobile overlay (used by sidebar.js) -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        {% include "society/Resident/Resident_sidebar.html" %}
+    </aside>
+
+    <!-- Main -->
+    <div class="main-wrap">
+
+        <!-- Topbar -->
+        <header class="topbar">
+            <button class="topbar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="topbar-left">
+                <div class="topbar-breadcrumb">
+                    <span class="breadcrumb-page">{% block page_title %}Dashboard{% endblock %}</span>
+                </div>
+            </div>
+            <div class="topbar-right">
+                {% block topbar_actions %}{% endblock %}
+                <div class="topbar-user">
+                    <div class="topbar-avatar">
+                        {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                    </div>
+                    <span class="topbar-name">{{ request.user.first_name }}</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Messages -->
+        {% if messages %}
+        <div class="messages-wrap">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                <i class="fas fa-{% if 'success' in message.tags %}check-circle{% elif 'error' in message.tags %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button class="alert-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+</div>
+
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach(a => a.remove());
+    }, 5000);
+</script>
+<script src="{% static 'js/sidebar.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

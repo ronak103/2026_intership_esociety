@@ -7,6 +7,25 @@
 
 {% block content %}
 
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-card">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-row" style="height:54px;margin-bottom:18px;"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
+
 <!-- ── SECTION HEADER ── -->
 <div class="section-header">
   <h2 class="section-title">Visitor Logs</h2>
@@ -272,8 +291,10 @@
 
 </div><!-- /card -->
 
+</div><!-- /real-content -->
+
 {% endblock %}
 
 {% block extra_js %}
-  <script src="{% static 'js/visitor_log.js' %}"></script>
+<script>skeletonReveal(1500);</script>
 {% endblock %}

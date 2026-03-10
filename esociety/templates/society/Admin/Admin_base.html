@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -13,13 +12,65 @@
     <!-- Admin CSS -->
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 
-    
+    {% block extra_css %}{% endblock %}
+
+    <!-- Skeleton CSS — must be in <head> so it applies before first paint -->
+    <style>
+        @keyframes sk-shimmer {
+            0%   { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        .sk {
+            background: linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%);
+            background-size: 200% 100%;
+            animation: sk-shimmer 1.5s infinite;
+            border-radius: 8px;
+            display: block;
+        }
+        .sk-stat   { height:88px;  border-radius:14px; }
+        .sk-title  { height:20px;  width:40%; margin-bottom:18px; }
+        .sk-row    { height:44px;  margin-bottom:7px;  border-radius:8px; }
+        .sk-row-sm { height:32px;  margin-bottom:7px;  border-radius:8px; }
+        .sk-notice { height:82px;  border-radius:12px; margin-bottom:12px; }
+        .sk-poll   { height:112px; border-radius:12px; margin-bottom:12px; }
+        .sk-card   { border-radius:14px; padding:22px; background:#fff;
+                     box-shadow:0 1px 6px rgba(0,0,0,.07); margin-bottom:20px; }
+        .sk-label  { height:12px; width:32%; border-radius:6px; margin-bottom:7px; }
+        .sk-field  { height:38px; border-radius:8px; margin-bottom:16px; }
+        .sk-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+        .sk-grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:20px; }
+        .sk-grid-w { display:grid; grid-template-columns:2fr 1fr; gap:20px; margin-bottom:20px; }
+        @media(max-width:900px){
+            .sk-grid-4 { grid-template-columns:repeat(2,1fr); }
+            .sk-grid-2,.sk-grid-w { grid-template-columns:1fr; }
+        }
+        /* real-content hidden while skeleton is showing */
+        .sk-active .sk-wrap      { display:block !important; }
+        .sk-active .real-content { display:none  !important; }
+        .sk-wrap      { display:none; }
+        .real-content { display:block; }
+        /* smooth reveal */
+        .real-content.sk-revealed {
+            animation: skFadeIn .5s ease forwards;
+        }
+        @keyframes skFadeIn {
+            from { opacity:0; transform:translateY(8px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+    </style>
+
+    <!-- Hide page-body immediately — before browser paints anything -->
+    <script>document.addEventListener('DOMContentLoaded',function(){var pb=document.querySelector('.page-body');if(pb)pb.classList.add('sk-active');});</script>
 </head>
 <body>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
 <div class="admin-layout">
 
     <!-- ── Sidebar ── -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
         {% include 'society/Admin/Admin_sidebar.html' %}
     </aside>
 
@@ -28,9 +79,14 @@
 
         <!-- Topbar -->
         <header class="topbar">
-            <div class="topbar-left">
-                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
-                <p>{% block page_subtitle %}SocietySync Admin Panel{% endblock %}</p>
+            <div class="topbar-left" style="display:flex;align-items:center;gap:14px;">
+                <button class="topbar-hamburger" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div>
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p>{% block page_subtitle %}SocietySync Admin Panel{% endblock %}</p>
+                </div>
             </div>
             <div class="topbar-right">
                 {% block topbar_actions %}{% endblock %}
@@ -57,6 +113,10 @@
     </div>
 </div>
 
+<!-- Hamburger toggle -->
+<script src="{% static 'js/sidebar.js' %}"></script>
+<!-- Admin-wide JS -->
+<script src="{% static 'js/admin.js' %}"></script>
 {% block extra_js %}{% endblock %}
 </body>
 </html>

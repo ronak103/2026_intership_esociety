@@ -11,6 +11,25 @@
 
 {% block content %}
 
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-card">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-row" style="margin-bottom:18px;"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
+
 <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
     <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-clock"></i></div>
         <div class="stat-info"><div class="stat-value">{{ pending_count }}</div><div class="stat-label">Pending</div></div></div>
@@ -110,6 +129,8 @@
     {% endif %}
 </div>
 
+
+</div><!-- /real-content -->
 <!-- Update Complaint Modal — uses {{ update_form.field }} -->
 <div class="modal-overlay" id="updateComplaintModal">
     <div class="modal">
@@ -142,6 +163,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>skeletonReveal(1500);</script>
 <script>
 function openModal(id)  { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }

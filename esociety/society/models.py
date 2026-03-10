@@ -32,7 +32,7 @@ class Visitor(models.Model):
     # ── NEW: tracks who created this visitor record ──────────────
     REGISTERED_BY_CHOICES = [
         ("resident", "Resident"),   # resident pre-registered (visitor pass)
-        ("guard", "Guard"),         # guard logged on arrival
+        ("Securityguard", "Securityguard"),         # guard logged on arrival
     ]
 
     visitor_name = models.CharField(max_length=100)
@@ -45,7 +45,7 @@ class Visitor(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="visitors",
-        limit_choices_to={"role": "resident"},
+        limit_choices_to={"role": "Resident"},
     )
 
     expected_date = models.DateField()
@@ -77,7 +77,7 @@ class Visitor(models.Model):
         null=True,
         blank=True,
         related_name="checked_visitors",
-        limit_choices_to={"role": "security"},
+        limit_choices_to={"role": "Securityguard"},
     )
 
     # ── NEW: who created this visitor record ─────────────────────
@@ -86,7 +86,7 @@ class Visitor(models.Model):
     registered_by = models.CharField(
         max_length=20,
         choices=REGISTERED_BY_CHOICES,
-        default="resident",
+        default="Resident",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -120,7 +120,7 @@ class Complaint(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="complaints",
-        limit_choices_to={"role": "resident"},
+        limit_choices_to={"role": "Resident"},
     )
 
     complaint_type = models.CharField(max_length=100)
@@ -201,7 +201,7 @@ class FacilityBooking(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="facility_bookings",
-        limit_choices_to={"role": "resident"},
+        limit_choices_to={"role": "Resident"},
     )
 
     booking_date = models.DateField()
@@ -251,7 +251,7 @@ class Payment(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="payments",
-        limit_choices_to={"role": "resident"},
+        limit_choices_to={"role": "Resident"},
     )
 
     amount = models.DecimalField(max_digits=10, decimal_places=2)
@@ -301,7 +301,7 @@ class Notice(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        limit_choices_to={"role": "admin"},
+        limit_choices_to={"role": "Admin"},
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -398,7 +398,7 @@ class Poll(models.Model):
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        limit_choices_to={"role": "admin"},
+        limit_choices_to={"role": "Admin"},
     )
 
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="active")
@@ -431,7 +431,7 @@ class PollVote(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="poll_votes",
-        limit_choices_to={"role": "resident"},
+        limit_choices_to={"role": "Resident"},
     )
 
     vote = models.CharField(max_length=10, choices=VOTE_CHOICES)

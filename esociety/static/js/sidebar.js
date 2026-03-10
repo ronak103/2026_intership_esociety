@@ -1,7 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const sidebar = document.getElementById('sidebar');
-    const toggleBtn = document.getElementById('sidebarToggle');
-    const overlay = document.getElementById('sidebarOverlay');
+    const sidebar    = document.getElementById('sidebar');
+    const toggleBtn  = document.getElementById('sidebarToggle');
+    const overlay    = document.getElementById('sidebarOverlay');
+    // Support both admin (.main-content) and resident (.main-wrap) layouts
+    const mainWrap   = document.querySelector('.main-wrap') || document.querySelector('.main-content');
     const MOBILE_BREAKPOINT = 1024;
 
     if (!sidebar || !toggleBtn) return;
@@ -14,9 +16,17 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleBtn.addEventListener('click', function () {
         if (isMobile()) {
             sidebar.classList.toggle('mobile-open');
-            overlay.classList.toggle('active');
+            if (overlay) overlay.classList.toggle('active');
         } else {
             sidebar.classList.toggle('collapsed');
+            // Shift main content in/out on desktop
+            if (mainWrap) {
+                if (sidebar.classList.contains('collapsed')) {
+                    mainWrap.style.marginLeft = '0';
+                } else {
+                    mainWrap.style.marginLeft = '';  // revert to CSS default
+                }
+            }
         }
     });
 
@@ -35,7 +45,7 @@ document.addEventListener('DOMContentLoaded', function () {
         resizeTimer = setTimeout(function () {
             if (!isMobile()) {
                 sidebar.classList.remove('mobile-open');
-                overlay.classList.remove('active');
+                if (overlay) overlay.classList.remove('active');
             }
         }, 150);
     });
@@ -44,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('mobile-open')) {
             sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
+            if (overlay) overlay.classList.remove('active');
         }
     });
 });

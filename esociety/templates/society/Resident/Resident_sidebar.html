@@ -34,7 +34,6 @@
                 </a>
             </li>
 
-            <!-- FEATURE 1: Pre-register visitors in advance -->
             <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'visitor_pass' %}active{% endif %}">
                 <a href="{% url 'visitor_pass' %}" class="sidebar-link">
                     <i class="fas fa-id-badge sidebar-icon"></i>
@@ -42,20 +41,22 @@
                 </a>
             </li>
 
-            <!-- FEATURE 2: Approve guard-logged visitors -->
             <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_visitor_approval' %}active{% endif %}">
                 <a href="{% url 'resident_visitor_approval' %}" class="sidebar-link">
                     <i class="fas fa-user-check sidebar-icon"></i>
                     <span class="sidebar-link-text">
                         Visitor Approvals
                         {% if pending_visitors > 0 %}
-                        <span style="
-                            background:#ef4444; color:white;
-                            border-radius:999px; font-size:11px;
-                            padding:1px 7px; margin-left:6px; font-weight:700;
-                        ">{{ pending_visitors }}</span>
+                        <span style="background:#ef4444;color:white;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700;">{{ pending_visitors }}</span>
                         {% endif %}
                     </span>
+                </a>
+            </li>
+
+            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_payments' %}active{% endif %}">
+                <a href="{% url 'resident_payments' %}" class="sidebar-link">
+                    <i class="fas fa-receipt sidebar-icon"></i>
+                    <span class="sidebar-link-text">My Payments</span>
                 </a>
             </li>
 
@@ -66,8 +67,20 @@
                 </a>
             </li>
 
-            <li class="sidebar-menu-item">
-                <a href="#" class="sidebar-link">
+            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_notifications' %}active{% endif %}">
+                <a href="{% url 'resident_notifications' %}" class="sidebar-link">
+                    <i class="fas fa-bell sidebar-icon"></i>
+                    <span class="sidebar-link-text">
+                        Notifications
+                        {% if unread_notifications > 0 %}
+                        <span style="background:#ef4444;color:white;border-radius:999px;font-size:11px;padding:1px 7px;margin-left:6px;font-weight:700;">{{ unread_notifications }}</span>
+                        {% endif %}
+                    </span>
+                </a>
+            </li>
+
+            <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'resident_settings' %}active{% endif %}">
+                <a href="{% url 'resident_settings' %}" class="sidebar-link">
                     <i class="fas fa-cog sidebar-icon"></i>
                     <span class="sidebar-link-text">Settings</span>
                 </a>

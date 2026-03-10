@@ -1,5 +1,4 @@
-{% extends 'society/Admin/Admin_base.html'%}
-
+{% extends 'society/Admin/Admin_base.html' %}
 {% load static %}
 
 {% block title %}Dashboard — SocietySync Admin{% endblock %}
@@ -8,237 +7,237 @@
 
 {% block content %}
 
-<!-- ── KPI Stats ── -->
-<div class="stats-grid">
-    <div class="stat-card blue">
-        <div class="stat-icon blue"><i class="fas fa-users"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ total_residents }}</div>
-            <div class="stat-label">Total Residents</div>
-            <div class="stat-sub"><span class="up"><i class="fas fa-arrow-up"></i> Active</span> members</div>
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-grid-w">
+        <div class="sk-card">
+            <div class="sk sk-title"></div>
+            <div class="sk sk-row"></div><div class="sk sk-row"></div>
+            <div class="sk sk-row"></div><div class="sk sk-row"></div><div class="sk sk-row"></div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div>
+            </div>
+            <div class="sk-card">
+                <div class="sk sk-title"></div>
+                <div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div><div class="sk sk-row-sm"></div>
+            </div>
         </div>
     </div>
-    <div class="stat-card amber">
-        <div class="stat-icon amber"><i class="fas fa-exclamation-circle"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ pending_complaints }}</div>
-            <div class="stat-label">Pending Complaints</div>
-            <div class="stat-sub">{{ resolved_complaints }} resolved total</div>
+    <div class="sk-grid-2">
+        <div class="sk-card">
+            <div class="sk sk-title"></div>
+            <div class="sk sk-row"></div><div class="sk sk-row"></div><div class="sk sk-row"></div><div class="sk sk-row"></div>
         </div>
-    </div>
-    <div class="stat-card green">
-        <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">₹{{ total_collected|floatformat:0 }}</div>
-            <div class="stat-label">Revenue (This Month)</div>
-            <div class="stat-sub">{{ pending_payments }} payments pending</div>
-        </div>
-    </div>
-    <div class="stat-card cyan">
-        <div class="stat-icon cyan"><i class="fas fa-clipboard-list"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ today_visitors }}</div>
-            <div class="stat-label">Today's Visitors</div>
-            <div class="stat-sub">{{ inside_visitors }} currently inside</div>
-        </div>
-    </div>
-    <div class="stat-card purple">
-        <div class="stat-icon purple"><i class="fas fa-bullhorn"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ total_notices }}</div>
-            <div class="stat-label">Active Notices</div>
-            <div class="stat-sub">{{ total_polls }} polls running</div>
-        </div>
-    </div>
-    <div class="stat-card red">
-        <div class="stat-icon red"><i class="fas fa-shield-alt"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ security_guards }}</div>
-            <div class="stat-label">Security Guards</div>
-            <div class="stat-sub">On-duty staff</div>
+        <div class="sk-card">
+            <div class="sk sk-title"></div>
+            <div class="sk sk-notice"></div><div class="sk sk-notice"></div><div class="sk sk-notice"></div>
         </div>
     </div>
 </div>
 
-<!-- ── Two-column row ── -->
-<div class="two-col wide" style="margin-bottom:20px;">
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
 
-    <!-- Recent Complaints -->
-    <div class="card">
-        <div class="card-header">
-            <span class="card-title"><i class="fas fa-exclamation-circle"></i> Recent Complaints</span>
-            <a href="{% url 'admin_complaints' %}" class="btn btn-outline btn-sm">View All</a>
+    <!-- KPI Stats -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_residents }}</div>
+                <div class="stat-label">Total Residents</div>
+                <div class="stat-sub"><span class="up"><i class="fas fa-arrow-up"></i> Active</span> members</div>
+            </div>
         </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Resident</th>
-                        <th>Type</th>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for c in recent_complaints %}
-                    <tr>
-                        <td>
-                            <div class="resident-cell">
-                                <div class="avatar sm">{{ c.resident.first_name|first }}{{ c.resident.last_name|first }}</div>
-                                <div class="info">
-                                    <div class="name">{{ c.resident.first_name }} {{ c.resident.last_name }}</div>
-                                    <div class="sub">{{ c.resident.unit_number|default:"—" }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="fw">{{ c.complaint_type }}</td>
-                        <td>
-                            {% if c.priority == 'urgent' %}
-                                <span class="badge badge-danger">Urgent</span>
-                            {% elif c.priority == 'high' %}
-                                <span class="badge badge-warning">High</span>
-                            {% elif c.priority == 'medium' %}
-                                <span class="badge badge-info">Medium</span>
-                            {% else %}
-                                <span class="badge badge-gray">Low</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if c.status == 'resolved' %}
-                                <span class="badge badge-success">Resolved</span>
-                            {% elif c.status == 'in_progress' %}
-                                <span class="badge badge-info">In Progress</span>
-                            {% else %}
-                                <span class="badge badge-warning">Pending</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ c.created_at|date:"d M" }}</td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px;">No complaints yet</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        <div class="stat-card amber">
+            <div class="stat-icon amber"><i class="fas fa-exclamation-circle"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ pending_complaints }}</div>
+                <div class="stat-label">Pending Complaints</div>
+                <div class="stat-sub">{{ resolved_complaints }} resolved total</div>
+            </div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-wallet"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">₹{{ total_collected|floatformat:0 }}</div>
+                <div class="stat-label">Revenue (This Month)</div>
+                <div class="stat-sub">{{ pending_payments }} payments pending</div>
+            </div>
+        </div>
+        <div class="stat-card cyan">
+            <div class="stat-icon cyan"><i class="fas fa-clipboard-list"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ today_visitors }}</div>
+                <div class="stat-label">Today's Visitors</div>
+                <div class="stat-sub">{{ inside_visitors }} currently inside</div>
+            </div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-icon purple"><i class="fas fa-bullhorn"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_notices }}</div>
+                <div class="stat-label">Active Notices</div>
+                <div class="stat-sub">{{ total_polls }} polls running</div>
+            </div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-icon red"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ security_guards }}</div>
+                <div class="stat-label">Security Guards</div>
+                <div class="stat-sub">On-duty staff</div>
+            </div>
         </div>
     </div>
 
-    <!-- Quick Stats Sidebar Panel -->
-    <div style="display:flex;flex-direction:column;gap:18px;">
-
-        <!-- Finance Snapshot -->
+    <!-- Two-column row -->
+    <div class="two-col wide" style="margin-bottom:20px;">
         <div class="card">
             <div class="card-header">
-                <span class="card-title"><i class="fas fa-wallet"></i> Finance Snapshot</span>
+                <span class="card-title"><i class="fas fa-exclamation-circle"></i> Recent Complaints</span>
+                <a href="{% url 'admin_complaints' %}" class="btn btn-outline btn-sm">View All</a>
             </div>
-            <div class="card-body" style="padding:16px 20px;">
-                <div style="margin-bottom:14px;">
-                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-                        <span style="color:var(--text-secondary);">Maintenance Collected</span>
-                        <span class="fw amount">₹{{ maintenance_collected|floatformat:0 }}</span>
-                    </div>
-                    <div class="progress"><div class="progress-bar green" style="width:{{ maintenance_pct }}%;"></div></div>
-                </div>
-                <div style="margin-bottom:14px;">
-                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-                        <span style="color:var(--text-secondary);">Facility Bookings</span>
-                        <span class="fw amount">₹{{ facility_collected|floatformat:0 }}</span>
-                    </div>
-                    <div class="progress"><div class="progress-bar blue" style="width:{{ facility_pct }}%;"></div></div>
-                </div>
-                <div>
-                    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
-                        <span style="color:var(--text-secondary);">Pending Dues</span>
-                        <span class="fw amount" style="color:var(--danger);">₹{{ pending_dues|floatformat:0 }}</span>
-                    </div>
-                    <div class="progress"><div class="progress-bar red" style="width:{{ dues_pct }}%;"></div></div>
-                </div>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Resident</th><th>Type</th><th>Priority</th><th>Status</th><th>Date</th></tr></thead>
+                    <tbody>
+                        {% for c in recent_complaints %}
+                        <tr>
+                            <td>
+                                <div class="resident-cell">
+                                    <div class="avatar sm">{{ c.resident.first_name|first }}{{ c.resident.last_name|first }}</div>
+                                    <div class="info">
+                                        <div class="name">{{ c.resident.first_name }} {{ c.resident.last_name }}</div>
+                                        <div class="sub">{{ c.resident.unit_number|default:"—" }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="fw">{{ c.complaint_type }}</td>
+                            <td>
+                                {% if c.priority == 'urgent' %}<span class="badge badge-danger">Urgent</span>
+                                {% elif c.priority == 'high' %}<span class="badge badge-warning">High</span>
+                                {% elif c.priority == 'medium' %}<span class="badge badge-info">Medium</span>
+                                {% else %}<span class="badge badge-gray">Low</span>{% endif %}
+                            </td>
+                            <td>
+                                {% if c.status == 'resolved' %}<span class="badge badge-success">Resolved</span>
+                                {% elif c.status == 'in_progress' %}<span class="badge badge-info">In Progress</span>
+                                {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                            </td>
+                            <td>{{ c.created_at|date:"d M" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" style="text-align:center;color:var(--text-muted);padding:28px;">No complaints yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Visitor Today -->
+        <div style="display:flex;flex-direction:column;gap:18px;">
+            <div class="card">
+                <div class="card-header"><span class="card-title"><i class="fas fa-wallet"></i> Finance Snapshot</span></div>
+                <div class="card-body" style="padding:16px 20px;">
+                    <div style="margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+                            <span style="color:var(--text-secondary);">Maintenance Collected</span>
+                            <span class="fw amount">₹{{ maintenance_collected|floatformat:0 }}</span>
+                        </div>
+                        <div class="progress"><div class="progress-bar green" style="width:{{ maintenance_pct }}%;"></div></div>
+                    </div>
+                    <div style="margin-bottom:14px;">
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+                            <span style="color:var(--text-secondary);">Facility Bookings</span>
+                            <span class="fw amount">₹{{ facility_collected|floatformat:0 }}</span>
+                        </div>
+                        <div class="progress"><div class="progress-bar blue" style="width:{{ facility_pct }}%;"></div></div>
+                    </div>
+                    <div>
+                        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+                            <span style="color:var(--text-secondary);">Pending Dues</span>
+                            <span class="fw amount" style="color:var(--danger);">₹{{ pending_dues|floatformat:0 }}</span>
+                        </div>
+                        <div class="progress"><div class="progress-bar red" style="width:{{ dues_pct }}%;"></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header"><span class="card-title"><i class="fas fa-clipboard-list"></i> Visitor Status Today</span></div>
+                <div class="card-body" style="padding:14px 20px;">
+                    {% for item in visitor_status_today %}
+                    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
+                        <span style="font-size:13px;color:var(--text-secondary);">{{ item.label }}</span>
+                        <span class="badge {{ item.badge }}">{{ item.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div class="two-col" style="margin-bottom:20px;">
         <div class="card">
             <div class="card-header">
-                <span class="card-title"><i class="fas fa-clipboard-list"></i> Visitor Status Today</span>
+                <span class="card-title"><i class="fas fa-receipt"></i> Recent Payments</span>
+                <a href="{% url 'admin_finance' %}" class="btn btn-outline btn-sm">View All</a>
             </div>
-            <div class="card-body" style="padding:14px 20px;">
-                {% for item in visitor_status_today %}
-                <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);">
-                    <span style="font-size:13px;color:var(--text-secondary);">{{ item.label }}</span>
-                    <span class="badge {{ item.badge }}">{{ item.count }}</span>
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead><tr><th>Resident</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for p in recent_payments %}
+                        <tr>
+                            <td class="fw">{{ p.resident.first_name }} {{ p.resident.last_name }}</td>
+                            <td>{{ p.get_payment_type_display }}</td>
+                            <td class="amount fw">₹{{ p.amount }}</td>
+                            <td>
+                                {% if p.payment_status == 'completed' %}<span class="badge badge-success">Paid</span>
+                                {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:28px;">No payments yet</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-bullhorn"></i> Recent Notices</span>
+                <a href="{% url 'admin_community' %}" class="btn btn-outline btn-sm">View All</a>
+            </div>
+            <div class="card-body" style="padding:12px 16px;">
+                {% for n in recent_notices %}
+                <div class="notice-card">
+                    <div class="notice-card-header">
+                        <span class="notice-card-title">{{ n.title }}</span>
+                        <span class="badge {% if n.target_audience == 'all' %}badge-info{% elif n.target_audience == 'resident' %}badge-success{% else %}badge-warning{% endif %}">
+                            {{ n.get_target_audience_display }}
+                        </span>
+                    </div>
+                    <div class="notice-card-body">{{ n.message|truncatechars:80 }}</div>
+                    <div class="notice-meta">{{ n.created_at|date:"d M Y" }}</div>
                 </div>
+                {% empty %}
+                <div class="empty-state"><i class="fas fa-bullhorn"></i><p>No notices posted yet</p></div>
                 {% endfor %}
             </div>
         </div>
-
-    </div>
-</div>
-
-<!-- ── Bottom row ── -->
-<div class="two-col" style="margin-bottom:20px;">
-
-    <!-- Recent Payments -->
-    <div class="card">
-        <div class="card-header">
-            <span class="card-title"><i class="fas fa-receipt"></i> Recent Payments</span>
-            <a href="{% url 'admin_finance' %}" class="btn btn-outline btn-sm">View All</a>
-        </div>
-        <div class="table-wrap">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Resident</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in recent_payments %}
-                    <tr>
-                        <td class="fw">{{ p.resident.first_name }} {{ p.resident.last_name }}</td>
-                        <td>{{ p.get_payment_type_display }}</td>
-                        <td class="amount fw">₹{{ p.amount }}</td>
-                        <td>
-                            {% if p.payment_status == 'completed' %}
-                                <span class="badge badge-success">Paid</span>
-                            {% else %}
-                                <span class="badge badge-warning">Pending</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:28px;">No payments yet</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
     </div>
 
-    <!-- Recent Notices -->
-    <div class="card">
-        <div class="card-header">
-            <span class="card-title"><i class="fas fa-bullhorn"></i> Recent Notices</span>
-            <a href="{% url 'admin_community' %}" class="btn btn-outline btn-sm">View All</a>
-        </div>
-        <div class="card-body" style="padding:12px 16px;">
-            {% for n in recent_notices %}
-            <div class="notice-card">
-                <div class="notice-card-header">
-                    <span class="notice-card-title">{{ n.title }}</span>
-                    <span class="badge {% if n.target_audience == 'all' %}badge-info{% elif n.target_audience == 'resident' %}badge-success{% else %}badge-warning{% endif %}">
-                        {{ n.get_target_audience_display }}
-                    </span>
-                </div>
-                <div class="notice-card-body">{{ n.message|truncatechars:80 }}</div>
-                <div class="notice-meta">{{ n.created_at|date:"d M Y" }}</div>
-            </div>
-            {% empty %}
-            <div class="empty-state"><i class="fas fa-bullhorn"></i><p>No notices posted yet</p></div>
-            {% endfor %}
-        </div>
-    </div>
+</div><!-- /real-content -->
 
-</div>
-
+{% block extra_js %}
+<script>skeletonReveal(1500);</script>
+{% endblock %}
 {% endblock %}

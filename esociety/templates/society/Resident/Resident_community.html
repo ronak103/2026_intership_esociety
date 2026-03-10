@@ -1,26 +1,96 @@
-{% extends "base.html" %}
+{% extends "society/Resident/Resident_base.html" %}
 {% load static %}
 
+{% block title %}Community — SocietySync{% endblock %}
+{% block page_title %}Community{% endblock %}
+
 {% block content %}
-<link rel="stylesheet" href="{% static 'css/resident.css' %}">
-<div class="section-header">
-<h2 class="section-title">Community</h2>
-<p class="section-sub">Society announcements & discussions</p>
-</div>
 
-<div class="card">
+<div class="grid-2">
 
-<p class="card-title">Bulletin Board</p>
+    <!-- Notices -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-bullhorn"></i> Announcements</span>
+        </div>
+        <div class="notice-list">
+            {% for notice in notices %}
+            <div class="notice-item">
+                <div class="notice-dot" style="
+                    {% if notice.target_audience == 'resident' %}background:var(--primary);
+                    {% elif notice.target_audience == 'security' %}background:var(--warning);
+                    {% else %}background:var(--success);{% endif %}
+                "></div>
+                <div class="notice-content">
+                    <div class="notice-title">{{ notice.title }}</div>
+                    <div style="font-size:13px;color:var(--text-muted);margin-top:4px;line-height:1.5;">
+                        {{ notice.message|truncatechars:120 }}
+                    </div>
+                    <div class="notice-meta" style="margin-top:6px;">
+                        {{ notice.created_at|date:"d M Y" }}
+                        &nbsp;·&nbsp;
+                        <span class="notice-audience">{{ notice.get_target_audience_display }}</span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <i class="fas fa-bullhorn"></i>
+                <p>No announcements yet.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 
-<div class="notice-item">
-<div class="notice-dot"></div>
-<div class="notice-text">Holi Celebration on March 14</div>
-</div>
+    <!-- Polls -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-poll"></i> Active Polls</span>
+            </div>
+            <div style="padding:16px;">
+                {% for poll in polls %}
+                <div class="poll-card">
+                    <div class="poll-question">{{ poll.question }}</div>
 
-<div class="notice-item">
-<div class="notice-dot"></div>
-<div class="notice-text">AGM Meeting March 5</div>
-</div>
+                    {% if poll.user_vote %}
+                        <!-- Already voted — show results -->
+                        <div class="poll-result">
+                            <div class="poll-bar-wrap">
+                                <span style="width:28px;font-weight:600;color:var(--success);">Yes</span>
+                                <div class="poll-bar-bg">
+                                    <div class="poll-bar yes" style="width:{{ poll.yes_pct }}%;"></div>
+                                </div>
+                                <span style="width:36px;font-size:12px;color:var(--text-muted);">{{ poll.yes_pct }}%</span>
+                            </div>
+                            <div class="poll-bar-wrap">
+                                <span style="width:28px;font-weight:600;color:var(--danger);">No</span>
+                                <div class="poll-bar-bg">
+                                    <div class="poll-bar no" style="width:{{ poll.no_pct }}%;"></div>
+                                </div>
+                                <span style="width:36px;font-size:12px;color:var(--text-muted);">{{ poll.no_pct }}%</span>
+                            </div>
+                            <div style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                                You voted <strong>{{ poll.user_vote }}</strong> · {{ poll.total_votes }} total votes
+                            </div>
+                        </div>
+                    {% else %}
+                        <!-- Not voted yet -->
+                        <div class="poll-actions">
+                            <a href="{% url 'poll_vote' poll.id 'yes' %}" class="poll-btn yes">👍 Yes</a>
+                            <a href="{% url 'poll_vote' poll.id 'no' %}"  class="poll-btn no">👎 No</a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% empty %}
+                <div class="empty-state">
+                    <i class="fas fa-poll"></i>
+                    <p>No active polls right now.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
 </div>
 
