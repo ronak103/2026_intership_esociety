@@ -9,6 +9,7 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
+    <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <!-- Admin CSS -->
     <link rel="stylesheet" href="{% static 'css/admin.css' %}">
 
@@ -76,12 +77,12 @@
     </aside>
 
     <!-- ── Main ── -->
-    <div class="main-content">
+    <div class="main-content" id="mainContent">
 
         <!-- Topbar -->
         <header class="topbar">
             <div class="topbar-left" style="display:flex;align-items:center;gap:14px;">
-                <button class="topbar-hamburger" id="sidebarToggle" aria-label="Toggle sidebar">
+                <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
                     <i class="fas fa-bars"></i>
                 </button>
                 <div>
@@ -162,7 +163,6 @@
 </div>
 
 <!-- Hamburger toggle -->
-<script src="{% static 'js/sidebar.js' %}"></script>
 <!-- Admin-wide JS -->
 <script src="{% static 'js/admin.js' %}"></script>
 {% block extra_js %}{% endblock %}

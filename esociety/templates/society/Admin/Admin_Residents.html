@@ -95,11 +95,11 @@
                         {% if r.is_active %}<span class="badge badge-success">Active</span>
                         {% else %}<span class="badge badge-gray">Inactive</span>{% endif %}
                     </td>
-                    <td style="font-size:12px;color:var(--text-muted);">{{ r.date_joined|date:"d M Y" }}</td>
+                    <td style="font-size:12px;color:var(--text-muted);">{{ r.created_at|date:"d M Y" }}</td>
                     <td>
                         <div style="display:flex;gap:5px;">
                             <button class="btn btn-outline btn-icon btn-sm" title="View"
-                                onclick="openResidentDetail('{{ r.first_name }} {{ r.last_name }}','{{ r.email }}','{{ r.unit_number|default:"—" }}','{{ r.mobile_number|default:"—" }}','{{ r.date_joined|date:"d M Y" }}',{{ r.complaint_count }},{{ r.pending_payment_count }})">
+                                onclick="openResidentDetail('{{ r.first_name }} {{ r.last_name }}','{{ r.email }}','{{ r.unit_number|default:"—" }}','{{ r.mobile_number|default:"—" }}','{{ r.created_at|date:"d M Y" }}',{{ r.complaint_count }},{{ r.pending_payment_count }})">
                                 <i class="fas fa-eye"></i>
                             </button>
                             <a href="{% url 'admin_toggle_resident' r.id %}"

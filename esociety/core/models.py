@@ -37,8 +37,17 @@ class User(AbstractBaseUser):
         ('Resident','Resident'),
         ('Securityguard','Securityguard'),
     )
+
+    STATUS_CHOICES = (
+        ('inactive','Inactive'),
+        ('active','Active'),
+        ('blocked','Blocked'),
+        ('deleted','Deleted'),
+    )
+
     gender_choice =(('Male','Male'),('Female','Female'),('Other','Other'))
     role = models.CharField(max_length=20,choices=role_choice,default='Resident')
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES,default='inactive')
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_admin = models.BooleanField(default=False)
@@ -49,6 +58,7 @@ class User(AbstractBaseUser):
     gender = models.CharField(max_length=10,choices=gender_choice,default="male")
     mobile_number = models.CharField(blank=True,default="")
     unit_number = models.CharField(max_length=20, blank=True, default="")
+    joining_date = models.DateField(blank=True, null=True)
     
     
     objects = UserManager()

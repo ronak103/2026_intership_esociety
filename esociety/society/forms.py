@@ -1,4 +1,3 @@
-
 from django import forms
 from .models import Complaint,Visitor,Payment, FacilityBooking, Notice, Poll, Facility, PollVote, Notification
 from django.core.exceptions import ValidationError
@@ -9,7 +8,7 @@ class ComplaintForm(forms.ModelForm):
 
     class Meta:
         model = Complaint
-        fields = "__all__"
+        fields = ["complaint_type", "description", "priority"]
 
         widgets = {
             "complaint_type": forms.TextInput(attrs={

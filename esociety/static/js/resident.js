@@ -62,9 +62,9 @@ async function postJson(url, data = {}) {
 (function initSidebar() {
     const sidebar   = document.getElementById('sidebar');
     const toggleBtn = document.getElementById('sidebarToggle') ||
-                      document.querySelector('.topbar-toggle, .sidebar-toggle');
+                      document.querySelector('.sidebar-toggle');
     const overlay   = document.getElementById('sidebarOverlay');
-    const mainWrap  = $('.main-wrap') || $('.main-content');
+    const mainWrap  = document.getElementById('mainContent') || $('.main-content');
 
     if (!sidebar || !toggleBtn) return;
 
@@ -84,7 +84,7 @@ async function postJson(url, data = {}) {
         if (mainWrap && !isMobile()) {
             // Fallback margin for browsers without CSS :has()
             if (!CSS.supports('selector(:has(*))')) {
-                mainWrap.style.marginLeft = collapsed ? '68px' : '260px';
+                mainWrap.style.marginLeft = collapsed ? '0' : '';
             }
         }
     }
@@ -512,9 +512,12 @@ window.skeletonReveal = function (minMs = 1000) {
     function reveal() {
         const wait = Math.max(0, minMs - (Date.now() - start));
         setTimeout(() => {
-            const pb = $('.page-body, .main-content');
+            // Target .page-content (resident) or .page-body (admin/security) — whichever is present
+            const pb = document.querySelector('.page-content') ||
+                       document.querySelector('.page-body') ||
+                       document.querySelector('main');
             pb?.classList.remove('sk-active', 'page-loading');
-            $$('.real-content').forEach(el => el.classList.add('sk-revealed'));
+            document.querySelectorAll('.real-content').forEach(el => el.classList.add('sk-revealed'));
         }, wait);
     }
     if (document.readyState === 'complete') reveal();

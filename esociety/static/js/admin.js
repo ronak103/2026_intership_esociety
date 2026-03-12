@@ -38,6 +38,90 @@ function fmtNum(n, isAmount) {
 }
 
 /* ═══════════════════════════════════════════════════════════
+   SIDEBAR — desktop collapse + mobile drawer
+   Mirrors Security.js initSidebar() exactly.
+   Requires in HTML:
+     <aside id="sidebar">  <div id="mainContent">
+     <button id="sidebarToggle">  <div id="sidebarOverlay">
+═══════════════════════════════════════════════════════════ */
+(function initSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.getElementById('sidebarToggle');
+    const overlay = document.getElementById('sidebarOverlay');
+    const mainEl  = document.getElementById('mainContent') || $('.main-content');
+
+    if (!sidebar || !toggle) return;
+
+    const MOBILE_BP = 1024;
+    const KEY       = 'adm_sidebar_collapsed';
+
+    function isMobile() { return window.innerWidth <= MOBILE_BP; }
+    function lockScroll(lock) { document.body.style.overflow = lock ? 'hidden' : ''; }
+
+    function setCollapsed(collapsed) {
+        sidebar.classList.toggle('collapsed', collapsed);
+        localStorage.setItem(KEY, collapsed);
+        // Fallback for browsers without CSS :has()
+        if (mainEl && !isMobile() && !CSS.supports('selector(:has(*))')) {
+            mainEl.style.marginLeft = collapsed ? '0' : '';
+        }
+    }
+
+    function setMobileOpen(open) {
+        sidebar.classList.toggle('mobile-open', open);
+        overlay && overlay.classList.toggle('active', open);
+        lockScroll(open);
+        toggle.setAttribute('aria-expanded', open);
+    }
+
+    // Restore desktop state on load
+    if (!isMobile()) {
+        setCollapsed(localStorage.getItem(KEY) === 'true');
+    }
+
+    toggle.addEventListener('click', () => {
+        if (isMobile()) {
+            setMobileOpen(!sidebar.classList.contains('mobile-open'));
+        } else {
+            setCollapsed(!sidebar.classList.contains('collapsed'));
+        }
+    });
+
+    overlay && overlay.addEventListener('click', () => setMobileOpen(false));
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('mobile-open')) {
+            setMobileOpen(false);
+        }
+    });
+
+    let rTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(rTimer);
+        rTimer = setTimeout(() => {
+            if (!isMobile()) {
+                sidebar.classList.remove('mobile-open');
+                overlay && overlay.classList.remove('active');
+                lockScroll(false);
+                if (mainEl) mainEl.style.marginLeft = '';
+                setCollapsed(localStorage.getItem(KEY) === 'true');
+            }
+        }, 150);
+    });
+
+    // Active nav highlight from URL
+    const path = window.location.pathname.replace(/\/$/, '');
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+        const lp = href.replace(/\/$/, '');
+        if (path === lp) {
+            link.closest('.sidebar-menu-item')?.classList.add('active');
+        }
+    });
+})();
+
+/* ═══════════════════════════════════════════════════════════
    0. SKELETON REVEAL
    Supports both:
      • Old pattern: .page-loading → removes class

@@ -76,8 +76,8 @@
 
                         <div class="form-group">
                             <label>Email</label>
-                            {{ login_form.username }}
-                            {% for error in login_form.username.errors %}
+                            {{ login_form.email }}
+                            {% for error in login_form.email.errors %}
                                  <span class="field-error">{{ error }}</span> 
                             {% endfor %} 
                         </div>

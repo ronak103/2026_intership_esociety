@@ -11,6 +11,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/sidebar.css' %}">
     <link rel="stylesheet" href="{% static 'css/resident.css' %}">
+
+    <!-- Skeleton: add sk-active before first paint so skeleton shows immediately -->
+    <script>document.addEventListener('DOMContentLoaded',function(){var pc=document.querySelector('.page-content');if(pc)pc.classList.add('sk-active');});</script>
 </head>
 <body>
 
@@ -19,7 +22,7 @@
 <!-- Mobile overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<div class="app-shell">
+<div class="admin-layout">
 
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
@@ -27,11 +30,11 @@
     </aside>
 
     <!-- Main area -->
-    <div class="main-wrap">
+    <div class="main-content" id="mainContent">
 
         <!-- Topbar -->
         <header class="topbar" id="topbar">
-            <button class="topbar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
                 <i class="fas fa-bars"></i>
             </button>
 
@@ -136,8 +139,8 @@
             {% block content %}{% endblock %}
         </main>
 
-    </div><!-- /main-wrap -->
-</div><!-- /app-shell -->
+    </div><!-- /main-content -->
+</div><!-- /admin-layout -->
 
 <!-- Booking Modal (global, used by booking.html) -->
 <div id="bookingModal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="bookingModalTitle">

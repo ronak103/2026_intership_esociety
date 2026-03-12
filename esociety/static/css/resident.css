@@ -55,7 +55,7 @@ ul { list-style: none; }
 button { cursor: pointer; font-family: var(--font); }
 
 /* ── App Shell ── */
-.app-shell {
+.admin-layout {
     display: flex;
     min-height: 100vh;
 }
@@ -160,7 +160,7 @@ button { cursor: pointer; font-family: var(--font); }
 .sidebar-signout:hover { background: rgba(239,68,68,.1); color: #ef4444; }
 
 /* ── Main Wrap ── */
-.main-wrap {
+.main-content {
     margin-left: var(--sidebar-w);
     flex: 1;
     display: flex;
@@ -183,6 +183,7 @@ button { cursor: pointer; font-family: var(--font); }
     z-index: 50;
     box-shadow: var(--shadow);
 }
+.sidebar-toggle,
 .topbar-toggle {
     background: none;
     border: none;
@@ -197,6 +198,7 @@ button { cursor: pointer; font-family: var(--font); }
     transition: background .18s, color .18s;
     flex-shrink: 0;
 }
+.sidebar-toggle:hover,
 .topbar-toggle:hover { background: var(--bg); color: var(--text); }
 .topbar-left { flex: 1; }
 .topbar-breadcrumb { display: flex; align-items: center; gap: 8px; }
@@ -680,8 +682,9 @@ button { cursor: pointer; font-family: var(--font); }
 @media (max-width: 768px) {
     .sidebar { transform: translateX(-100%); }
     .sidebar.open { transform: translateX(0); }
-    .main-wrap { margin-left: 0; }
-    .topbar-toggle { display: flex; }
+    .main-content { margin-left: 0; }
+    .sidebar-toggle,
+.topbar-toggle { display: flex; }
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .form-row   { grid-template-columns: 1fr; }
     .topbar-name { display: none; }
@@ -718,6 +721,21 @@ button { cursor: pointer; font-family: var(--font); }
 .page-loading .real-content { display: none; }
 .page-loading .skeleton-content { display: block; }
 .skeleton-content { display: none; }
+
+/* sk-active pattern (used by skeletonReveal in resident.js) */
+.sk-active .sk-wrap      { display: block !important; }
+.sk-active .real-content { display: none  !important; }
+.sk-wrap      { display: none; }
+.real-content { display: block; }
+
+/* Smooth reveal after skeleton removed */
+.real-content.sk-revealed {
+    animation: resSkFadeIn .4s ease forwards;
+}
+@keyframes resSkFadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ============================================================
    MODAL SYSTEM

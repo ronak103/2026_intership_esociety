@@ -1,60 +1,84 @@
-document.addEventListener('DOMContentLoaded', function () {
-    const sidebar    = document.getElementById('sidebar');
-    const toggleBtn  = document.getElementById('sidebarToggle');
-    const overlay    = document.getElementById('sidebarOverlay');
-    // Support both admin (.main-content) and resident (.main-wrap) layouts
-    const mainWrap   = document.querySelector('.main-wrap') || document.querySelector('.main-content');
-    const MOBILE_BREAKPOINT = 1024;
+'use strict';
+
+/* same $ helper used in resident.js */
+const _$ = (sel, ctx) => (ctx || document).querySelector(sel);
+
+(function initSidebar() {
+    const sidebar   = document.getElementById('sidebar');
+    const toggleBtn = document.getElementById('sidebarToggle') ||
+                      document.querySelector('.sidebar-toggle');
+    const overlay   = document.getElementById('sidebarOverlay');
+    const mainWrap  = document.getElementById('mainContent') ||
+                      document.querySelector('.main-content');
 
     if (!sidebar || !toggleBtn) return;
 
-    function isMobile() {
-        return window.innerWidth <= MOBILE_BREAKPOINT;
+    const MOBILE_BP = 1024;
+    const STORE_KEY = 'adm_sidebar_collapsed';
+
+    function isMobile() { return window.innerWidth <= MOBILE_BP; }
+
+    function lockScroll(lock) {
+        document.body.style.overflow = lock ? 'hidden' : '';
     }
 
-    // Toggle sidebar
-    toggleBtn.addEventListener('click', function () {
+    function setCollapsed(collapsed) {
+        sidebar.classList.toggle('collapsed', collapsed);
+        localStorage.setItem(STORE_KEY, collapsed);
+        if (mainWrap && !isMobile() && !CSS.supports('selector(:has(*))')) {
+            mainWrap.style.marginLeft = collapsed ? '0' : '';
+        }
+    }
+
+    function setMobileOpen(open) {
+        sidebar.classList.toggle('mobile-open', open);
+        if (overlay) overlay.classList.toggle('active', open);
+        lockScroll(open);
+    }
+
+    /* restore on load */
+    if (!isMobile()) {
+        setCollapsed(localStorage.getItem(STORE_KEY) === 'true');
+    }
+
+    toggleBtn.addEventListener('click', () => {
         if (isMobile()) {
-            sidebar.classList.toggle('mobile-open');
-            if (overlay) overlay.classList.toggle('active');
+            setMobileOpen(!sidebar.classList.contains('mobile-open'));
         } else {
-            sidebar.classList.toggle('collapsed');
-            // Shift main content in/out on desktop
-            if (mainWrap) {
-                if (sidebar.classList.contains('collapsed')) {
-                    mainWrap.style.marginLeft = '0';
-                } else {
-                    mainWrap.style.marginLeft = '';  // revert to CSS default
-                }
-            }
+            setCollapsed(!sidebar.classList.contains('collapsed'));
         }
     });
 
-    // Close sidebar when clicking overlay (mobile)
-    if (overlay) {
-        overlay.addEventListener('click', function () {
-            sidebar.classList.remove('mobile-open');
-            overlay.classList.remove('active');
-        });
-    }
+    if (overlay) overlay.addEventListener('click', () => setMobileOpen(false));
 
-    // Handle window resize
-    let resizeTimer;
-    window.addEventListener('resize', function () {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function () {
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('mobile-open')) {
+            setMobileOpen(false);
+        }
+    });
+
+    let rTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(rTimer);
+        rTimer = setTimeout(() => {
             if (!isMobile()) {
                 sidebar.classList.remove('mobile-open');
                 if (overlay) overlay.classList.remove('active');
+                lockScroll(false);
+                if (mainWrap) mainWrap.style.marginLeft = '';
+                setCollapsed(localStorage.getItem(STORE_KEY) === 'true');
             }
         }, 150);
     });
 
-    // Close mobile sidebar on Escape key
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape' && isMobile() && sidebar.classList.contains('mobile-open')) {
-            sidebar.classList.remove('mobile-open');
-            if (overlay) overlay.classList.remove('active');
+    /* active link highlight */
+    const path = window.location.pathname.replace(/\/$/, '');
+    document.querySelectorAll('.sidebar-link').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || href === '#') return;
+        const lp = href.replace(/\/$/, '');
+        if (path === lp || (lp.length > 1 && path.startsWith(lp))) {
+            link.closest('.sidebar-menu-item')?.classList.add('active');
         }
     });
-});
+})();

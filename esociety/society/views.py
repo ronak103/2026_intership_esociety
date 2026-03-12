@@ -1,4 +1,3 @@
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.core.paginator import Paginator
@@ -833,6 +832,7 @@ def ResidentDashboardView(request):
         "maintenance_amount":  0,
         "recent_notices":      recent_notices,
         "recent_payments":     recent_payments,
+        "unread_notif_count":  Notification.objects.filter(user=user, is_read=False).count(),
     }
     return render(request, "society/Resident/Resident_dashboard.html", context)
 
@@ -858,7 +858,10 @@ def visitor_pass(request):
     ).order_by("-created_at")
 
     return render(request, "society/Resident/visitor_pass.html", {
-        "form": form, "visitors": visitors
+        "form":              form,
+        "visitors":          visitors,
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
@@ -872,7 +875,10 @@ def visitor_approvals(request):
         resident=user, registered_by="guard", approval_status__in=["approved", "rejected"]
     ).order_by("-created_at")[:20]
     return render(request, "society/Resident/visitor_approval.html", {
-        "pending": pending, "history": history
+        "pending":           pending,
+        "history":           history,
+        "unread_notif_count": Notification.objects.filter(user=user, is_read=False).count(),
+        "pending_visitors":  pending.count(),
     })
 
 
@@ -936,11 +942,13 @@ def complaints(request):
     complaints_qs = Complaint.objects.filter(resident=user).order_by("-created_at")
 
     context = {
-        "form":            form,
-        "complaints":      complaints_qs,
-        "pending_count":   complaints_qs.filter(status="pending").count(),
-        "inprogress_count":complaints_qs.filter(status="in_progress").count(),
-        "resolved_count":  complaints_qs.filter(status="resolved").count(),
+        "form":             form,
+        "complaints":       complaints_qs,
+        "pending_count":    complaints_qs.filter(status="pending").count(),
+        "inprogress_count": complaints_qs.filter(status="in_progress").count(),
+        "resolved_count":   complaints_qs.filter(status="resolved").count(),
+        "unread_notif_count": Notification.objects.filter(user=user, is_read=False).count(),
+        "pending_visitors": Visitor.objects.filter(resident=user, registered_by="guard", approval_status="pending").count(),
     }
     return render(request, "society/Resident/Resident_complaints.html", context)
 
@@ -999,8 +1007,10 @@ def facility_booking(request):
     ).select_related("facility").order_by("-created_at")
 
     return render(request, "society/Resident/booking.html", {
-        "facilities": facilities,
-        "bookings":   bookings,
+        "facilities":        facilities,
+        "bookings":          bookings,
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
@@ -1030,14 +1040,19 @@ def community_notice(request):
         polls.append(poll)
 
     return render(request, "society/Resident/Resident_community.html", {
-        "notices": notices,
-        "polls":   polls,
+        "notices":           notices,
+        "polls":             polls,
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
 @role_required(allowed_roles=["Resident"])
 def resident_settings(request):
-    return render(request, "society/Resident/Resident_settings.html")
+    return render(request, "society/Resident/Resident_settings.html", {
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
+    })
 
 
 @role_required(allowed_roles=["Resident"])
@@ -1065,19 +1080,21 @@ def resident_change_password(request):
 def resident_payments(request):
     payments = Payment.objects.filter(resident=request.user).order_by("-created_at")
     return render(request, "society/Resident/Resident_payments.html", {
-        "payments": payments,
+        "payments":          payments,
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
 @role_required(allowed_roles=["Resident"])
 def resident_notifications(request):
     notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
-    unread_count  = notifications.filter(is_read=False).count()
-    # Mark all as read when page is opened
+    unread_count  = notifications.filter(is_read=False).count()  # count BEFORE marking read
     notifications.filter(is_read=False).update(is_read=True)
     return render(request, "society/Resident/Resident_notifications.html", {
-        "notifications":    notifications,
-        "unread_count":     unread_count,
+        "notifications":     notifications,
+        "unread_count":      unread_count,
+        "unread_notif_count": 0,  # page just cleared them
     })
 
 @role_required(allowed_roles=["Resident"])
@@ -1135,7 +1152,7 @@ def ResidentMarkAllReadView(request):
 # SECURITY GUARD VIEWS  (unchanged from original)
 # ================================================================
 
-role_required(allowed_roles=["Securityguard"])
+@role_required(allowed_roles=["Securityguard"])
 def SecurityDashboardView(request):
     today = date.today()
     today_visitors_qs = (
@@ -1155,14 +1172,17 @@ def SecurityDashboardView(request):
     ]
 
     context = {
-        "today_date":        today,
-        "total_today":       today_visitors_qs.count(),
-        "currently_inside":  today_visitors_qs.filter(entry_status="inside").count(),
-        "pending_approval":  today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
-        "total_denied":      today_visitors_qs.filter(entry_status="denied").count(),
-        "today_visitors":    today_visitors_qs[:8],
-        "pending_visitors":  today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
-        "visitor_breakdown": visitor_breakdown,
+        "today_date":            today,
+        "total_today":           today_visitors_qs.count(),
+        "currently_inside":      today_visitors_qs.filter(entry_status="inside").count(),
+        "pending_approval":      today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
+        "pending_approval_count":today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
+        "total_denied":          today_visitors_qs.filter(entry_status="denied").count(),
+        "today_visitors":        today_visitors_qs[:8],
+        "pending_visitors":      today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
+        "pre_approved_visitors": today_visitors_qs.filter(registered_by="resident", approval_status="approved"),
+        "visitor_breakdown":     visitor_breakdown,
+        "unread_notif_count":    Notification.objects.filter(user=request.user, is_read=False).count(),
     }
     return render(request, "society/Securityguard/Security_dashboard.html", context)
 
@@ -1172,6 +1192,7 @@ def SecurityDashboardView(request):
 def guard_log_visitor(request):
     if request.method == "POST":
         form = GuardVisitorForm(request.POST)
+        form.fields["resident"].label_from_instance = lambda u: f"{u.first_name} {u.last_name} — Unit {u.unit_number or '—'}"
         if form.is_valid():
             visitor = form.save(commit=False)
             visitor.guard           = request.user
@@ -1216,6 +1237,7 @@ def guard_log_visitor(request):
             })
     else:
         form = GuardVisitorForm()
+        form.fields["resident"].label_from_instance = lambda u: f"{u.first_name} {u.last_name} — Unit {u.unit_number or '—'}"
 
     # Build queryset with optional filters
     search_query  = request.GET.get("q", "").strip()
@@ -1278,8 +1300,12 @@ def guard_log_visitor(request):
         # stats
         "total_today":        Visitor.objects.filter(expected_date=date.today()).count(),
         "currently_inside":   Visitor.objects.filter(expected_date=date.today(), entry_status="inside").count(),
+        # Guard-logged visitors awaiting resident approval
         "pending_approval_count": Visitor.objects.filter(expected_date=date.today(), registered_by="guard", approval_status="pending").count(),
+        # Pre-approved by resident (waiting at gate, can enter immediately)
+        "pre_approved_count": Visitor.objects.filter(expected_date=date.today(), registered_by="resident", approval_status="approved", entry_status="waiting").count(),
         "total_denied":       Visitor.objects.filter(expected_date=date.today(), entry_status="denied").count(),
+        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
     }
     return render(request, "society/Securityguard/guard_log_visitor.html", context)
 
@@ -1360,6 +1386,7 @@ def guard_notifications(request):
         "total_count":   total_count,
         "unread_count":  unread_count,
         "read_count":    read_count,
+        "unread_notif_count": 0,  # already marked read above
     })
 
 
@@ -1379,7 +1406,10 @@ def guard_mark_all_read(request):
 @role_required(allowed_roles=["Securityguard"])
 def guard_settings(request):
     """Guard settings / profile page."""
-    return render(request, "society/Securityguard/guard_settings.html")
+    return render(request, "society/Securityguard/guard_settings.html", {
+        "unread_notif_count":     Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pending_approval_count": Visitor.objects.filter(expected_date=date.today(), registered_by="guard", approval_status="pending").count(),
+    })
 
 
 @role_required(allowed_roles=["Securityguard"])
