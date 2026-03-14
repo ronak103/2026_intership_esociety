@@ -68,6 +68,11 @@ class Visitor(models.Model):
     )
 
     otp_code = models.CharField(max_length=6, null=True, blank=True)
+    visitor_photo = models.ImageField(
+    upload_to='visitor_photos/',
+    null=True,
+    blank=True
+    )
 
     vehicle_number = models.CharField(max_length=20, null=True, blank=True)
 

@@ -132,7 +132,12 @@
                 <td style="color:var(--text-muted);font-size:11px;">{{ forloop.counter }}</td>
                 <td>
                     <div class="visitor-cell">
-                        <div class="visitor-avatar">{{ v.visitor_name|first|upper }}</div>
+                        {% if v.visitor_photo %}
+                            <img src="{{ v.visitor_photo.url }}"
+                                 style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0;">
+                        {% else %}
+                            <div class="visitor-avatar">{{ v.visitor_name|first|upper }}</div>
+                        {% endif %}
                         <div>
                             <div class="visitor-name">{{ v.visitor_name }}</div>
                             <div class="visitor-mobile">{{ v.mobile_number }}</div>
@@ -260,7 +265,7 @@
             </span>
             <button class="modal-close" onclick="closeModal('logVisitorModal')"><i class="fas fa-times"></i></button>
         </div>
-        <form method="POST" action="{% url 'guard_log_visitor' %}">
+        <form method="POST" action="{% url 'guard_log_visitor' %}" enctype="multipart/form-data">
             {% csrf_token %}
             <div class="modal-body">
                 <div class="alert alert-warning" style="margin-bottom:16px;">
@@ -299,6 +304,12 @@
                     {{ form.resident }}
                     {% if form.resident.errors %}
                     <div class="form-error">{{ form.resident.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Visitor Photo <span style="color:var(--text-muted);font-size:11px;">(optional)</span></label>
+                    <input type="file" name="visitor_photo" accept="image/*" capture="environment" class="form-control"
+                           style="padding:6px;border:1px solid var(--border);border-radius:6px;width:100%;cursor:pointer;">
+                    <small style="color:var(--text-muted);font-size:11px;"><i class="fas fa-camera"></i> Take a photo or upload from gallery</small>
                 </div>
                 {% if form.non_field_errors %}
                 <div class="alert alert-danger">{{ form.non_field_errors.0 }}</div>

@@ -22,6 +22,13 @@
         <div id="pendingList">
         {% for v in pending %}
         <div class="approval-card" id="approval-{{ v.id }}">
+            {% if v.visitor_photo %}
+            <div style="flex-shrink:0;">
+                <img src="{{ v.visitor_photo.url }}"
+                     alt="Photo of {{ v.visitor_name }}"
+                     style="width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid var(--border);">
+            </div>
+            {% endif %}
             <div class="visitor-info">
                 <div class="visitor-name">{{ v.visitor_name }}</div>
                 <div class="visitor-meta">
@@ -70,6 +77,7 @@
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Photo</th>
                     <th>Visitor</th>
                     <th>Type</th>
                     <th>Date</th>
@@ -80,6 +88,18 @@
             <tbody>
             {% for v in history %}
                 <tr>
+                    <td>
+                        {% if v.visitor_photo %}
+                            <img src="{{ v.visitor_photo.url }}"
+                                 style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
+                        {% else %}
+                            <div style="width:40px;height:40px;border-radius:8px;background:var(--border);
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-weight:700;color:var(--text-muted);">
+                                {{ v.visitor_name|first|upper }}
+                            </div>
+                        {% endif %}
+                    </td>
                     <td>
                         <div style="font-weight:600;">{{ v.visitor_name }}</div>
                         <div style="font-size:12px;color:var(--text-muted);">{{ v.mobile_number }}</div>
@@ -106,7 +126,7 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="5">
+                <tr><td colspan="6">
                     <div class="empty-state">
                         <i class="fas fa-history"></i>
                         <p>No history yet.</p>

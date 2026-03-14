@@ -9,14 +9,12 @@ import csv
 from django.http import HttpResponse
 from datetime import date
 from django.contrib.auth.decorators import login_required
-
 from .decorators import role_required
 from .forms import (
     # existing
     ComplaintForm,
     VisitorForm,
     GuardVisitorForm,
-    # new admin forms
     AdminAddResidentForm,
     AdminComplaintUpdateForm,
     AdminPaymentForm,
@@ -1191,7 +1189,7 @@ def SecurityDashboardView(request):
 @role_required(allowed_roles=["Securityguard"])
 def guard_log_visitor(request):
     if request.method == "POST":
-        form = GuardVisitorForm(request.POST)
+        form = GuardVisitorForm(request.POST,request.FILES)
         form.fields["resident"].label_from_instance = lambda u: f"{u.first_name} {u.last_name} — Unit {u.unit_number or '—'}"
         if form.is_valid():
             visitor = form.save(commit=False)

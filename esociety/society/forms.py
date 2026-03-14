@@ -36,7 +36,8 @@ class VisitorForm(forms.ModelForm):
             "mobile_number",
             "visitor_type",
             "expected_date",
-            "vehicle_number"
+            "vehicle_number",
+            "visitor_photo",
         ]
 
         widgets = {
@@ -75,6 +76,7 @@ class GuardVisitorForm(forms.ModelForm):
             "visitor_type",
             "vehicle_number",
             "resident",       # guard selects the resident being visited
+            "visitor_photo",  # ← NEW: photo of visitor at gate
         ]
 
         widgets = {
@@ -95,6 +97,11 @@ class GuardVisitorForm(forms.ModelForm):
             }),
             "resident": forms.Select(attrs={
                 "class": "inner-select"
+            }),
+            "visitor_photo": forms.FileInput(attrs={
+                "class":   "inner-input",
+                "accept":  "image/*",
+                "capture": "environment",  # opens rear camera on mobile
             }),
         }
 

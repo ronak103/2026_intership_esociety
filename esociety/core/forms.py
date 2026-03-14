@@ -1,5 +1,5 @@
 from django import forms
-from .models import User
+from .models import User, DemoBooking
 
 
 class UserSignupForm(forms.ModelForm):
@@ -59,3 +59,16 @@ class UserLoginForm(forms.Form):
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={'placeholder': 'Password', 'autocomplete': 'current-password'}),
     )
+
+
+
+class DemoBookingForm(forms.ModelForm):
+    class Meta:
+        model = DemoBooking
+        fields = ['full_name', 'mobile', 'society_name', 'city']
+        widgets = {
+            'full_name':    forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'Your full name'}),
+            'mobile':       forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'Mobile number'}),
+            'society_name': forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'Society name'}),
+            'city':         forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'City / Pincode'}),
+        }

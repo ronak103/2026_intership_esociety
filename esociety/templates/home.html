@@ -38,7 +38,7 @@
       <div class="nav__actions">
   
         <a href="{% url 'login' %}" class="btn btn-outline btn-sm">Login</a>
-        <button class="btn btn-primary btn-sm">Book a Demo →</button>
+        <a href="#contact" class="btn btn-primary btn-sm">Book a Demo →</a>
       </div>
 
       <div class="nav__hamburger" id="hamburger">
@@ -82,7 +82,7 @@
         </p>
 
         <div class="hero__actions">
-          <button class="btn btn-primary btn-lg">Book a Free Demo →</button>
+          <a href="#contact" class="btn btn-primary btn-lg">Book a Free Demo →</a>
           <button class="btn btn-outline btn-lg">Watch Video ▶</button>
         </div>
 
@@ -578,14 +578,27 @@
       </div>
 
       <div class="reveal reveal-delay-1">
-        <div class="cta-form">
-          <input class="cta-input" type="text"   placeholder="Your full name" />
-          <input class="cta-input" type="tel"    placeholder="Mobile number" />
-          <input class="cta-input" type="text"   placeholder="Society name" />
-          <input class="cta-input" type="text"   placeholder="City / Pincode" />
-          <button class="btn btn-white btn-lg" style="justify-content:center">Schedule Free Demo →</button>
+
+          {% if messages %}
+            {% for message in messages %}
+              <div class="cta-message cta-message--{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="POST" action="{% url 'book_demo' %}">
+            {% csrf_token %}
+            <div class="cta-form">
+              {{ form.full_name }}
+              {{ form.mobile }}
+              {{ form.society_name }}
+              {{ form.city }}
+              <button type="submit" class="btn btn-white btn-lg" style="justify-content:center">
+                Schedule Free Demo →
+              </button>
+            </div>
+          </form>
+
         </div>
-      </div>
 
     </div>
   </div>

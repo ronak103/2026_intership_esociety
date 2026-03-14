@@ -16,11 +16,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path,include
-from . import views
+from core import views as core_views
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('core/',include('core.urls')),
     path('society/',include('society.urls')),
-    path('',views.home,name="home")
+    path('', core_views.home, name='home'),
+    path('book-demo/', core_views.book_demo, name='book_demo')
+
+   
 ]
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

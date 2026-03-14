@@ -14,8 +14,8 @@ import string
 import os
 import logging
 
-from .forms import UserSignupForm, UserLoginForm
-from .models import User
+from .forms import UserSignupForm, UserLoginForm, DemoBookingForm
+from .models import User, DemoBooking
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +23,10 @@ logger = logging.getLogger(__name__)
 OTP_EXPIRY_SECONDS = 5 * 60   # 5 minutes
 OTP_MAX_ATTEMPTS   = 5
 
+
+def home(request):
+    form = DemoBookingForm()
+    return render(request, "home.html",{'form': form})
 
 # ════════════════════════════════════════════════════════
 #  SESSION-BASED OTP FUNCTIONS  (no model / no DB table)
@@ -303,3 +307,15 @@ def resendOtpView(request):
     _send_otp_email(user, otp_code)
     messages.success(request, 'A new OTP has been sent to your email.')
     return redirect('verify_otp')
+
+def book_demo(request):
+    if request.method == 'POST':
+        form = DemoBookingForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Demo booked! We will contact you soon.')
+            return redirect('home')
+        else:
+            # Pass form WITH errors back to home template
+            return render(request, 'home.html', {'form': form})
+    return redirect('home')
