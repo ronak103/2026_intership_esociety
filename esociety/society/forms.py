@@ -490,3 +490,49 @@ class AdminSocietySettingsForm(forms.Form):
             "placeholder": "e.g. 9876543210",
         }),
     )
+
+from datetime import date as _date
+ 
+class MaintenanceConfigForm(forms.Form):
+    monthly_amount = forms.DecimalField(
+        min_value=0, max_digits=10, decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            "class": "inner-input",
+            "placeholder": "e.g. 2500",
+            "step": "0.01",
+        }),
+        label="Monthly Maintenance Amount (₹)",
+    )
+    due_day = forms.IntegerField(
+        min_value=1, max_value=28,
+        widget=forms.NumberInput(attrs={
+            "class": "inner-input",
+            "placeholder": "e.g. 10",
+        }),
+        label="Due Day of Month (1–28)",
+    )
+ 
+ 
+class GenerateDuesForm(forms.Form):
+    # Generates month choices: previous year, current year, next year
+    MONTH_CHOICES = [
+        (f"{y}-{m:02d}-01", _date(y, m, 1).strftime("%B %Y"))
+        for y in [_date.today().year - 1, _date.today().year, _date.today().year + 1]
+        for m in range(1, 13)
+    ]
+    month = forms.ChoiceField(
+        choices=MONTH_CHOICES,
+        widget=forms.Select(attrs={"class": "inner-select"}),
+        label="Month",
+    )
+    custom_amount = forms.DecimalField(
+        required=False,
+        min_value=0, max_digits=10, decimal_places=2,
+        widget=forms.NumberInput(attrs={
+            "class": "inner-input",
+            "placeholder": "Leave blank to use default amount",
+            "step": "0.01",
+        }),
+        label="Custom Amount (optional)",
+    )
+ 

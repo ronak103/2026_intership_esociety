@@ -3,12 +3,6 @@ from .models import User, DemoBooking
 
 
 class UserSignupForm(forms.ModelForm):
-    """
-    Signup form based directly on the custom User model.
-    Avoids UserCreationForm which is tied to Django's default username-based User.
-    """
-
-    # Defined at class level (not inside Meta) so Django renders and validates them
     password1 = forms.CharField(
         label='Password',
         widget=forms.PasswordInput(attrs={'placeholder': 'Password', 'autocomplete': 'new-password'}),
@@ -45,8 +39,8 @@ class UserSignupForm(forms.ModelForm):
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.set_password(self.cleaned_data['password1'])  # hashes the password properly
-        user.status = 'inactive'   # always start inactive — required for OTP verification flow
+        user.set_password(self.cleaned_data['password1'])
+        user.status = 'inactive'
         if commit:
             user.save()
         return user
@@ -61,7 +55,6 @@ class UserLoginForm(forms.Form):
     )
 
 
-
 class DemoBookingForm(forms.ModelForm):
     class Meta:
         model = DemoBooking
@@ -72,3 +65,47 @@ class DemoBookingForm(forms.ModelForm):
             'society_name': forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'Society name'}),
             'city':         forms.TextInput(attrs={'class': 'cta-input', 'placeholder': 'City / Pincode'}),
         }
+
+
+# ── FORGOT PASSWORD FORMS ─────────────────────────────────
+
+class ForgotPasswordForm(forms.Form):
+    email = forms.EmailField(
+        widget=forms.EmailInput(attrs={
+            'placeholder': 'Enter your registered email',
+            'autocomplete': 'email',
+        }),
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email', '').strip().lower()
+        if not User.objects.filter(email=email).exists():
+            raise forms.ValidationError('No account found with this email address.')
+        return email
+
+
+class ResetPasswordForm(forms.Form):
+    password1 = forms.CharField(
+        label='New Password',
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'New password',
+            'autocomplete': 'new-password',
+        }),
+    )
+    password2 = forms.CharField(
+        label='Confirm New Password',
+        widget=forms.PasswordInput(attrs={
+            'placeholder': 'Confirm new password',
+            'autocomplete': 'new-password',
+        }),
+    )
+
+    def clean_password2(self):
+        p1 = self.cleaned_data.get('password1', '')
+        p2 = self.cleaned_data.get('password2', '')
+        if p1 != p2:
+            raise forms.ValidationError('Passwords do not match.')
+        if len(p1) < 8:
+            raise forms.ValidationError('Password must be at least 8 characters.')
+        return p2
+        

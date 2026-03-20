@@ -38,6 +38,14 @@ urlpatterns = [
     path("admin/finance/payment/<int:payment_id>/mark-paid/", views.AdminMarkPaidView, name="admin_mark_paid"),
     path("admin/finance/booking/<int:booking_id>/confirm/", views.AdminConfirmBookingView, name="admin_confirm_booking"),
     path("admin/finance/booking/<int:booking_id>/cancel/", views.AdminCancelBookingView,  name="admin_cancel_booking"),
+    path("admin/maintenance/", views.AdminMaintenanceView, name="admin_maintenance"),
+    path("admin/maintenance/config/save/", views.AdminSaveMaintenanceConfigView, name="admin_save_maintenance_config"),
+    path("admin/maintenance/generate/",  views.AdminGenerateDuesView, name="admin_generate_dues"),
+    path("admin/maintenance/due/<int:due_id>/paid/", views.AdminMarkDuePaidView,name="admin_mark_due_paid"),
+    path("admin/maintenance/due/<int:due_id>/waive/", views.AdminWaiveDueView,  name="admin_waive_due"),
+    path("admin/maintenance/due/<int:due_id>/delete/", views.AdminDeleteDueView,name="admin_delete_due"),
+    path("admin/maintenance/mark-overdue/",  views.AdminMarkOverdueView,name="admin_mark_overdue"),
+    path("admin/maintenance/export/",  views.AdminExportDuesView,name="admin_export_dues"),
 
     # Community
     path("admin/community/", views.AdminCommunityView, name="admin_community"),

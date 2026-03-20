@@ -14,7 +14,7 @@ import string
 import os
 import logging
 
-from .forms import UserSignupForm, UserLoginForm, DemoBookingForm
+from .forms import UserSignupForm, UserLoginForm, DemoBookingForm, ForgotPasswordForm, ResetPasswordForm
 from .models import User, DemoBooking
 
 logger = logging.getLogger(__name__)
@@ -26,19 +26,18 @@ OTP_MAX_ATTEMPTS   = 5
 
 def home(request):
     form = DemoBookingForm()
-    return render(request, "home.html",{'form': form})
+    return render(request, "home.html", {'form': form})
+
 
 # ════════════════════════════════════════════════════════
-#  SESSION-BASED OTP FUNCTIONS  (no model / no DB table)
+#  SESSION-BASED OTP FUNCTIONS
 # ════════════════════════════════════════════════════════
 
 def generate_otp():
-    """Return a cryptographically random 6-digit string."""
     return ''.join(random.choices(string.digits, k=6))
 
 
 def store_otp_in_session(request, user_id, otp_code):
-    """Write OTP state into the signed/encrypted session."""
     request.session['otp'] = {
         'user_id':    user_id,
         'code':       otp_code,
@@ -66,10 +65,6 @@ def is_otp_expired(otp_data):
 
 
 def check_otp(request, submitted_code):
-    """
-    Validate OTP from session.
-    Returns (success: bool, error_message: str | None).
-    """
     otp_data = get_otp_from_session(request)
 
     if not otp_data:
@@ -96,7 +91,6 @@ def check_otp(request, submitted_code):
         clear_otp_from_session(request)
         return False, 'Too many incorrect attempts. Please log in again.'
 
-    # ✅ Correct — mark as used to prevent replay
     otp_data['is_used'] = True
     request.session['otp'] = otp_data
     request.session.modified = True
@@ -108,7 +102,6 @@ def check_otp(request, submitted_code):
 # ════════════════════════════════════════════════════════
 
 def _send_otp_email(user, otp_code):
-    """Fire-and-forget OTP email in a daemon thread."""
     def _send():
         try:
             html = render_to_string('core/otp_email.html', {
@@ -117,7 +110,7 @@ def _send_otp_email(user, otp_code):
                 'expiry_min': OTP_EXPIRY_SECONDS // 60,
             })
             msg = EmailMultiAlternatives(
-                subject='Your E-Society Login OTP',
+                subject='Your GateNova Login OTP',
                 body=otp_code,
                 from_email=settings.EMAIL_HOST_USER,
                 to=[user.email],
@@ -126,20 +119,40 @@ def _send_otp_email(user, otp_code):
             msg.send()
         except Exception as exc:
             logger.exception('OTP email failed for %s: %s', user.email, exc)
+    threading.Thread(target=_send, daemon=True).start()
 
+
+def _send_forgot_otp_email(user, otp_code):
+    """Forgot password OTP email — separate subject line."""
+    def _send():
+        try:
+            html = render_to_string('core/otp_email.html', {
+                'first_name': user.first_name or user.email,
+                'otp_code':   otp_code,
+                'expiry_min': OTP_EXPIRY_SECONDS // 60,
+            })
+            msg = EmailMultiAlternatives(
+                subject='GateNova — Reset Your Password',
+                body=otp_code,
+                from_email=settings.EMAIL_HOST_USER,
+                to=[user.email],
+            )
+            msg.attach_alternative(html, 'text/html')
+            msg.send()
+        except Exception as exc:
+            logger.exception('Forgot OTP email failed for %s: %s', user.email, exc)
     threading.Thread(target=_send, daemon=True).start()
 
 
 def _send_welcome_email(user):
-    """Fire-and-forget welcome email in a daemon thread."""
     def _send():
         try:
             html = render_to_string('core/welcome_email.html', {
                 'first_name': user.first_name or user.email,
             })
             msg = EmailMultiAlternatives(
-                subject='Welcome to E-Society',
-                body='Welcome to E-Society',
+                subject='Welcome to GateNova',
+                body='Welcome to GateNova',
                 from_email=settings.EMAIL_HOST_USER,
                 to=[user.email],
             )
@@ -150,7 +163,6 @@ def _send_welcome_email(user):
             msg.send()
         except Exception as exc:
             logger.exception('Welcome email failed for %s: %s', user.email, exc)
-
     threading.Thread(target=_send, daemon=True).start()
 
 
@@ -185,7 +197,7 @@ def userSignupView(request):
     active_form = 'signup'
 
     if request.method == 'POST' and signup_form.is_valid():
-        user = signup_form.save()          # status = 'inactive' by default
+        user = signup_form.save()
         _send_welcome_email(user)
         messages.success(request, 'Account created successfully! Please log in.')
         return redirect('login')
@@ -203,19 +215,16 @@ def userLoginview(request):
         email    = login_form.cleaned_data['email']
         password = login_form.cleaned_data['password']
 
-        # 1. Lookup user
         try:
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             messages.error(request, 'Account does not exist.')
             return _auth_render(request, login_form, signup_form, active_form)
 
-        # 2. Password check
         if not user.check_password(password):
             messages.error(request, 'Invalid email or password.')
             return _auth_render(request, login_form, signup_form, active_form)
 
-        # 3. Status gate
         if user.status == 'deleted':
             messages.error(request, 'Account does not exist.')
             return _auth_render(request, login_form, signup_form, active_form)
@@ -228,7 +237,6 @@ def userLoginview(request):
             login(request, user)
             return _redirect_by_role(user)
 
-        # 4. Inactive → send OTP
         otp_code = generate_otp()
         store_otp_in_session(request, user.pk, otp_code)
         _send_otp_email(user, otp_code)
@@ -259,7 +267,6 @@ def verifyOtpView(request):
         return redirect('login')
 
     if request.method == 'POST':
-        # Accept either a single 'otp' field OR six individual 'otp1'…'otp6' fields
         if request.POST.get('otp'):
             submitted = request.POST.get('otp', '').strip()
         else:
@@ -277,11 +284,10 @@ def verifyOtpView(request):
             user.save(update_fields=['status'])
             clear_otp_from_session(request)
             login(request, user)
-            messages.success(request, 'Email verified successfully! Welcome to E-Society.')
+            messages.success(request, 'Email verified successfully! Welcome to GateNova.')
             return _redirect_by_role(user)
 
         messages.error(request, error_msg)
-        # If session was cleared (expired / locked), send back to login
         if not get_otp_from_session(request):
             return redirect('login')
 
@@ -308,6 +314,7 @@ def resendOtpView(request):
     messages.success(request, 'A new OTP has been sent to your email.')
     return redirect('verify_otp')
 
+
 def book_demo(request):
     if request.method == 'POST':
         form = DemoBookingForm(request.POST)
@@ -316,6 +323,149 @@ def book_demo(request):
             messages.success(request, 'Demo booked! We will contact you soon.')
             return redirect('home')
         else:
-            # Pass form WITH errors back to home template
             return render(request, 'home.html', {'form': form})
     return redirect('home')
+
+
+# ════════════════════════════════════════════════════════
+#  FORGOT PASSWORD VIEWS
+# ════════════════════════════════════════════════════════
+
+@never_cache
+def forgotPasswordView(request):
+    """Step 1 — User enters email. OTP sent if account exists."""
+    form = ForgotPasswordForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        email = form.cleaned_data['email']
+        user  = User.objects.get(email=email)
+
+        otp_code = generate_otp()
+        # Store OTP in session under a separate key so it doesn't clash with login OTP
+        request.session['fp_otp'] = {
+            'user_id':    user.pk,
+            'code':       otp_code,
+            'created_at': timezone.now().isoformat(),
+            'attempts':   0,
+            'is_used':    False,
+        }
+        request.session.modified = True
+
+        _send_forgot_otp_email(user, otp_code)
+        messages.success(request, f'A 6-digit OTP has been sent to {email}.')
+        return redirect('forgot_verify_otp')
+
+    return render(request, 'core/forgot_password.html', {'form': form})
+
+
+@never_cache
+def forgotVerifyOtpView(request):
+    """Step 2 — User enters the OTP received in email."""
+    fp_otp = request.session.get('fp_otp')
+
+    if not fp_otp:
+        messages.error(request, 'Session expired. Please start again.')
+        return redirect('forgot_password')
+
+    try:
+        user = User.objects.get(pk=fp_otp['user_id'])
+    except User.DoesNotExist:
+        request.session.pop('fp_otp', None)
+        return redirect('forgot_password')
+
+    if request.method == 'POST':
+        digits    = [request.POST.get(f'otp{i}', '').strip() for i in range(1, 7)]
+        submitted = ''.join(digits)
+
+        if len(submitted) != 6 or not submitted.isdigit():
+            messages.error(request, 'Please enter all 6 digits.')
+            return render(request, 'core/forgot_verify_otp.html', {'email': user.email})
+
+        # Check expiry
+        created_at = timezone.datetime.fromisoformat(fp_otp['created_at'])
+        if timezone.is_naive(created_at):
+            created_at = timezone.make_aware(created_at)
+        if timezone.now() > created_at + timezone.timedelta(seconds=OTP_EXPIRY_SECONDS):
+            request.session.pop('fp_otp', None)
+            messages.error(request, 'OTP has expired. Please try again.')
+            return redirect('forgot_password')
+
+        # Check attempts
+        if fp_otp.get('attempts', 0) >= OTP_MAX_ATTEMPTS:
+            request.session.pop('fp_otp', None)
+            messages.error(request, 'Too many incorrect attempts. Please try again.')
+            return redirect('forgot_password')
+
+        # Check code
+        if fp_otp['code'] != submitted:
+            fp_otp['attempts'] += 1
+            request.session['fp_otp'] = fp_otp
+            request.session.modified  = True
+            remaining = OTP_MAX_ATTEMPTS - fp_otp['attempts']
+            messages.error(request, f'Incorrect OTP. {remaining} attempt(s) remaining.')
+            return render(request, 'core/forgot_verify_otp.html', {'email': user.email})
+
+        # ✅ OTP correct — mark verified, move to reset step
+        fp_otp['is_verified'] = True
+        request.session['fp_otp'] = fp_otp
+        request.session.modified   = True
+        return redirect('reset_password')
+
+    return render(request, 'core/forgot_verify_otp.html', {'email': user.email})
+
+
+@never_cache
+@require_http_methods(['POST'])
+def forgotResendOtpView(request):
+    """Resend OTP during forgot password flow."""
+    fp_otp = request.session.get('fp_otp')
+    if not fp_otp:
+        messages.error(request, 'Session expired. Please start again.')
+        return redirect('forgot_password')
+
+    try:
+        user = User.objects.get(pk=fp_otp['user_id'])
+    except User.DoesNotExist:
+        request.session.pop('fp_otp', None)
+        return redirect('forgot_password')
+
+    otp_code = generate_otp()
+    request.session['fp_otp'] = {
+        'user_id':    user.pk,
+        'code':       otp_code,
+        'created_at': timezone.now().isoformat(),
+        'attempts':   0,
+        'is_used':    False,
+    }
+    request.session.modified = True
+    _send_forgot_otp_email(user, otp_code)
+    messages.success(request, 'A new OTP has been sent to your email.')
+    return redirect('forgot_verify_otp')
+
+
+@never_cache
+def resetPasswordView(request):
+    """Step 3 — User sets a new password."""
+    fp_otp = request.session.get('fp_otp')
+
+    # Guard — only allow if OTP was verified
+    if not fp_otp or not fp_otp.get('is_verified'):
+        messages.error(request, 'Unauthorized. Please complete OTP verification first.')
+        return redirect('forgot_password')
+
+    try:
+        user = User.objects.get(pk=fp_otp['user_id'])
+    except User.DoesNotExist:
+        request.session.pop('fp_otp', None)
+        return redirect('forgot_password')
+
+    form = ResetPasswordForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        user.set_password(form.cleaned_data['password1'])
+        user.save()
+        request.session.pop('fp_otp', None)  # clear session
+        messages.success(request, 'Password reset successful! Please log in with your new password.')
+        return redirect('login')
+
+    return render(request, 'core/reset_password.html', {'form': form})

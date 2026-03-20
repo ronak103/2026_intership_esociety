@@ -8,6 +8,7 @@ from django.contrib.auth import update_session_auth_hash
 import csv
 from django.http import HttpResponse
 from datetime import date
+import calendar
 from django.contrib.auth.decorators import login_required
 from .decorators import role_required
 from .forms import (
@@ -23,6 +24,7 @@ from .forms import (
     AdminFacilityForm,
     AdminChangePasswordForm,
     AdminSocietySettingsForm,
+     MaintenanceConfigForm, GenerateDuesForm
 )
 from .models import (
     Complaint,
@@ -34,6 +36,7 @@ from .models import (
     PollVote,
     Facility,
     FacilityBooking,
+    MaintenanceDue, MaintenanceConfig 
 )
 from core.models import User
 
@@ -496,6 +499,208 @@ def AdminCommunityView(request):
         "total_votes":     PollVote.objects.count(),
     }
     return render(request, "society/Admin/Admin_community.html", context)
+@role_required(allowed_roles=["Admin"])
+def AdminMaintenanceView(request):
+    """Main maintenance due management page."""
+    config        = MaintenanceConfig.get()
+    config_form   = MaintenanceConfigForm(initial={
+        "monthly_amount": config.monthly_amount,
+        "due_day":        config.due_day,
+    })
+    generate_form = GenerateDuesForm()
+ 
+    # Stats
+    paid_dues       = MaintenanceDue.objects.filter(status="paid").count()
+    pending_dues    = MaintenanceDue.objects.filter(status="pending").count()
+    overdue_dues    = MaintenanceDue.objects.filter(status="overdue").count()
+    total_collected = MaintenanceDue.objects.filter(status="paid").aggregate(t=Sum("amount"))["t"] or 0
+    total_pending   = MaintenanceDue.objects.filter(status__in=["pending", "overdue"]).aggregate(t=Sum("amount"))["t"] or 0
+ 
+    # Filters
+    month_filter  = request.GET.get("month", "")
+    status_filter = request.GET.get("status", "all")
+    search_query  = request.GET.get("q", "").strip()
+ 
+    dues_qs = MaintenanceDue.objects.select_related("resident").order_by("-due_month", "resident__first_name")
+ 
+    if month_filter:
+        dues_qs = dues_qs.filter(due_month__startswith=month_filter)
+    if status_filter != "all":
+        dues_qs = dues_qs.filter(status=status_filter)
+    if search_query:
+        dues_qs = dues_qs.filter(
+            Q(resident__first_name__icontains=search_query) |
+            Q(resident__last_name__icontains=search_query)  |
+            Q(resident__unit_number__icontains=search_query)
+        )
+ 
+    paginator = Paginator(dues_qs, 20)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
+ 
+    context = {
+        "config":          config,
+        "config_form":     config_form,
+        "generate_form":   generate_form,
+        "paid_dues":       paid_dues,
+        "pending_dues":    pending_dues,
+        "overdue_dues":    overdue_dues,
+        "total_collected": total_collected,
+        "total_pending":   total_pending,
+        "dues":            page_obj,
+        "page_obj":        page_obj,
+        "is_paginated":    page_obj.has_other_pages(),
+        "month_filter":    month_filter,
+        "status_filter":   status_filter,
+        "search_query":    search_query,
+    }
+    return render(request, "society/Admin/Admin_maintenance.html", context)
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminSaveMaintenanceConfigView(request):
+    """Save monthly amount and due day."""
+    if request.method == "POST":
+        form = MaintenanceConfigForm(request.POST)
+        if form.is_valid():
+            config                = MaintenanceConfig.get()
+            config.monthly_amount = form.cleaned_data["monthly_amount"]
+            config.due_day        = form.cleaned_data["due_day"]
+            config.updated_by     = request.user
+            config.save()
+            messages.success(request, f"Config saved — ₹{config.monthly_amount}/month, due by {config.due_day}th.")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminGenerateDuesView(request):
+    """Generate MaintenanceDue records for all active residents for a given month."""
+    if request.method == "POST":
+        form = GenerateDuesForm(request.POST)
+        if form.is_valid():
+            month_str     = form.cleaned_data["month"]       # "2026-03-01"
+            custom_amount = form.cleaned_data.get("custom_amount")
+            config        = MaintenanceConfig.get()
+            amount        = custom_amount if custom_amount else config.monthly_amount
+ 
+            due_month = date.fromisoformat(month_str)
+            last_day  = calendar.monthrange(due_month.year, due_month.month)[1]
+            due_day   = min(config.due_day, last_day)
+            due_date  = due_month.replace(day=due_day)
+ 
+            residents = User.objects.filter(role="Resident", status="active")
+            created = skipped = 0
+ 
+            for resident in residents:
+                _, was_created = MaintenanceDue.objects.get_or_create(
+                    resident=resident,
+                    due_month=due_month,
+                    defaults={
+                        "amount":   amount,
+                        "due_date": due_date,
+                        "status":   "pending",
+                    }
+                )
+                if was_created:
+                    created += 1
+                    if date.today() > due_date:
+                        MaintenanceDue.objects.filter(
+                            resident=resident, due_month=due_month
+                        ).update(status="overdue")
+                else:
+                    skipped += 1
+ 
+            messages.success(
+                request,
+                f"Generated {created} dues for {due_month.strftime('%B %Y')} — {skipped} already existed."
+            )
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminMarkDuePaidView(request, due_id):
+    """Admin manually marks a due as paid and creates a Payment record."""
+    due = get_object_or_404(MaintenanceDue, id=due_id)
+    if due.status not in ("paid", "waived"):
+        payment = Payment.objects.create(
+            resident       = due.resident,
+            amount         = due.amount,
+            payment_type   = "maintenance",
+            payment_date   = date.today(),
+            payment_status = "completed",
+        )
+        due.status  = "paid"
+        due.paid_on = date.today()
+        due.payment = payment
+        due.save()
+        messages.success(
+            request,
+            f"Marked paid — {due.resident.first_name} {due.resident.last_name} ({due.due_month.strftime('%B %Y')})."
+        )
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminWaiveDueView(request, due_id):
+    """Admin waives a due."""
+    due = get_object_or_404(MaintenanceDue, id=due_id)
+    if request.method == "POST":
+        due.status = "waived"
+        due.note   = request.POST.get("note", "").strip()
+        due.save()
+        messages.success(
+            request,
+            f"Due waived — {due.resident.first_name} {due.resident.last_name} ({due.due_month.strftime('%B %Y')})."
+        )
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminMarkOverdueView(request):
+    """Bulk mark all pending dues past their due_date as overdue."""
+    updated = MaintenanceDue.objects.filter(
+        status="pending", due_date__lt=date.today()
+    ).update(status="overdue")
+    messages.warning(request, f"{updated} dues marked as overdue.")
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminDeleteDueView(request, due_id):
+    """Delete a single due record."""
+    due   = get_object_or_404(MaintenanceDue, id=due_id)
+    month = due.due_month.strftime("%B %Y")
+    name  = f"{due.resident.first_name} {due.resident.last_name}"
+    due.delete()
+    messages.success(request, f"Due deleted — {name} ({month}).")
+    return redirect("admin_maintenance")
+ 
+ 
+@role_required(allowed_roles=["Admin"])
+def AdminExportDuesView(request):
+    """Export all dues as CSV."""
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="maintenance_dues.csv"'
+    writer = csv.writer(response)
+    writer.writerow(["Resident", "Unit", "Month", "Amount", "Due Date", "Status", "Paid On"])
+    for d in MaintenanceDue.objects.select_related("resident").order_by("-due_month"):
+        writer.writerow([
+            f"{d.resident.first_name} {d.resident.last_name}",
+            getattr(d.resident, "unit_number", "—"),
+            d.due_month.strftime("%B %Y"),
+            d.amount,
+            d.due_date,
+            d.status,
+            d.paid_on or "—",
+        ])
+    return response
 
 
 @role_required(allowed_roles=["Admin"])
@@ -682,7 +887,7 @@ def AdminExportAllView(request):
             "Yes" if r.is_active else "No",
             Complaint.objects.filter(resident=r).count(),
             Payment.objects.filter(resident=r, payment_status="pending").count(),
-            r.date_joined.strftime("%d %b %Y"),
+            r.created_at.strftime("%d %b %Y") if r.created_at else "—",
         ])
 
     writer.writerow([])
@@ -815,19 +1020,25 @@ def ResidentDashboardView(request):
     ).count()
 
     # Recent notices for resident
-    from .models import Notice, Payment
+    from .models import Notice, Payment, MaintenanceDue
     recent_notices  = Notice.objects.filter(
         target_audience__in=["all", "resident"]
     ).order_by("-created_at")[:5]
 
     recent_payments = Payment.objects.filter(resident=user).order_by("-created_at")[:5]
 
+    # Current unpaid maintenance due (most recent pending/overdue)
+    current_due = MaintenanceDue.objects.filter(
+        resident=user, status__in=["pending", "overdue"]
+    ).order_by("-due_month").first()
+
     context = {
         "total_complaints":    total_complaints,
         "resolved_complaints": resolved_complaints,
         "active_booking":      active_booking,
         "pending_visitors":    pending_visitors,
-        "maintenance_amount":  0,
+        "maintenance_amount":  current_due.amount if current_due else 0,
+        "maintenance_due":     current_due,
         "recent_notices":      recent_notices,
         "recent_payments":     recent_payments,
         "unread_notif_count":  Notification.objects.filter(user=user, is_read=False).count(),
@@ -1076,11 +1287,19 @@ def resident_change_password(request):
 
 @role_required(allowed_roles=["Resident"])
 def resident_payments(request):
-    payments = Payment.objects.filter(resident=request.user).order_by("-created_at")
+    from .models import MaintenanceDue
+    payments     = Payment.objects.filter(resident=request.user).order_by("-created_at")
+    dues         = MaintenanceDue.objects.filter(resident=request.user).order_by("-due_month")
+    pending_dues = dues.filter(status__in=["pending", "overdue"])
+    total_due    = pending_dues.aggregate(t=Sum("amount"))["t"] or 0
+
     return render(request, "society/Resident/Resident_payments.html", {
-        "payments":          payments,
+        "payments":           payments,
+        "dues":               dues,
+        "pending_dues":       pending_dues,
+        "total_due":          total_due,
         "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
-        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
+        "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 

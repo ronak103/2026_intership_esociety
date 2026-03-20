@@ -5,7 +5,20 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="{% static 'css/home.css' %}" />
-  <title>Home</title>
+  <title>GateNova — Smarter Society Management</title>
+  <meta name="description" content="One platform for residents, security guards & managers — visitor approvals, complaints, facility bookings, and finances, all in one place.">
+  <meta name="keywords" content="society management, RWA software, visitor management, maintenance dues, housing society app">
+
+  <!-- Open Graph (for WhatsApp, LinkedIn, Facebook link previews) -->
+  <meta property="og:title" content="GateNova — Smarter Society Management">
+  <meta property="og:description" content="One platform for residents, security guards & managers.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://yourdomain.com">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="GateNova — Smarter Society Management">
+  <meta name="twitter:description" content="Visitor approvals, complaints, finances — all in one place.">
 </head>
 <body>
 
@@ -24,7 +37,7 @@
             <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
           </svg>
         </div>
-       <span> e<em>Society</em></span>
+       <span> GateNova</span>
       </a>
 
       <ul class="nav__links">
@@ -38,7 +51,7 @@
       <div class="nav__actions">
   
         <a href="{% url 'login' %}" class="btn btn-outline btn-sm">Login</a>
-        <a href="#contact" class="btn btn-primary btn-sm">Book a Demo →</a>
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-sm">Sign Up →</a>
       </div>
 
       <div class="nav__hamburger" id="hamburger">
@@ -95,7 +108,7 @@
           </div>
           <div class="hero__trust-text">
             <strong>50,000+ residents</strong>
-            love eSociety across India
+            love GateNova across India
           </div>
 
           <div class="hero__divider"></div>
@@ -248,7 +261,7 @@
     <div class="section__header section__header--center reveal">
       <div class="section__tag">Core Features</div>
       <h2 class="section__title">Everything your society <span>actually needs</span></h2>
-      <p class="section__sub">From the gate to the committee room — eSociety brings every moving part together in one seamless platform.</p>
+      <p class="section__sub">From the gate to the committee room — GateNova brings every moving part together in one seamless platform.</p>
     </div>
 
     <div class="features-grid">
@@ -487,7 +500,7 @@
 
     <div class="section__header section__header--center reveal">
       <div class="section__tag">By the Numbers</div>
-      <h2 class="section__title">Communities <span>trust eSociety</span></h2>
+      <h2 class="section__title">Communities <span>trust GateNova</span></h2>
     </div>
 
     <div class="stats-grid reveal">
@@ -528,7 +541,7 @@
     <div class="testimonials-grid">
       <div class="testi-card reveal">
         <div class="testi-stars">★★★★★</div>
-        <p class="testi-text">"Managing 300+ flats used to be a nightmare. With eSociety, everything from visitor logs to maintenance dues is handled in one place. The committee finally has time to focus on improving the community."</p>
+        <p class="testi-text">"Managing 300+ flats used to be a nightmare. With GateNova, everything from visitor logs to maintenance dues is handled in one place. The committee finally has time to focus on improving the community."</p>
         <div class="testi-author">
           <div class="testi-ava" style="background: linear-gradient(135deg,#1a56db,#06b6d4)">RK</div>
           <div>
@@ -573,8 +586,8 @@
     <div class="cta-inner">
 
       <div class="reveal">
-        <h2 class="cta-title">Switch to eSociety.<br>Your community deserves better.</h2>
-        <p class="cta-desc">Book a free demo today. See how eSociety can transform your society's operations in under 30 minutes. No commitment. No credit card.</p>
+        <h2 class="cta-title">Switch to GateNova.<br>Your community deserves better.</h2>
+        <p class="cta-desc">Book a free demo today. See how GateNova can transform your society's operations in under 30 minutes. No commitment. No credit card.</p>
       </div>
 
       <div class="reveal reveal-delay-1">
@@ -618,7 +631,7 @@
             <rect width="24" height="24" rx="6" fill="#1a56db"/>
             <path d="M12 3L21 9.5V21H15V15H9V21H3V9.5L12 3Z" fill="white"/>
           </svg>
-          eSociety
+          GateNova
         </div>
         <p class="footer__brand-desc">Making everyday community living easier, safer, and more connected — one society at a time.</p>
       </div>
@@ -657,7 +670,7 @@
     </div>
 
     <div class="footer__bottom">
-      <span>© 2025 eSociety Technologies Pvt. Ltd. All rights reserved.</span>
+      <span>© 2025 GateNova Technologies Pvt. Ltd. All rights reserved.</span>
       <div class="footer__bottom-links">
         <a href="#">Privacy</a>
         <a href="#">Terms</a>
@@ -669,44 +682,7 @@
 </footer>
 
 
-<!-- ════════════════════════════════════════
-     JS — Scroll effects & nav
-════════════════════════════════════════ -->
-<script>
-  // Navbar scroll shadow
-  const navbar = document.getElementById('navbar');
-  window.addEventListener('scroll', () => {
-    navbar.classList.toggle('scrolled', window.scrollY > 20);
-  });
-
-  // Scroll reveal
-  const reveals = document.querySelectorAll('.reveal');
-  const revealObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.classList.add('visible');
-        revealObserver.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.1 });
-  reveals.forEach(el => revealObserver.observe(el));
-
-  // Progress bar animation on scroll
-  const progFills = document.querySelectorAll('.prog__fill');
-  const progObserver = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.style.width = e.target.style.width; // trigger reflow
-        progObserver.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.3 });
-  progFills.forEach(el => { const w = el.style.width; el.style.width = '0'; setTimeout(() => el.style.width = w, 300); progObserver.observe(el); });
-
-  // Hamburger (mobile) - basic toggle
-  const hamburger = document.getElementById('hamburger');
-  hamburger.addEventListener('click', () => hamburger.classList.toggle('active'));
-</script>
+<script src="{% static 'js/home.js' %}"></script>
 
 </body>
 </html>

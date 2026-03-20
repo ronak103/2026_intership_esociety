@@ -1,0 +1,338 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Maintenance Dues — GateNova Admin{% endblock %}
+{% block page_title %}Maintenance Dues{% endblock %}
+{% block page_subtitle %}Set monthly amounts and manage resident dues{% endblock %}
+
+{% block topbar_actions %}
+<button class="topbar-btn topbar-btn-primary" onclick="openModal('generateModal')">
+    <i class="fas fa-bolt"></i> Generate Dues
+</button>
+<a href="{% url 'admin_mark_overdue' %}"
+   class="topbar-btn topbar-btn-outline"
+   onclick="return confirm('Mark all pending past-due-date dues as Overdue?')">
+    <i class="fas fa-exclamation-triangle"></i> Mark Overdue
+</a>
+<a href="{% url 'admin_export_dues' %}" class="topbar-btn topbar-btn-outline">
+    <i class="fas fa-download"></i> Export CSV
+</a>
+{% endblock %}
+
+{% block content %}
+
+<!-- ░░ SKELETON ░░ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+        <div class="sk sk-stat"></div><div class="sk sk-stat"></div>
+    </div>
+    <div class="sk-card">
+        <div class="sk sk-title"></div>
+        <div class="sk sk-row" style="margin-bottom:18px;"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+        <div class="sk sk-row"></div><div class="sk sk-row"></div>
+    </div>
+</div>
+
+<!-- ░░ REAL CONTENT ░░ -->
+<div class="real-content">
+
+<!-- ── STAT CARDS ── -->
+<div class="stats-grid" style="margin-bottom:24px;">
+    <div class="stat-card green">
+        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-value amount">₹{{ total_collected|floatformat:0 }}</div>
+            <div class="stat-label">Total Collected</div>
+            <div class="stat-sub">{{ paid_dues }} dues paid</div>
+        </div>
+    </div>
+    <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fas fa-hourglass-half"></i></div>
+        <div class="stat-info">
+            <div class="stat-value amount">₹{{ total_pending|floatformat:0 }}</div>
+            <div class="stat-label">Pending Amount</div>
+            <div class="stat-sub">{{ pending_dues }} residents</div>
+        </div>
+    </div>
+    <div class="stat-card red">
+        <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+        <div class="stat-info">
+            <div class="stat-value">{{ overdue_dues }}</div>
+            <div class="stat-label">Overdue Dues</div>
+            <div class="stat-sub">Past due date</div>
+        </div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon blue"><i class="fas fa-cog"></i></div>
+        <div class="stat-info">
+            <div class="stat-value amount">₹{{ config.monthly_amount|floatformat:0 }}</div>
+            <div class="stat-label">Monthly Amount</div>
+            <div class="stat-sub">Due by {{ config.due_day }}th each month</div>
+        </div>
+    </div>
+</div>
+
+<!-- ── CONFIG CARD ── -->
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-cog"></i> Maintenance Configuration</span>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{% url 'admin_save_maintenance_config' %}">
+            {% csrf_token %}
+            <div class="form-row" style="align-items:flex-end;">
+                <div class="form-group">
+                    <label class="form-label">Monthly Amount (₹) <span class="req">*</span></label>
+                    {{ config_form.monthly_amount }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Due Day of Month <span class="req">*</span></label>
+                    {{ config_form.due_day }}
+                    <small style="color:var(--text-muted);font-size:11px;margin-top:3px;display:block;">
+                        Payment due by this day each month (1–28)
+                    </small>
+                </div>
+                <div class="form-group" style="flex:0 0 auto;padding-top:4px;">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Config
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── DUES TABLE CARD ── -->
+<div class="card">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-file-invoice-dollar"></i> Maintenance Dues</span>
+        <span style="font-size:13px;color:var(--text-muted);">{{ dues.paginator.count }} total records</span>
+    </div>
+
+    <!-- Filters -->
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);">
+        <form method="GET" class="filter-bar">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search resident or unit…">
+            </div>
+            <input type="month" name="month" value="{{ month_filter }}"
+                   class="filter-select" style="padding:8px 10px;">
+            <select name="status" class="filter-select" onchange="this.form.submit()">
+                <option value="all"     {% if status_filter == 'all'     %}selected{% endif %}>All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="paid"    {% if status_filter == 'paid'    %}selected{% endif %}>Paid</option>
+                <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+                <option value="waived"  {% if status_filter == 'waived'  %}selected{% endif %}>Waived</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+            {% if search_query or status_filter != 'all' or month_filter %}
+            <a href="{% url 'admin_maintenance' %}" class="btn btn-outline btn-sm">Clear</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Resident</th>
+                    <th>Unit</th>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Paid On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for due in dues %}
+                <tr>
+                    <td style="color:var(--text-muted);font-size:12px;">{{ forloop.counter }}</td>
+                    <td>
+                        <div class="resident-cell">
+                            <div class="avatar sm">{{ due.resident.first_name|first|upper }}{{ due.resident.last_name|first|upper }}</div>
+                            <div class="info">
+                                <div class="name">{{ due.resident.first_name }} {{ due.resident.last_name }}</div>
+                                <div class="sub">{{ due.resident.email }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-gray">{{ due.resident.unit_number|default:"—" }}</span></td>
+                    <td><strong>{{ due.due_month|date:"M Y" }}</strong></td>
+                    <td class="fw amount" style="color:var(--success);">₹{{ due.amount }}</td>
+                    <td style="font-size:12.5px;">{{ due.due_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if due.status == "paid" %}
+                            <span class="badge badge-success">Paid</span>
+                        {% elif due.status == "overdue" %}
+                            <span class="badge badge-danger">Overdue</span>
+                        {% elif due.status == "waived" %}
+                            <span class="badge badge-gray">Waived</span>
+                        {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:12px;color:var(--text-muted);">
+                        {{ due.paid_on|date:"d M Y"|default:"—" }}
+                    </td>
+                    <td>
+                        <div style="display:flex;gap:4px;">
+                            {% if due.status != "paid" and due.status != "waived" %}
+                            <a href="{% url 'admin_mark_due_paid' due.id %}"
+                               class="btn btn-success btn-xs"
+                               onclick="return confirm('Mark as paid?')">
+                                <i class="fas fa-check"></i> Mark Paid
+                            </a>
+                            <button class="btn btn-outline btn-xs"
+                                    onclick="openWaiveModal({{ due.id }})">
+                                <i class="fas fa-hand-paper"></i>
+                            </button>
+                            {% endif %}
+                            <a href="{% url 'admin_delete_due' due.id %}"
+                               class="btn btn-danger btn-xs"
+                               onclick="return confirm('Delete this due?')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <i class="fas fa-file-invoice-dollar"></i>
+                            <p>No dues found. Click <strong>Generate Dues</strong> to create dues for a month.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="pagination">
+        <span class="pagination-info">
+            Showing {{ dues.start_index }}–{{ dues.end_index }} of {{ dues.paginator.count }}
+        </span>
+        <div class="pagination-controls">
+            {% if dues.has_previous %}
+            <a href="?page={{ dues.previous_page_number }}&status={{ status_filter }}&month={{ month_filter }}&q={{ search_query }}"
+               class="page-btn"><i class="fas fa-chevron-left"></i></a>
+            {% endif %}
+            {% for num in dues.paginator.page_range %}
+                {% if dues.number == num %}
+                    <span class="page-btn active">{{ num }}</span>
+                {% elif num > dues.number|add:'-3' and num < dues.number|add:'3' %}
+                    <a href="?page={{ num }}&status={{ status_filter }}&month={{ month_filter }}&q={{ search_query }}"
+                       class="page-btn">{{ num }}</a>
+                {% endif %}
+            {% endfor %}
+            {% if dues.has_next %}
+            <a href="?page={{ dues.next_page_number }}&status={{ status_filter }}&month={{ month_filter }}&q={{ search_query }}"
+               class="page-btn"><i class="fas fa-chevron-right"></i></a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+</div><!-- /real-content -->
+
+<!-- ── GENERATE DUES MODAL ── -->
+<div class="modal-overlay" id="generateModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-bolt" style="color:var(--primary);margin-right:8px;"></i>
+                Generate Monthly Dues
+            </span>
+            <button class="modal-close" onclick="closeModal('generateModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" action="{% url 'admin_generate_dues' %}">
+            {% csrf_token %}
+            <div class="modal-body">
+                {% if generate_form.non_field_errors %}
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> {{ generate_form.non_field_errors.0 }}
+                </div>
+                {% endif %}
+                <div class="alert alert-info" style="margin-bottom:16px;font-size:13px;">
+                    <i class="fas fa-info-circle"></i>
+                    Creates one due per active resident for the selected month.
+                    Existing records are skipped.
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Month <span class="req">*</span></label>
+                    {{ generate_form.month }}
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Custom Amount (optional)</label>
+                    {{ generate_form.custom_amount }}
+                    <small style="color:var(--text-muted);font-size:11px;">
+                        Leave blank to use default: ₹{{ config.monthly_amount }}
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('generateModal')">Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-bolt"></i> Generate Dues
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── WAIVE DUE MODAL ── -->
+<div class="modal-overlay" id="waiveModal">
+    <div class="modal">
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-hand-paper" style="color:#f59e0b;margin-right:8px;"></i>
+                Waive Due
+            </span>
+            <button class="modal-close" onclick="closeModal('waiveModal')">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form method="POST" id="waiveForm" action="">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Reason (optional)</label>
+                    <textarea name="note" class="inner-input" rows="3"
+                              placeholder="e.g. Senior citizen discount, special case…"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('waiveModal')">Cancel</button>
+                <button type="submit" class="btn btn-warning">
+                    <i class="fas fa-hand-paper"></i> Waive Due
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>skeletonReveal(1500);</script>
+<script>
+function openWaiveModal(dueId) {
+    document.getElementById('waiveForm').action = '/society/admin/maintenance/due/' + dueId + '/waive/';
+    openModal('waiveModal');
+}
+</script>
+{% endblock %}

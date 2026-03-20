@@ -1,19 +1,29 @@
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
 
-{% block title %}My Dashboard — SocietySync{% endblock %}
+{% block title %}My Dashboard — GateNova{% endblock %}
 {% block page_title %}My Dashboard{% endblock %}
 
 {% block content %}
 
 <!-- Stats -->
 <div class="stats-grid">
-    <div class="stat-card blue">
-        <div class="stat-icon blue"><i class="fas fa-wallet"></i></div>
+    <div class="stat-card {% if maintenance_due.status == 'overdue' %}red{% elif maintenance_due %}amber{% else %}blue{% endif %}">
+        <div class="stat-icon {% if maintenance_due.status == 'overdue' %}red{% elif maintenance_due %}amber{% else %}blue{% endif %}">
+            <i class="fas fa-wallet"></i>
+        </div>
         <div class="stat-info">
             <div class="stat-value">₹{{ maintenance_amount|default:"0" }}</div>
             <div class="stat-label">Maintenance Due</div>
-            <div class="stat-sub">Current month</div>
+            <div class="stat-sub">
+                {% if maintenance_due.status == 'overdue' %}
+                    Overdue — due {{ maintenance_due.due_date|date:"d M" }}
+                {% elif maintenance_due %}
+                    Due by {{ maintenance_due.due_date|date:"d M Y" }}
+                {% else %}
+                    All clear ✓
+                {% endif %}
+            </div>
         </div>
     </div>
     <div class="stat-card amber">

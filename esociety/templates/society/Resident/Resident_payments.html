@@ -1,10 +1,79 @@
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
 
-{% block title %}My Payments — SocietySync{% endblock %}
+{% block title %}My Payments — GateNova{% endblock %}
 {% block page_title %}My Payments{% endblock %}
 
 {% block content %}
+
+<!-- ── MAINTENANCE DUES SECTION ── -->
+{% if dues %}
+<div class="card" style="margin-bottom:20px;">
+    <div class="card-header">
+        <span class="card-title"><i class="fas fa-file-invoice-dollar"></i> Maintenance Dues</span>
+        {% if total_due > 0 %}
+        <span class="badge badge-danger">₹{{ total_due|floatformat:0 }} pending</span>
+        {% else %}
+        <span class="badge badge-success">All Clear</span>
+        {% endif %}
+    </div>
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Amount</th>
+                    <th>Due Date</th>
+                    <th>Status</th>
+                    <th>Paid On</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for due in dues %}
+                <tr>
+                    <td><strong>{{ due.due_month|date:"F Y" }}</strong></td>
+                    <td style="font-weight:700;color:var(--text);">₹{{ due.amount }}</td>
+                    <td style="font-size:13px;color:var(--text-muted);">{{ due.due_date|date:"d M Y" }}</td>
+                    <td>
+                        {% if due.status == "paid" %}
+                            <span class="badge badge-success"><i class="fas fa-check"></i> Paid</span>
+                        {% elif due.status == "overdue" %}
+                            <span class="badge badge-danger"><i class="fas fa-exclamation"></i> Overdue</span>
+                        {% elif due.status == "waived" %}
+                            <span class="badge badge-gray">Waived</span>
+                        {% else %}
+                            <span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>
+                        {% endif %}
+                    </td>
+                    <td style="font-size:13px;color:var(--text-muted);">
+                        {{ due.paid_on|date:"d M Y"|default:"—" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<!-- Overdue warning banner -->
+{% if pending_dues %}
+<div class="card" style="border-left:4px solid var(--danger);margin-bottom:20px;">
+    <div class="card-header" style="background:linear-gradient(135deg,#fef2f2,#fff);padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <i class="fas fa-exclamation-triangle" style="color:var(--danger);font-size:20px;flex-shrink:0;"></i>
+            <div>
+                <div style="font-weight:700;font-size:14px;color:#991b1b;">
+                    You have ₹{{ total_due|floatformat:0 }} in pending maintenance dues
+                </div>
+                <div style="font-size:12px;color:#b91c1c;margin-top:2px;">
+                    Please contact the society office or admin to clear your dues.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Payment Table -->
 <div class="card">

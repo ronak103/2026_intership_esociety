@@ -5,24 +5,20 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Verify OTP — GateNova</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:'DM Sans',system-ui,sans-serif;
-      min-height:100vh;
-      display:flex;align-items:center;justify-content:center;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
       background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 55%,#0f172a 100%);
       padding:20px;
     }
     .card{
-      background:#fff;border-radius:20px;
-      padding:48px 40px;width:100%;max-width:440px;
-      box-shadow:0 24px 64px rgba(0,0,0,.35);
-      text-align:center;
+      background:#fff;border-radius:20px;padding:48px 40px;
+      width:100%;max-width:440px;
+      box-shadow:0 24px 64px rgba(0,0,0,.35);text-align:center;
     }
-    /* icon */
     .icon{
       width:72px;height:72px;border-radius:50%;
       background:linear-gradient(135deg,#2563eb,#06b6d4);
@@ -36,17 +32,11 @@
       font-size:.82rem;font-weight:600;padding:4px 14px;
       border-radius:20px;margin-bottom:28px;
     }
-    /* messages */
     .msgs{list-style:none;margin-bottom:18px}
-    .msgs li{
-      padding:10px 14px;border-radius:10px;
-      font-size:.85rem;font-weight:500;margin-bottom:6px;
-    }
+    .msgs li{padding:10px 14px;border-radius:10px;font-size:.85rem;font-weight:500;margin-bottom:6px;}
     .msgs .error  {background:#fee2e2;color:#dc2626}
     .msgs .success{background:#dcfce7;color:#16a34a}
     .msgs .info   {background:#dbeafe;color:#2563eb}
-    .msgs .warning{background:#fef9c3;color:#92400e}
-    /* otp boxes */
     .otp-row{display:flex;gap:10px;justify-content:center;margin-bottom:24px}
     .otp-row input{
       width:52px;height:60px;border:2px solid #e2e8f0;border-radius:12px;
@@ -56,11 +46,9 @@
     }
     .otp-row input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.12)}
     .otp-row input.filled{border-color:#06b6d4;background:#ecfeff}
-    /* timer */
     .timer{font-size:.83rem;color:#94a3b8;margin-bottom:22px}
     #cd{font-weight:700;color:#2563eb}
     #cd.expired{color:#ef4444}
-    /* submit */
     .btn{
       width:100%;padding:13px;border:none;border-radius:12px;
       font-size:.975rem;font-weight:600;cursor:pointer;
@@ -68,18 +56,14 @@
       transition:opacity .18s,transform .1s;margin-bottom:14px;
     }
     .btn:hover{opacity:.91;transform:translateY(-1px)}
-    .btn:active{transform:translateY(0)}
     .btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
-    /* resend */
     .resend{font-size:.85rem;color:#64748b}
     .resend form{display:inline}
     .resend-btn{
       background:none;border:none;color:#2563eb;font-weight:600;
       font-size:.85rem;cursor:pointer;font-family:inherit;padding:0;
-      transition:color .15s;
     }
-    .resend-btn:hover{color:#1d4ed8;text-decoration:underline}
-    .resend-btn:disabled{color:#94a3b8;cursor:not-allowed;text-decoration:none}
+    .resend-btn:disabled{color:#94a3b8;cursor:not-allowed}
     .back{display:block;margin-top:18px;font-size:.82rem;color:#94a3b8;text-decoration:none}
     .back:hover{color:#475569}
     @media(max-width:480px){
@@ -90,21 +74,18 @@
 </head>
 <body>
 <div class="card">
-
   <div class="icon">✉️</div>
-  <h1>Verify your email</h1>
+  <h1>Check your email</h1>
   <p class="sub">Enter the 6-digit code sent to</p>
   <span class="email-pill">{{ email }}</span>
 
   {% if messages %}
   <ul class="msgs">
-    {% for m in messages %}
-    <li class="{{ m.tags }}">{{ m }}</li>
-    {% endfor %}
+    {% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}
   </ul>
   {% endif %}
 
-  <form method="POST" action="{% url 'verify_otp' %}" id="otpForm" autocomplete="off">
+  <form method="POST" action="{% url 'forgot_verify_otp' %}" id="otpForm" autocomplete="off">
     {% csrf_token %}
     <div class="otp-row" id="otpRow">
       {% for i in "123456" %}
@@ -113,69 +94,63 @@
              aria-label="OTP digit {{ forloop.counter }}" required/>
       {% endfor %}
     </div>
-
     <p class="timer">Code expires in <span id="cd">05:00</span></p>
-
     <button type="submit" class="btn" id="submitBtn">Verify OTP</button>
   </form>
 
   <div class="resend">
     Didn't receive it?
-    <form method="POST" action="{% url 'resend_otp' %}">
+    <form method="POST" action="{% url 'forgot_resend_otp' %}">
       {% csrf_token %}
       <button type="submit" class="resend-btn" id="resendBtn">Resend OTP</button>
     </form>
   </div>
 
-  <a href="{% url 'login' %}" class="back">← Back to login</a>
+  <a href="{% url 'forgot_password' %}" class="back">← Back</a>
 </div>
 
 <script>
 (function(){
-  const boxes   = Array.from(document.querySelectorAll('#otpRow input'));
-  const submit  = document.getElementById('submitBtn');
-  const resend  = document.getElementById('resendBtn');
-  const cdEl    = document.getElementById('cd');
+  const boxes  = Array.from(document.querySelectorAll('#otpRow input'));
+  const submit = document.getElementById('submitBtn');
+  const resend = document.getElementById('resendBtn');
+  const cdEl   = document.getElementById('cd');
 
-  /* ── box navigation ── */
-  boxes.forEach(function(box, i){
-    box.addEventListener('input', function(){
-      box.value = box.value.replace(/\D/g,'').slice(-1);
-      if(box.value && i < boxes.length-1) boxes[i+1].focus();
+  boxes.forEach(function(box,i){
+    box.addEventListener('input',function(){
+      box.value=box.value.replace(/\D/g,'').slice(-1);
+      if(box.value && i<boxes.length-1) boxes[i+1].focus();
       syncFilled();
     });
-    box.addEventListener('keydown', function(e){
-      if(e.key==='Backspace' && !box.value && i>0) boxes[i-1].focus();
+    box.addEventListener('keydown',function(e){
+      if(e.key==='Backspace'&&!box.value&&i>0) boxes[i-1].focus();
     });
-    box.addEventListener('keypress', function(e){
+    box.addEventListener('keypress',function(e){
       if(!/[0-9]/.test(e.key)) e.preventDefault();
     });
-    box.addEventListener('paste', function(e){
+    box.addEventListener('paste',function(e){
       e.preventDefault();
-      const digits = (e.clipboardData||window.clipboardData)
-                      .getData('text').replace(/\D/g,'').slice(0,6);
-      digits.split('').forEach(function(d,j){ if(boxes[j]) boxes[j].value=d; });
-      const next = boxes[Math.min(digits.length, boxes.length-1)];
+      const digits=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
+      digits.split('').forEach(function(d,j){if(boxes[j])boxes[j].value=d;});
+      const next=boxes[Math.min(digits.length,boxes.length-1)];
       if(next) next.focus();
       syncFilled();
     });
   });
-  function syncFilled(){ boxes.forEach(function(b){ b.classList.toggle('filled', b.value!==''); }); }
-  boxes[0] && boxes[0].focus();
+  function syncFilled(){boxes.forEach(function(b){b.classList.toggle('filled',b.value!=='');});}
+  boxes[0]&&boxes[0].focus();
 
-  /* ── countdown (5 min) ── */
-  let secs = 5*60;
-  resend.disabled = true;
+  let secs=5*60;
+  resend.disabled=true;
   function tick(){
     if(secs<=0){
-      cdEl.textContent='Expired'; cdEl.classList.add('expired');
-      submit.disabled=true; resend.disabled=false;
-      return;
+      cdEl.textContent='Expired';cdEl.classList.add('expired');
+      submit.disabled=true;resend.disabled=false;return;
     }
     const m=String(Math.floor(secs/60)).padStart(2,'0');
     const s=String(secs%60).padStart(2,'0');
     cdEl.textContent=m+':'+s;
-    secs--; setTimeout(tick,1000);
+    secs--;setTimeout(tick,1000);
   }
   tick();
 })();
