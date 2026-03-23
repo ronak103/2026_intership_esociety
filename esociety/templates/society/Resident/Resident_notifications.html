@@ -1,56 +1,53 @@
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
-
 {% block title %}Notifications — GateNova{% endblock %}
 {% block page_title %}Notifications{% endblock %}
-
 {% block content %}
 
+<div class="sk-wrap">
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+    </div>
+</div>
+
+<div class="real-content">
 <div class="card">
     <div class="card-header">
-        <span class="card-title">
-            <i class="fas fa-bell"></i> All Notifications
-        </span>
+        <span class="card-title"><i class="fas fa-bell"></i> All Notifications</span>
         {% if unread_count > 0 %}
-        <span class="badge badge-danger">{{ unread_count }} unread</span>
+            <span class="badge badge-danger">{{ unread_count }} unread</span>
         {% else %}
-        <span class="badge badge-success"><i class="fas fa-check"></i> All read</span>
+            <span class="badge badge-success"><i class="fas fa-check"></i> All read</span>
         {% endif %}
     </div>
-
     <div style="display:flex;flex-direction:column;">
         {% for notif in notifications %}
         <div class="notif-page-item {% if not notif.is_read %}unread{% endif %}" style="
             display:flex;gap:14px;align-items:flex-start;
             padding:16px 20px;
-            border-bottom:1px solid var(--border-light, #f1f5f9);
+            border-bottom:1px solid var(--border-light,#f1f5f9);
             background:{% if not notif.is_read %}#eff6ff{% else %}#fff{% endif %};
             transition:background .2s;
         ">
-            <!-- Icon -->
             <div style="
                 width:36px;height:36px;border-radius:10px;flex-shrink:0;
                 display:flex;align-items:center;justify-content:center;font-size:15px;
                 {% if not notif.is_read %}background:#dbeafe;color:#2563eb;
                 {% else %}background:#f1f5f9;color:#94a3b8;{% endif %}
-            ">
-                <i class="fas fa-bell"></i>
-            </div>
-
-            <!-- Content -->
+            "><i class="fas fa-bell"></i></div>
             <div style="flex:1;min-width:0;">
-                <div style="font-size:14px;color:var(--text, #0f172a);line-height:1.5;font-weight:{% if not notif.is_read %}600{% else %}400{% endif %};">
+                <div style="font-size:14px;color:var(--text,#0f172a);line-height:1.5;font-weight:{% if not notif.is_read %}600{% else %}400{% endif %};">
                     {{ notif.message }}
                 </div>
-                <div style="font-size:12px;color:var(--text-muted, #94a3b8);margin-top:4px;display:flex;align-items:center;gap:8px;">
+                <div style="font-size:12px;color:var(--text-muted,#94a3b8);margin-top:4px;display:flex;align-items:center;gap:8px;">
                     <i class="fas fa-clock" style="font-size:10px;"></i>
-                    {{ notif.created_at|date:"d M Y, h:i A" }}
-                    &nbsp;·&nbsp;
-                    {{ notif.created_at|timesince }} ago
+                    {{ notif.created_at|date:"d M Y, h:i A" }} &nbsp;·&nbsp; {{ notif.created_at|timesince }} ago
                 </div>
             </div>
-
-            <!-- Unread dot -->
             {% if not notif.is_read %}
             <div style="width:8px;height:8px;border-radius:50%;background:#2563eb;flex-shrink:0;margin-top:6px;" title="Unread"></div>
             {% endif %}
@@ -59,19 +56,18 @@
         <div class="empty-state" style="padding:60px 20px;">
             <i class="fas fa-bell-slash"></i>
             <p style="font-weight:600;margin-bottom:4px;">No notifications yet</p>
-            <p style="font-size:13px;">You'll see visitor approvals, payment updates, and society announcements here.</p>
+            <p style="font-size:13px;">Visitor approvals, payment updates, and announcements will appear here.</p>
         </div>
         {% endfor %}
     </div>
-
     {% if notifications %}
-    <div style="padding:14px 20px;border-top:1px solid var(--border-light, #f1f5f9);text-align:center;">
-        <span style="font-size:12px;color:var(--text-muted, #94a3b8);">
-            Showing {{ notifications|length }} notification{{ notifications|length|pluralize }} · 
-            All notifications are automatically marked as read when you visit this page.
+    <div style="padding:14px 20px;border-top:1px solid var(--border-light,#f1f5f9);text-align:center;">
+        <span style="font-size:12px;color:var(--text-muted,#94a3b8);">
+            Showing {{ notifications|length }} notification{{ notifications|length|pluralize }}
         </span>
     </div>
     {% endif %}
 </div>
-
+</div>{# /real-content #}
 {% endblock %}
+{% block extra_js %}<script>skeletonReveal(600);</script>{% endblock %}

@@ -27,6 +27,25 @@
             </a>
         </li>
 
+        <!-- ── Pending Approvals ── -->
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'pending_users' %}active{% endif %}">
+            <a href="{% url 'pending_users' %}" class="sidebar-link">
+                <i class="fas fa-user-clock sidebar-icon"></i>
+                <span class="sidebar-link-text">Pending Approvals</span>
+                {% if pending_count and pending_count > 0 %}
+                    <span class="sidebar-badge">{{ pending_count }}</span>
+                {% endif %}
+            </a>
+        </li>
+
+        <!-- ── Create Security Guard ── -->
+        <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'create_staff' %}active{% endif %}">
+            <a href="{% url 'create_staff' %}" class="sidebar-link">
+                <i class="fas fa-user-shield sidebar-icon"></i>
+                <span class="sidebar-link-text">Add Security Guard</span>
+            </a>
+        </li>
+
         <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'admin_complaints' %}active{% endif %}">
             <a href="{% url 'admin_complaints' %}" class="sidebar-link">
                 <i class="fas fa-exclamation-circle sidebar-icon"></i>
@@ -41,7 +60,6 @@
             </a>
         </li>
 
-        <!-- ── NEW: Maintenance Dues ── -->
         <li class="sidebar-menu-item {% if request.resolver_match.url_name == 'admin_maintenance' %}active{% endif %}">
             <a href="{% url 'admin_maintenance' %}" class="sidebar-link">
                 <i class="fas fa-file-invoice-dollar sidebar-icon"></i>

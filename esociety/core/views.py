@@ -14,19 +14,20 @@ import string
 import os
 import logging
 
-from .forms import UserSignupForm, UserLoginForm, DemoBookingForm, ForgotPasswordForm, ResetPasswordForm
+from .forms import UserSignupForm, UserLoginForm, DemoBookingForm, ForgotPasswordForm, ResetPasswordForm, StaffCreateForm
 from .models import User, DemoBooking
+from society.decorators import role_required
 
 logger = logging.getLogger(__name__)
 
-# ── Constants ────────────────────────────────
+# ── Constants ─────────────────────────────────────────────
 OTP_EXPIRY_SECONDS = 5 * 60   # 5 minutes
 OTP_MAX_ATTEMPTS   = 5
 
 
 def home(request):
     form = DemoBookingForm()
-    return render(request, "home.html", {'form': form})
+    return render(request, 'home.html', {'form': form})
 
 
 # ════════════════════════════════════════════════════════
@@ -123,7 +124,6 @@ def _send_otp_email(user, otp_code):
 
 
 def _send_forgot_otp_email(user, otp_code):
-    """Forgot password OTP email — separate subject line."""
     def _send():
         try:
             html = render_to_string('core/otp_email.html', {
@@ -166,6 +166,38 @@ def _send_welcome_email(user):
     threading.Thread(target=_send, daemon=True).start()
 
 
+def _send_approval_result_email(user, approved: bool):
+    """Notifies the user whether their account was approved or rejected."""
+    def _send():
+        try:
+            if approved:
+                subject = 'GateNova — Your account has been approved!'
+                body    = (
+                    f'Hi {user.first_name},\n\n'
+                    'Great news! Your GateNova account has been approved by the admin.\n'
+                    'You can now log in and access your dashboard.\n\n'
+                    '— The GateNova Team'
+                )
+            else:
+                subject = 'GateNova — Account not approved'
+                body    = (
+                    f'Hi {user.first_name},\n\n'
+                    'Unfortunately your GateNova account was not approved at this time.\n'
+                    'Please contact your society admin for more information.\n\n'
+                    '— The GateNova Team'
+                )
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=body,
+                from_email=settings.EMAIL_HOST_USER,
+                to=[user.email],
+            )
+            msg.send()
+        except Exception as exc:
+            logger.exception('Approval result email failed for %s: %s', user.email, exc)
+    threading.Thread(target=_send, daemon=True).start()
+
+
 # ════════════════════════════════════════════════════════
 #  SHARED HELPERS
 # ════════════════════════════════════════════════════════
@@ -187,7 +219,7 @@ def _auth_render(request, login_form, signup_form, active_form):
 
 
 # ════════════════════════════════════════════════════════
-#  VIEWS
+#  AUTH VIEWS
 # ════════════════════════════════════════════════════════
 
 @never_cache
@@ -199,7 +231,10 @@ def userSignupView(request):
     if request.method == 'POST' and signup_form.is_valid():
         user = signup_form.save()
         _send_welcome_email(user)
-        messages.success(request, 'Account created successfully! Please log in.')
+        messages.success(
+            request,
+            'Account created successfully! Please wait for admin approval before logging in.'
+        )
         return redirect('login')
 
     return _auth_render(request, login_form, signup_form, active_form)
@@ -233,14 +268,43 @@ def userLoginview(request):
             messages.error(request, 'Your account has been blocked. Please contact support.')
             return _auth_render(request, login_form, signup_form, active_form)
 
+        # ── Admin / staff: bypass all status checks ──────────────────────────
+        if user.is_staff or user.is_admin:
+            # Already active — log in directly, no OTP needed
+            if user.status == 'active':
+                login(request, user)
+                return _redirect_by_role(user)
+            # Inactive (first time) — send OTP to verify email
+            otp_code = generate_otp()
+            store_otp_in_session(request, user.pk, otp_code)
+            _send_otp_email(user, otp_code)
+            messages.info(
+                request,
+                f'A 6-digit OTP has been sent to {user.email}. It expires in {OTP_EXPIRY_SECONDS // 60} minutes.'
+            )
+            return redirect('verify_otp')
+
+        # ── Pending: signed up but not yet approved by admin ─────────────────
+        if user.status == 'pending':
+            messages.warning(
+                request,
+                'Your account is pending admin approval. You will receive an email once approved.'
+            )
+            return _auth_render(request, login_form, signup_form, active_form)
+
+        # ── Active: go straight to dashboard ─────────────────────────────────
         if user.status == 'active':
             login(request, user)
             return _redirect_by_role(user)
 
+        # ── Inactive: first-time login — send OTP for email verification ──────
         otp_code = generate_otp()
         store_otp_in_session(request, user.pk, otp_code)
         _send_otp_email(user, otp_code)
-        messages.info(request, f'A 6-digit OTP has been sent to {user.email}. It expires in {OTP_EXPIRY_SECONDS // 60} minutes.')
+        messages.info(
+            request,
+            f'A 6-digit OTP has been sent to {user.email}. It expires in {OTP_EXPIRY_SECONDS // 60} minutes.'
+        )
         return redirect('verify_otp')
 
     return _auth_render(request, login_form, signup_form, active_form)
@@ -270,7 +334,7 @@ def verifyOtpView(request):
         if request.POST.get('otp'):
             submitted = request.POST.get('otp', '').strip()
         else:
-            digits = [request.POST.get(f'otp{i}', '').strip() for i in range(1, 7)]
+            digits    = [request.POST.get(f'otp{i}', '').strip() for i in range(1, 7)]
             submitted = ''.join(digits)
 
         if len(submitted) != 6 or not submitted.isdigit():
@@ -341,7 +405,6 @@ def forgotPasswordView(request):
         user  = User.objects.get(email=email)
 
         otp_code = generate_otp()
-        # Store OTP in session under a separate key so it doesn't clash with login OTP
         request.session['fp_otp'] = {
             'user_id':    user.pk,
             'code':       otp_code,
@@ -381,7 +444,6 @@ def forgotVerifyOtpView(request):
             messages.error(request, 'Please enter all 6 digits.')
             return render(request, 'core/forgot_verify_otp.html', {'email': user.email})
 
-        # Check expiry
         created_at = timezone.datetime.fromisoformat(fp_otp['created_at'])
         if timezone.is_naive(created_at):
             created_at = timezone.make_aware(created_at)
@@ -390,13 +452,11 @@ def forgotVerifyOtpView(request):
             messages.error(request, 'OTP has expired. Please try again.')
             return redirect('forgot_password')
 
-        # Check attempts
         if fp_otp.get('attempts', 0) >= OTP_MAX_ATTEMPTS:
             request.session.pop('fp_otp', None)
             messages.error(request, 'Too many incorrect attempts. Please try again.')
             return redirect('forgot_password')
 
-        # Check code
         if fp_otp['code'] != submitted:
             fp_otp['attempts'] += 1
             request.session['fp_otp'] = fp_otp
@@ -405,7 +465,6 @@ def forgotVerifyOtpView(request):
             messages.error(request, f'Incorrect OTP. {remaining} attempt(s) remaining.')
             return render(request, 'core/forgot_verify_otp.html', {'email': user.email})
 
-        # ✅ OTP correct — mark verified, move to reset step
         fp_otp['is_verified'] = True
         request.session['fp_otp'] = fp_otp
         request.session.modified   = True
@@ -448,7 +507,6 @@ def resetPasswordView(request):
     """Step 3 — User sets a new password."""
     fp_otp = request.session.get('fp_otp')
 
-    # Guard — only allow if OTP was verified
     if not fp_otp or not fp_otp.get('is_verified'):
         messages.error(request, 'Unauthorized. Please complete OTP verification first.')
         return redirect('forgot_password')
@@ -464,8 +522,73 @@ def resetPasswordView(request):
     if request.method == 'POST' and form.is_valid():
         user.set_password(form.cleaned_data['password1'])
         user.save()
-        request.session.pop('fp_otp', None)  # clear session
+        request.session.pop('fp_otp', None)
         messages.success(request, 'Password reset successful! Please log in with your new password.')
         return redirect('login')
 
     return render(request, 'core/reset_password.html', {'form': form})
+
+
+# ════════════════════════════════════════════════════════
+#  ADMIN — PENDING USER APPROVAL VIEWS
+# ════════════════════════════════════════════════════════
+
+@role_required(allowed_roles=['Admin'])
+def pendingUsersView(request):
+    """Admin sees a list of all users waiting for approval."""
+    pending = User.objects.filter(status='pending').order_by('-created_at')
+    return render(request, 'society/Admin/pending_users.html', {
+        'pending_users':    pending,
+        'total_residents':  User.objects.filter(role='Resident').count(),
+        'active_residents': User.objects.filter(role='Resident', status='active').count(),
+    })
+
+
+@role_required(allowed_roles=['Admin'])
+def approveUserView(request, user_id):
+    """Admin approves a pending user → status becomes active."""
+    try:
+        user = User.objects.get(pk=user_id, status='pending')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found or already processed.')
+        return redirect('pending_users')
+
+    user.status = 'active'
+    user.save(update_fields=['status'])
+    _send_approval_result_email(user, approved=True)
+    messages.success(request, f'{user.email} has been approved.')
+    return redirect('pending_users')
+
+
+@role_required(allowed_roles=['Admin'])
+def rejectUserView(request, user_id):
+    """Admin rejects a pending user → status becomes blocked."""
+    try:
+        user = User.objects.get(pk=user_id, status='pending')
+    except User.DoesNotExist:
+        messages.error(request, 'User not found or already processed.')
+        return redirect('pending_users')
+
+    user.status = 'blocked'
+    user.save(update_fields=['status'])
+    _send_approval_result_email(user, approved=False)
+    messages.success(request, f'{user.email} has been rejected.')
+    return redirect('pending_users')
+
+
+# ════════════════════════════════════════════════════════
+#  ADMIN — CREATE SECURITY GUARD ACCOUNT
+# ════════════════════════════════════════════════════════
+
+@role_required(allowed_roles=['Admin'])
+def createStaffView(request):
+    """Admin creates a Security Guard account directly.
+    Guards never go through the public signup form."""
+    form = StaffCreateForm(request.POST or None)
+
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        messages.success(request, f'Security Guard account created for {user.email}.')
+        return redirect('admin_dashboard')
+
+    return render(request, 'society/Admin/create_staff.html', {'form': form})

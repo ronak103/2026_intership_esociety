@@ -34,6 +34,7 @@ def security_notifications(request):
         return {
             'admin_notifications': notifs,
             'unread_notif_count':  unread,
+            'pending_count':       _pending_count(),   # ← sidebar badge + dashboard stat
         }
 
     if role == 'Resident':
@@ -50,9 +51,9 @@ def security_notifications(request):
             approval_status='pending',
         ).count()
         return {
-            'resident_notifications': notifs,       # used by bell dropdown in base
-            'unread_notif_count':     unread,        # used by bell badge + sidebar
-            'pending_visitors':       pending_visitors,  # used by sidebar badge
+            'resident_notifications': notifs,
+            'unread_notif_count':     unread,
+            'pending_visitors':       pending_visitors,
         }
 
     return {}
@@ -69,3 +70,12 @@ def _pending_approval_count(guard_user):
         registered_by='guard',
         approval_status='pending',
     ).count()
+
+
+def _pending_count():
+    """
+    Count users awaiting admin approval — drives the sidebar badge
+    and the dashboard stat card on every admin page automatically.
+    """
+    from core.models import User
+    return User.objects.filter(status='pending').count()

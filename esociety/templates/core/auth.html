@@ -10,11 +10,36 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/auth.css' %}">
+
+    <style>
+        .back-home {
+            position: fixed;
+            top: 24px;
+            left: 28px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            color: #64748b;
+            text-decoration: none;
+            z-index: 100;
+            transition: color .15s ease;
+        }
+        .back-home:hover { color: #2563eb; }
+        .back-home i { font-size: 11px; }
+    </style>
 </head>
 <body>
 
+<!-- Back to Home — fixed top left, outside everything -->
+<a href="{% url 'home' %}" class="back-home">
+    <i class="fa-solid fa-arrow-left"></i>
+    Back to Home
+</a>
+
 <div class="auth-wrapper">
-        
 
     <!-- Toggle Bar -->
     <div class="toggle-bar">
@@ -23,75 +48,60 @@
            data-type="signin">
             Sign In
         </a>
-
         <a href="{% url 'signup' %}"
            class="toggle-btn {% if active_form == 'signup' %}active{% endif %}"
            data-type="signup">
             Sign Up
         </a>
-
         <div class="slider {% if active_form == 'signup' %}move{% endif %}"></div>
-
     </div>
+
     {% if messages %}
-            {% for message in messages %}
-                <div class="message-box {{ message.tags }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
+        {% for message in messages %}
+            <div class="message-box {{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 
     <!-- Card -->
     <div class="auth-card">
-        
-
         <div class="form-slider">
             <div class="form-track">
 
                 <!-- ── SIGN IN ─────────────────────────── -->
                 <div class="form-panel" id="panel-signin">
-                  <div class="logo">
+                    <div class="logo">
                         <div class="logo-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 3L22 10V21H16V15H8V21H2V10L12 3Z" fill="white"/>
-                            <rect x="9.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
-                            <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
-                        </svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 3L22 10V21H16V15H8V21H2V10L12 3Z" fill="white"/>
+                                <rect x="9.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+                                <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+                            </svg>
                         </div>
-                    <span> GateNova</span>
+                        <span> GateNova</span>
                     </div>
                     <h2>Welcome back</h2>
-                    {% comment %} <p class="subtitle">Sign in to your account to continue</p> {% endcomment %}
 
                     <form method="post" action="{% url 'login' %}" novalidate>
                         {% csrf_token %}
-
-                        {% comment %} {% if login_form.non_field_errors %}
-                            <div class="form-error-global">
-                                {% for error in login_form.non_field_errors %}
-                                    <p>{{ error }}</p>
-                                {% endfor %}
-                            </div>
-                        {% endif %} {% endcomment %}
 
                         <div class="form-group">
                             <label>Email</label>
                             {{ login_form.email }}
                             {% for error in login_form.email.errors %}
-                                 <span class="field-error">{{ error }}</span> 
-                            {% endfor %} 
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
                         </div>
 
                         <div class="form-group password-group">
                             <label>Password</label>
-
                             <div class="password-wrapper">
                                 {{ login_form.password }}
                                 <i class="fa-solid fa-eye toggle-password"></i>
                             </div>
-
                             {% for error in login_form.password.errors %}
-                                 <span class="field-error">{{ error }}</span> 
+                                <span class="field-error">{{ error }}</span>
                             {% endfor %}
                         </div>
 
@@ -115,22 +125,20 @@
 
                 <!-- ── SIGN UP ─────────────────────────── -->
                 <div class="form-panel" id="panel-signup">
-                <div class="logo">
+                    <div class="logo">
                         <div class="logo-icon">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 3L22 10V21H16V15H8V21H2V10L12 3Z" fill="white"/>
-                            <rect x="9.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
-                            <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
-                        </svg>
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                                <path d="M12 3L22 10V21H16V15H8V21H2V10L12 3Z" fill="white"/>
+                                <rect x="9.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+                                <rect x="12.5" y="16" width="2.5" height="2.5" rx=".6" fill="#1a56db"/>
+                            </svg>
                         </div>
-                    <span> GateNova</span>
+                        <span> GateNova</span>
                     </div>
                     <h2>Create account</h2>
-                    {% comment %} <p class="subtitle">Join us today — it only takes a minute</p> {% endcomment %}
 
                     <form method="post" action="{% url 'signup' %}" novalidate>
                         {% csrf_token %}
-                       
 
                         {% if signup_form.non_field_errors %}
                             <div class="form-error-global">
@@ -140,6 +148,9 @@
                             </div>
                         {% endif %}
 
+                        <!-- Hidden role field — always Resident, forced server-side -->
+                        {{ signup_form.role }}
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>First Name</label>
@@ -148,7 +159,6 @@
                                     <span class="field-error">{{ error }}</span>
                                 {% endfor %}
                             </div>
-
                             <div class="form-group">
                                 <label>Last Name</label>
                                 {{ signup_form.last_name }}
@@ -174,24 +184,15 @@
                             {% endfor %}
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Role</label>
-                                {{ signup_form.role }}
-                                {% for error in signup_form.role.errors %}
-                                    <span class="field-error">{{ error }}</span>
-                                {% endfor %}
-                            </div>
-
-                            <div class="form-group">
-                                <label>Gender</label>
-                                {{ signup_form.gender }}
-                                {% for error in signup_form.gender.errors %}
-                                    <span class="field-error">{{ error }}</span>
-                                {% endfor %}
-                            </div>
+                        <div class="form-group">
+                            <label>Gender</label>
+                            {{ signup_form.gender }}
+                            {% for error in signup_form.gender.errors %}
+                                <span class="field-error">{{ error }}</span>
+                            {% endfor %}
                         </div>
-                        <div class="form-group" id="unit-number-group" style="display:none;">
+
+                        <div class="form-group">
                             <label>Unit Number</label>
                             {{ signup_form.unit_number }}
                             {% for error in signup_form.unit_number.errors %}
@@ -201,7 +202,6 @@
 
                         <div class="form-group password-group">
                             <label>Password</label>
-
                             <div class="password-wrapper">
                                 {{ signup_form.password1 }}
                                 <i class="fa-solid fa-eye toggle-password"></i>
@@ -213,7 +213,6 @@
 
                         <div class="form-group password-group">
                             <label>Confirm Password</label>
-
                             <div class="password-wrapper">
                                 {{ signup_form.password2 }}
                                 <i class="fa-solid fa-eye toggle-password"></i>
@@ -236,30 +235,10 @@
 
             </div>
         </div>
-
     </div><!-- /.auth-card -->
 </div><!-- /.auth-wrapper -->
 
 <script src="{% static 'js/auth.js' %}"></script>
-<script>
-const roleSelect   = document.querySelector('[name="role"]');
-const unitGroup    = document.getElementById('unit-number-group');
-
-function toggleUnitNumber() {
-    if (roleSelect.value === 'Resident') {
-        unitGroup.style.display = 'block';
-    } else {
-        unitGroup.style.display = 'none';
-        unitGroup.querySelector('input').value = '';
-    }
-}
-
-// Run on page load (in case of form re-render with errors)
-toggleUnitNumber();
-roleSelect.addEventListener('change', toggleUnitNumber);
-</script>
-
 
 </body>
-
 </html>

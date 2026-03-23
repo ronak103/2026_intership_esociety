@@ -1,0 +1,157 @@
+{% extends 'society/Admin/Admin_base.html' %}
+{% load static %}
+
+{% block title %}Pending Approvals | GateNova Admin{% endblock %}
+
+{% block page_title %}Pending Approvals{% endblock %}
+{% block page_subtitle %}Review and approve new resident registrations{% endblock %}
+
+{% block topbar_actions %}
+    <span class="badge badge-warning" style="font-size:13px;padding:6px 14px;">
+        <i class="fas fa-clock"></i>
+        {{ pending_users.count }} pending
+    </span>
+{% endblock %}
+
+{% block content %}
+<div class="real-content">
+
+    <!-- Stat row -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+        <div class="stat-card amber">
+            <div class="stat-icon amber"><i class="fas fa-user-clock"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ pending_users.count }}</div>
+                <div class="stat-label">Awaiting Approval</div>
+            </div>
+        </div>
+        <div class="stat-card blue">
+            <div class="stat-icon blue"><i class="fas fa-user-shield"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_residents|default:"—" }}</div>
+                <div class="stat-label">Total Residents</div>
+            </div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon green"><i class="fas fa-user-check"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ active_residents|default:"—" }}</div>
+                <div class="stat-label">Active Residents</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main card -->
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title">
+                    <i class="fas fa-user-clock"></i>
+                    Pending Registrations
+                </div>
+                <div class="card-sub">Approve residents to grant login access, or reject to block them.</div>
+            </div>
+        </div>
+
+        {% if pending_users %}
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Resident</th>
+                        <th>Email</th>
+                        <th>Mobile</th>
+                        <th>Unit</th>
+                        <th>Registered</th>
+                        <th style="text-align:center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in pending_users %}
+                    <tr>
+                        <td class="td-num">{{ forloop.counter }}</td>
+
+                        <td>
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <div style="width:34px;height:34px;border-radius:50%;
+                                            background:var(--primary-light);color:var(--primary);
+                                            display:flex;align-items:center;justify-content:center;
+                                            font-size:13px;font-weight:700;flex-shrink:0;">
+                                    {{ u.first_name|slice:":1"|upper }}{{ u.last_name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <div class="td-name">{{ u.first_name }} {{ u.last_name }}</div>
+                                    <div style="font-size:11px;color:var(--text-muted);">{{ u.gender }}</div>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="td-mono">{{ u.email }}</td>
+                        <td>{{ u.mobile_number|default:"—" }}</td>
+                        <td>
+                            {% if u.unit_number %}
+                                <span class="badge badge-info">{{ u.unit_number }}</span>
+                            {% else %}
+                                <span class="td-null">—</span>
+                            {% endif %}
+                        </td>
+                        <td style="font-size:12.5px;color:var(--text-muted);">
+                            {{ u.created_at|date:"d M Y" }}<br>
+                            <span style="font-size:11px;">{{ u.created_at|date:"h:i A" }}</span>
+                        </td>
+
+                        <td style="text-align:center;">
+                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <form method="post" action="{% url 'approve_user' u.pk %}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Approve {{ u.first_name }} {{ u.last_name }}?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-success"
+                                            style="padding:6px 14px;font-size:12px;">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                </form>
+
+                                <form method="post" action="{% url 'reject_user' u.pk %}"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('Reject {{ u.first_name }} {{ u.last_name }}? This will block their account.')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-danger"
+                                            style="padding:6px 14px;font-size:12px;">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% else %}
+        <div style="text-align:center;padding:60px 24px;">
+            <div style="width:64px;height:64px;border-radius:50%;
+                        background:var(--success-light);color:var(--success);
+                        display:flex;align-items:center;justify-content:center;
+                        font-size:26px;margin:0 auto 16px;">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">
+                All caught up!
+            </div>
+            <div style="font-size:13px;color:var(--text-muted);">
+                No pending registrations right now.
+            </div>
+        </div>
+        {% endif %}
+
+    </div><!-- /.card -->
+</div><!-- /.real-content -->
+
+{% block extra_js %}
+<script>skeletonReveal(800);</script>
+{% endblock %}
+
+{% endblock %}

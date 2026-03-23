@@ -12,7 +12,6 @@ import calendar
 from django.contrib.auth.decorators import login_required
 from .decorators import role_required
 from .forms import (
-    # existing
     ComplaintForm,
     VisitorForm,
     GuardVisitorForm,
@@ -24,7 +23,7 @@ from .forms import (
     AdminFacilityForm,
     AdminChangePasswordForm,
     AdminSocietySettingsForm,
-     MaintenanceConfigForm, GenerateDuesForm
+    MaintenanceConfigForm, GenerateDuesForm
 )
 from .models import (
     Complaint,
@@ -36,9 +35,14 @@ from .models import (
     PollVote,
     Facility,
     FacilityBooking,
-    MaintenanceDue, MaintenanceConfig 
+    MaintenanceDue, MaintenanceConfig
 )
 from core.models import User
+
+
+# ── Shared helper — pending count injected into every admin context ──────────
+def _pending_count():
+    return User.objects.filter(status='pending').count()
 
 
 # ================================================================
@@ -48,8 +52,8 @@ from core.models import User
 def AdminDashboardView(request):
     today = date.today()
 
-    total_residents   = User.objects.filter(role="Resident").count()
-    security_guards   = User.objects.filter(role="Securityguard").count()
+    total_residents    = User.objects.filter(role="Resident").count()
+    security_guards    = User.objects.filter(role="Securityguard").count()
     pending_complaints  = Complaint.objects.filter(status="pending").count()
     resolved_complaints = Complaint.objects.filter(status="resolved").count()
 
@@ -102,6 +106,8 @@ def AdminDashboardView(request):
         "recent_payments":       recent_payments,
         "recent_notices":        recent_notices,
         "visitor_status_today":  visitor_status_today,
+        "pending_count":         _pending_count(),   # ← sidebar badge
+        "active_residents":      User.objects.filter(role="Resident", status="active").count(),  # ← pending_users page needs this
     }
     return render(request, "society/Admin/Admin_dashboard.html", context)
 
@@ -114,7 +120,11 @@ def AdminResidentsView(request):
     search_query  = request.GET.get("q", "").strip()
     status_filter = request.GET.get("status", "all")
 
-    residents = User.objects.filter(role="Resident").order_by("first_name")
+    # ── Only show approved residents — pending users belong in the approval queue
+    residents = User.objects.filter(
+        role="Resident",
+        status__in=["active", "inactive", "blocked"]
+    ).order_by("first_name")
 
     if search_query:
         residents = residents.filter(
@@ -150,16 +160,15 @@ def AdminResidentsView(request):
                 getattr(r, "unit_number", "—"),
                 getattr(r, "mobile_number", "—"),
                 "Yes" if r.is_active else "No",
-                r.date_joined.strftime("%d %b %Y"),
+                r.created_at.strftime("%d %b %Y") if r.created_at else "—",
                 r.complaint_count,
                 r.pending_payment_count,
             ])
         return response
 
-    paginator   = Paginator(residents, 20)
-    page_obj    = paginator.get_page(request.GET.get("page", 1))
+    paginator = Paginator(residents, 20)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
 
-    # Pass a blank form for the "Add Resident" modal
     add_form = AdminAddResidentForm()
 
     context = {
@@ -174,6 +183,7 @@ def AdminResidentsView(request):
         "occupied_units":   User.objects.filter(role="Resident", is_active=True)
                                 .exclude(unit_number="").exclude(unit_number__isnull=True).count(),
         "security_guards":  User.objects.filter(role="Securityguard").count(),
+        "pending_count":    _pending_count(),   # ← sidebar badge
     }
     return render(request, "society/Admin/Admin_Residents.html", context)
 
@@ -194,16 +204,18 @@ def AdminAddResidentView(request):
                     last_name=cd["last_name"],
                     role="Resident",
                 )
-                if hasattr(user, "unit_number"):
-                    user.unit_number = cd["unit_number"]
-                if hasattr(user, "mobile_number"):
-                    user.mobile_number = cd.get("mobile_number", "")
+                # ── Admin-created residents are active immediately ────────────
+                # They bypass the public signup approval flow entirely.
+                user.status       = "active"
+                user.unit_number  = cd.get("unit_number", "")
+                user.mobile_number = cd.get("mobile_number", "")
                 user.save()
                 messages.success(request, f"Resident '{cd['first_name']} {cd['last_name']}' added successfully.")
         else:
-            # Re-render residents page with form errors visible in modal
-            # Build the full residents context again so the page renders correctly
-            residents = User.objects.filter(role="Resident").order_by("first_name").annotate(
+            residents = User.objects.filter(
+                role="Resident",
+                status__in=["active", "inactive", "blocked"]
+            ).order_by("first_name").annotate(
                 complaint_count=Count("complaints", distinct=True),
                 pending_payment_count=Count("payments", filter=Q(payments__payment_status="pending"), distinct=True),
             )
@@ -215,13 +227,14 @@ def AdminAddResidentView(request):
                 "is_paginated":     page_obj.has_other_pages(),
                 "search_query":     "",
                 "status_filter":    "all",
-                "add_form":         form,          # form WITH errors — modal will re-open via JS
-                "show_add_modal":   True,          # flag so template auto-opens the modal
+                "add_form":         form,
+                "show_add_modal":   True,
                 "total_residents":  User.objects.filter(role="Resident").count(),
                 "active_residents": User.objects.filter(role="Resident", is_active=True).count(),
                 "occupied_units":   User.objects.filter(role="Resident", is_active=True)
                                         .exclude(unit_number="").exclude(unit_number__isnull=True).count(),
                 "security_guards":  User.objects.filter(role="Securityguard").count(),
+                "pending_count":    _pending_count(),   # ← sidebar badge
             }
             return render(request, "society/Admin/Admin_Residents.html", context)
 
@@ -281,22 +294,25 @@ def AdminComplaintsView(request):
     paginator = Paginator(complaints_qs, 20)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
 
-    # Blank update form (populated via JS in modal)
     update_form = AdminComplaintUpdateForm()
 
     context = {
-        "complaints":       page_obj,
-        "page_obj":         page_obj,
-        "is_paginated":     page_obj.has_other_pages(),
-        "search_query":     search_query,
-        "status_filter":    status_filter,
-        "priority_filter":  priority_filter,
-        "update_form":      update_form,
-        "pending_count":    Complaint.objects.filter(status="pending").count(),
-        "in_progress_count":Complaint.objects.filter(status="in_progress").count(),
-        "resolved_count":   Complaint.objects.filter(status="resolved").count(),
-        "urgent_count":     Complaint.objects.filter(priority="urgent").count(),
+        "complaints":        page_obj,
+        "page_obj":          page_obj,
+        "is_paginated":      page_obj.has_other_pages(),
+        "search_query":      search_query,
+        "status_filter":     status_filter,
+        "priority_filter":   priority_filter,
+        "update_form":       update_form,
+        "pending_count":     Complaint.objects.filter(status="pending").count(),
+        "in_progress_count": Complaint.objects.filter(status="in_progress").count(),
+        "resolved_count":    Complaint.objects.filter(status="resolved").count(),
+        "urgent_count":      Complaint.objects.filter(priority="urgent").count(),
+        "pending_count":     _pending_count(),   # ← sidebar badge (overrides complaint pending_count — rename below)
     }
+    # Fix: separate variable names to avoid collision
+    context["complaint_pending_count"]  = Complaint.objects.filter(status="pending").count()
+    context["pending_count"]            = _pending_count()
     return render(request, "society/Admin/Admin_complaints.html", context)
 
 
@@ -306,7 +322,6 @@ def AdminUpdateComplaintView(request):
         complaint_id = request.POST.get("complaint_id")
         complaint    = get_object_or_404(Complaint, id=complaint_id)
 
-        # Bind the form to POST data but only update allowed fields
         form = AdminComplaintUpdateForm(request.POST, instance=complaint)
         if form.is_valid():
             updated = form.save(commit=False)
@@ -335,7 +350,7 @@ def AdminFinanceView(request):
     total_collected   = Payment.objects.filter(payment_status="completed").aggregate(t=Sum("amount"))["t"] or 0
     total_pending     = Payment.objects.filter(payment_status="pending").aggregate(t=Sum("amount"))["t"] or 0
     completed_count   = Payment.objects.filter(payment_status="completed").count()
-    pending_count     = Payment.objects.filter(payment_status="pending").count()
+    payment_pending_count = Payment.objects.filter(payment_status="pending").count()
     maintenance_total = Payment.objects.filter(payment_status="completed", payment_type="maintenance").aggregate(t=Sum("amount"))["t"] or 0
     facility_total    = Payment.objects.filter(payment_status="completed", payment_type="facility_booking").aggregate(t=Sum("amount"))["t"] or 0
 
@@ -357,21 +372,21 @@ def AdminFinanceView(request):
             ])
         return response
 
-    # Blank payment form for modal
     payment_form = AdminPaymentForm()
 
     context = {
-        "active_tab":        active_tab,
-        "total_collected":   total_collected,
-        "total_pending":     total_pending,
-        "completed_count":   completed_count,
-        "pending_count":     pending_count,
-        "maintenance_total": maintenance_total,
-        "facility_total":    facility_total,
-        "payment_form":      payment_form,
-        "search_query":      search_query,
-        "type_filter":       type_filter,
-        "status_filter":     status_filter,
+        "active_tab":            active_tab,
+        "total_collected":       total_collected,
+        "total_pending":         total_pending,
+        "completed_count":       completed_count,
+        "payment_pending_count": payment_pending_count,  # renamed to avoid clash
+        "maintenance_total":     maintenance_total,
+        "facility_total":        facility_total,
+        "payment_form":          payment_form,
+        "search_query":          search_query,
+        "type_filter":           type_filter,
+        "status_filter":         status_filter,
+        "pending_count":         _pending_count(),   # ← sidebar badge
     }
 
     if active_tab == "payments":
@@ -488,41 +503,41 @@ def AdminCommunityView(request):
     poll_form   = AdminPollForm()
 
     context = {
-        "notices":         notices_qs,
-        "polls":           polls,
-        "notice_tab":      notice_tab,
-        "notice_form":     notice_form,
-        "poll_form":       poll_form,
-        "total_notices":   Notice.objects.count(),
-        "resident_notices":Notice.objects.filter(target_audience="resident").count(),
-        "active_polls":    Poll.objects.filter(status="active").count(),
-        "total_votes":     PollVote.objects.count(),
+        "notices":          notices_qs,
+        "polls":            polls,
+        "notice_tab":       notice_tab,
+        "notice_form":      notice_form,
+        "poll_form":        poll_form,
+        "total_notices":    Notice.objects.count(),
+        "resident_notices": Notice.objects.filter(target_audience="resident").count(),
+        "active_polls":     Poll.objects.filter(status="active").count(),
+        "total_votes":      PollVote.objects.count(),
+        "pending_count":    _pending_count(),   # ← sidebar badge
     }
     return render(request, "society/Admin/Admin_community.html", context)
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminMaintenanceView(request):
-    """Main maintenance due management page."""
     config        = MaintenanceConfig.get()
     config_form   = MaintenanceConfigForm(initial={
         "monthly_amount": config.monthly_amount,
         "due_day":        config.due_day,
     })
     generate_form = GenerateDuesForm()
- 
-    # Stats
+
     paid_dues       = MaintenanceDue.objects.filter(status="paid").count()
     pending_dues    = MaintenanceDue.objects.filter(status="pending").count()
     overdue_dues    = MaintenanceDue.objects.filter(status="overdue").count()
     total_collected = MaintenanceDue.objects.filter(status="paid").aggregate(t=Sum("amount"))["t"] or 0
     total_pending   = MaintenanceDue.objects.filter(status__in=["pending", "overdue"]).aggregate(t=Sum("amount"))["t"] or 0
- 
-    # Filters
+
     month_filter  = request.GET.get("month", "")
     status_filter = request.GET.get("status", "all")
     search_query  = request.GET.get("q", "").strip()
- 
+
     dues_qs = MaintenanceDue.objects.select_related("resident").order_by("-due_month", "resident__first_name")
- 
+
     if month_filter:
         dues_qs = dues_qs.filter(due_month__startswith=month_filter)
     if status_filter != "all":
@@ -533,10 +548,10 @@ def AdminMaintenanceView(request):
             Q(resident__last_name__icontains=search_query)  |
             Q(resident__unit_number__icontains=search_query)
         )
- 
+
     paginator = Paginator(dues_qs, 20)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
- 
+
     context = {
         "config":          config,
         "config_form":     config_form,
@@ -552,13 +567,13 @@ def AdminMaintenanceView(request):
         "month_filter":    month_filter,
         "status_filter":   status_filter,
         "search_query":    search_query,
+        "pending_count":   _pending_count(),   # ← sidebar badge
     }
     return render(request, "society/Admin/Admin_maintenance.html", context)
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminSaveMaintenanceConfigView(request):
-    """Save monthly amount and due day."""
     if request.method == "POST":
         form = MaintenanceConfigForm(request.POST)
         if form.is_valid():
@@ -573,27 +588,27 @@ def AdminSaveMaintenanceConfigView(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminGenerateDuesView(request):
-    """Generate MaintenanceDue records for all active residents for a given month."""
     if request.method == "POST":
         form = GenerateDuesForm(request.POST)
         if form.is_valid():
-            month_str     = form.cleaned_data["month"]       # "2026-03-01"
+            month_str     = form.cleaned_data["month"]
             custom_amount = form.cleaned_data.get("custom_amount")
             config        = MaintenanceConfig.get()
             amount        = custom_amount if custom_amount else config.monthly_amount
- 
+
             due_month = date.fromisoformat(month_str)
             last_day  = calendar.monthrange(due_month.year, due_month.month)[1]
             due_day   = min(config.due_day, last_day)
             due_date  = due_month.replace(day=due_day)
- 
+
+            # ── Only generate dues for approved active residents ──────────────
             residents = User.objects.filter(role="Resident", status="active")
             created = skipped = 0
- 
+
             for resident in residents:
                 _, was_created = MaintenanceDue.objects.get_or_create(
                     resident=resident,
@@ -612,7 +627,7 @@ def AdminGenerateDuesView(request):
                         ).update(status="overdue")
                 else:
                     skipped += 1
- 
+
             messages.success(
                 request,
                 f"Generated {created} dues for {due_month.strftime('%B %Y')} — {skipped} already existed."
@@ -622,11 +637,10 @@ def AdminGenerateDuesView(request):
                 for error in errors:
                     messages.error(request, f"{field}: {error}")
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminMarkDuePaidView(request, due_id):
-    """Admin manually marks a due as paid and creates a Payment record."""
     due = get_object_or_404(MaintenanceDue, id=due_id)
     if due.status not in ("paid", "waived"):
         payment = Payment.objects.create(
@@ -645,11 +659,10 @@ def AdminMarkDuePaidView(request, due_id):
             f"Marked paid — {due.resident.first_name} {due.resident.last_name} ({due.due_month.strftime('%B %Y')})."
         )
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminWaiveDueView(request, due_id):
-    """Admin waives a due."""
     due = get_object_or_404(MaintenanceDue, id=due_id)
     if request.method == "POST":
         due.status = "waived"
@@ -660,32 +673,29 @@ def AdminWaiveDueView(request, due_id):
             f"Due waived — {due.resident.first_name} {due.resident.last_name} ({due.due_month.strftime('%B %Y')})."
         )
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminMarkOverdueView(request):
-    """Bulk mark all pending dues past their due_date as overdue."""
     updated = MaintenanceDue.objects.filter(
         status="pending", due_date__lt=date.today()
     ).update(status="overdue")
     messages.warning(request, f"{updated} dues marked as overdue.")
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminDeleteDueView(request, due_id):
-    """Delete a single due record."""
     due   = get_object_or_404(MaintenanceDue, id=due_id)
     month = due.due_month.strftime("%B %Y")
     name  = f"{due.resident.first_name} {due.resident.last_name}"
     due.delete()
     messages.success(request, f"Due deleted — {name} ({month}).")
     return redirect("admin_maintenance")
- 
- 
+
+
 @role_required(allowed_roles=["Admin"])
 def AdminExportDuesView(request):
-    """Export all dues as CSV."""
     response = HttpResponse(content_type="text/csv")
     response["Content-Disposition"] = 'attachment; filename="maintenance_dues.csv"'
     writer = csv.writer(response)
@@ -769,7 +779,6 @@ def AdminDeletePollView(request, poll_id):
 def AdminSettingsView(request):
     saved = request.session.get("society_settings", {})
 
-    # Pre-populate form from session data
     society_form  = AdminSocietySettingsForm(initial=saved)
     password_form = AdminChangePasswordForm()
     facility_form = AdminFacilityForm()
@@ -780,7 +789,8 @@ def AdminSettingsView(request):
         "password_form": password_form,
         "facility_form": facility_form,
         "facilities":    facilities,
-        "settings":      saved,        # used for toggle checkbox state
+        "settings":      saved,
+        "pending_count": _pending_count(),   # ← sidebar badge
     }
     return render(request, "society/Admin/Admin_settings.html", context)
 
@@ -878,7 +888,7 @@ def AdminExportAllView(request):
 
     writer.writerow(["=== RESIDENTS ==="])
     writer.writerow(["Name", "Email", "Unit", "Mobile", "Active", "Complaints", "Pending Payments", "Joined"])
-    for r in User.objects.filter(role="Resident").order_by("first_name"):
+    for r in User.objects.filter(role="Resident", status__in=["active", "inactive", "blocked"]).order_by("first_name"):
         writer.writerow([
             f"{r.first_name} {r.last_name}",
             r.email,
@@ -907,7 +917,7 @@ def AdminExportAllView(request):
 
 
 # ================================================================
-# ADMIN — VISITOR LOGS  (unchanged — already existed)
+# ADMIN — VISITOR LOGS
 # ================================================================
 @role_required(allowed_roles=["Admin"])
 def AdminVisitorLogsView(request):
@@ -968,8 +978,8 @@ def AdminVisitorLogsView(request):
     total_deliveries = Visitor.objects.filter(expected_date=today, visitor_type="delivery").count()
     total_denied     = Visitor.objects.filter(expected_date=today, entry_status="denied").count()
 
-    paginator   = Paginator(visitors, 25)
-    page_obj    = paginator.get_page(request.GET.get("page", 1))
+    paginator = Paginator(visitors, 25)
+    page_obj  = paginator.get_page(request.GET.get("page", 1))
 
     context = {
         "active_page":      "vislog",
@@ -984,12 +994,13 @@ def AdminVisitorLogsView(request):
         "currently_inside": currently_inside,
         "total_deliveries": total_deliveries,
         "total_denied":     total_denied,
+        "pending_count":    _pending_count(),   # ← sidebar badge
     }
     return render(request, "society/Admin/Admin_visitor_logs.html", context)
 
+
 @role_required(allowed_roles=["Admin"])
 def AdminMarkAllReadView(request):
-    """Mark all admin notifications as read. Supports AJAX and GET."""
     from .models import Notification
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
@@ -999,13 +1010,8 @@ def AdminMarkAllReadView(request):
 
 
 # ================================================================
-# RESIDENT VIEWS  
+# RESIDENT VIEWS
 # ================================================================
-
-# ================================================================
-# RESIDENT VIEWS — Updated
-# ================================================================
-
 @role_required(allowed_roles=["Resident"])
 def ResidentDashboardView(request):
     user = request.user
@@ -1019,7 +1025,6 @@ def ResidentDashboardView(request):
         booked_by=user, booking_status="confirmed"
     ).count()
 
-    # Recent notices for resident
     from .models import Notice, Payment, MaintenanceDue
     recent_notices  = Notice.objects.filter(
         target_audience__in=["all", "resident"]
@@ -1027,7 +1032,6 @@ def ResidentDashboardView(request):
 
     recent_payments = Payment.objects.filter(resident=user).order_by("-created_at")[:5]
 
-    # Current unpaid maintenance due (most recent pending/overdue)
     current_due = MaintenanceDue.objects.filter(
         resident=user, status__in=["pending", "overdue"]
     ).order_by("-due_month").first()
@@ -1067,10 +1071,10 @@ def visitor_pass(request):
     ).order_by("-created_at")
 
     return render(request, "society/Resident/visitor_pass.html", {
-        "form":              form,
-        "visitors":          visitors,
+        "form":               form,
+        "visitors":           visitors,
         "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
-        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
+        "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
@@ -1084,10 +1088,10 @@ def visitor_approvals(request):
         resident=user, registered_by="guard", approval_status__in=["approved", "rejected"]
     ).order_by("-created_at")[:20]
     return render(request, "society/Resident/visitor_approval.html", {
-        "pending":           pending,
-        "history":           history,
+        "pending":            pending,
+        "history":            history,
         "unread_notif_count": Notification.objects.filter(user=user, is_read=False).count(),
-        "pending_visitors":  pending.count(),
+        "pending_visitors":   pending.count(),
     })
 
 
@@ -1151,13 +1155,13 @@ def complaints(request):
     complaints_qs = Complaint.objects.filter(resident=user).order_by("-created_at")
 
     context = {
-        "form":             form,
-        "complaints":       complaints_qs,
-        "pending_count":    complaints_qs.filter(status="pending").count(),
-        "inprogress_count": complaints_qs.filter(status="in_progress").count(),
-        "resolved_count":   complaints_qs.filter(status="resolved").count(),
+        "form":               form,
+        "complaints":         complaints_qs,
+        "pending_count":      complaints_qs.filter(status="pending").count(),
+        "inprogress_count":   complaints_qs.filter(status="in_progress").count(),
+        "resolved_count":     complaints_qs.filter(status="resolved").count(),
         "unread_notif_count": Notification.objects.filter(user=user, is_read=False).count(),
-        "pending_visitors": Visitor.objects.filter(resident=user, registered_by="guard", approval_status="pending").count(),
+        "pending_visitors":   Visitor.objects.filter(resident=user, registered_by="guard", approval_status="pending").count(),
     }
     return render(request, "society/Resident/Resident_complaints.html", context)
 
@@ -1181,7 +1185,6 @@ def facility_booking(request):
         if not errors:
             try:
                 facility = Facility.objects.get(id=facility_id, availability_status="available")
-                # Check for duplicate booking
                 duplicate = FacilityBooking.objects.filter(
                     facility=facility,
                     booking_date=booking_date,
@@ -1209,17 +1212,16 @@ def facility_booking(request):
 
         return redirect("facility_booking")
 
-    # GET — original logic
     facilities = Facility.objects.all().order_by("facility_name")
     bookings   = FacilityBooking.objects.filter(
         booked_by=request.user
     ).select_related("facility").order_by("-created_at")
 
     return render(request, "society/Resident/booking.html", {
-        "facilities":        facilities,
-        "bookings":          bookings,
+        "facilities":         facilities,
+        "bookings":           bookings,
         "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
-        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
+        "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
@@ -1232,7 +1234,6 @@ def community_notice(request):
 
     polls_qs = Poll.objects.filter(status="active").order_by("-created_at")
 
-    # Annotate each poll with user's vote and percentages
     polls = []
     for poll in polls_qs:
         total   = poll.votes.count()
@@ -1249,10 +1250,10 @@ def community_notice(request):
         polls.append(poll)
 
     return render(request, "society/Resident/Resident_community.html", {
-        "notices":           notices,
-        "polls":             polls,
+        "notices":            notices,
+        "polls":              polls,
         "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
-        "pending_visitors":  Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
+        "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
 
 
@@ -1285,6 +1286,7 @@ def resident_change_password(request):
 
     return redirect("resident_settings")
 
+
 @role_required(allowed_roles=["Resident"])
 def resident_payments(request):
     from .models import MaintenanceDue
@@ -1306,23 +1308,22 @@ def resident_payments(request):
 @role_required(allowed_roles=["Resident"])
 def resident_notifications(request):
     notifications = Notification.objects.filter(user=request.user).order_by("-created_at")
-    unread_count  = notifications.filter(is_read=False).count()  # count BEFORE marking read
+    unread_count  = notifications.filter(is_read=False).count()
     notifications.filter(is_read=False).update(is_read=True)
     return render(request, "society/Resident/Resident_notifications.html", {
-        "notifications":     notifications,
-        "unread_count":      unread_count,
-        "unread_notif_count": 0,  # page just cleared them
+        "notifications":      notifications,
+        "unread_count":       unread_count,
+        "unread_notif_count": 0,
     })
+
 
 @role_required(allowed_roles=["Resident"])
 def resident_poll_vote(request, poll_id, vote):
     from django.http import JsonResponse
 
     poll = get_object_or_404(Poll, id=poll_id, status="active")
-
     is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
-    # Prevent duplicate votes
     already_voted = PollVote.objects.filter(poll=poll, voter=request.user).exists()
     if already_voted:
         if is_ajax:
@@ -1333,7 +1334,6 @@ def resident_poll_vote(request, poll_id, vote):
     if vote in ["yes", "no"]:
         PollVote.objects.create(poll=poll, voter=request.user, vote=vote)
 
-        # Compute updated results
         total  = poll.votes.count()
         yes_ct = poll.votes.filter(vote="yes").count()
         no_ct  = poll.votes.filter(vote="no").count()
@@ -1357,6 +1357,7 @@ def resident_poll_vote(request, poll_id, vote):
 
     return redirect("community_notice")
 
+
 @role_required(allowed_roles=["Resident"])
 def ResidentMarkAllReadView(request):
     from .models import Notification
@@ -1365,10 +1366,11 @@ def ResidentMarkAllReadView(request):
         from django.http import JsonResponse
         return JsonResponse({"status": "ok"})
     return redirect(request.META.get("HTTP_REFERER", "resident_dashboard"))
-# ================================================================
-# SECURITY GUARD VIEWS  (unchanged from original)
-# ================================================================
 
+
+# ================================================================
+# SECURITY GUARD VIEWS
+# ================================================================
 @role_required(allowed_roles=["Securityguard"])
 def SecurityDashboardView(request):
     today = date.today()
@@ -1378,37 +1380,35 @@ def SecurityDashboardView(request):
         .order_by("-created_at")
     )
 
-    # Visitor breakdown for the stat panel
     visitor_breakdown = [
-        {"label": "Guests",      "count": today_visitors_qs.filter(visitor_type="guest").count(),       "badge": "badge-info"},
-        {"label": "Deliveries",  "count": today_visitors_qs.filter(visitor_type="delivery").count(),    "badge": "badge-purple"},
-        {"label": "Maintenance", "count": today_visitors_qs.filter(visitor_type="maintenance").count(), "badge": "badge-warning"},
-        {"label": "Staff",       "count": today_visitors_qs.filter(visitor_type="staff").count(),       "badge": "badge-gray"},
-        {"label": "Pre-Registered", "count": today_visitors_qs.filter(registered_by="resident").count(), "badge": "badge-info"},
-        {"label": "Guard-Logged",   "count": today_visitors_qs.filter(registered_by="guard").count(),    "badge": "badge-warning"},
+        {"label": "Guests",         "count": today_visitors_qs.filter(visitor_type="guest").count(),       "badge": "badge-info"},
+        {"label": "Deliveries",     "count": today_visitors_qs.filter(visitor_type="delivery").count(),    "badge": "badge-purple"},
+        {"label": "Maintenance",    "count": today_visitors_qs.filter(visitor_type="maintenance").count(), "badge": "badge-warning"},
+        {"label": "Staff",          "count": today_visitors_qs.filter(visitor_type="staff").count(),       "badge": "badge-gray"},
+        {"label": "Pre-Registered", "count": today_visitors_qs.filter(registered_by="resident").count(),  "badge": "badge-info"},
+        {"label": "Guard-Logged",   "count": today_visitors_qs.filter(registered_by="guard").count(),     "badge": "badge-warning"},
     ]
 
     context = {
-        "today_date":            today,
-        "total_today":           today_visitors_qs.count(),
-        "currently_inside":      today_visitors_qs.filter(entry_status="inside").count(),
-        "pending_approval":      today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
-        "pending_approval_count":today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
-        "total_denied":          today_visitors_qs.filter(entry_status="denied").count(),
-        "today_visitors":        today_visitors_qs[:8],
-        "pending_visitors":      today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
-        "pre_approved_visitors": today_visitors_qs.filter(registered_by="resident", approval_status="approved"),
-        "visitor_breakdown":     visitor_breakdown,
-        "unread_notif_count":    Notification.objects.filter(user=request.user, is_read=False).count(),
+        "today_date":             today,
+        "total_today":            today_visitors_qs.count(),
+        "currently_inside":       today_visitors_qs.filter(entry_status="inside").count(),
+        "pending_approval":       today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
+        "pending_approval_count": today_visitors_qs.filter(registered_by="guard", approval_status="pending").count(),
+        "total_denied":           today_visitors_qs.filter(entry_status="denied").count(),
+        "today_visitors":         today_visitors_qs[:8],
+        "pending_visitors":       today_visitors_qs.filter(registered_by="guard", approval_status="pending"),
+        "pre_approved_visitors":  today_visitors_qs.filter(registered_by="resident", approval_status="approved"),
+        "visitor_breakdown":      visitor_breakdown,
+        "unread_notif_count":     Notification.objects.filter(user=request.user, is_read=False).count(),
     }
     return render(request, "society/Securityguard/Security_dashboard.html", context)
-
 
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_log_visitor(request):
     if request.method == "POST":
-        form = GuardVisitorForm(request.POST,request.FILES)
+        form = GuardVisitorForm(request.POST, request.FILES)
         form.fields["resident"].label_from_instance = lambda u: f"{u.first_name} {u.last_name} — Unit {u.unit_number or '—'}"
         if form.is_valid():
             visitor = form.save(commit=False)
@@ -1419,7 +1419,6 @@ def guard_log_visitor(request):
             visitor.entry_status    = "waiting"
             visitor.save()
 
-            # Notify resident
             Notification.objects.create(
                 user=visitor.resident,
                 message=(
@@ -1434,29 +1433,27 @@ def guard_log_visitor(request):
             )
             return redirect("guard_log_visitor")
         else:
-            # Re-render with form errors — auto-open modal via JS flag
             today_visitors = (
                 Visitor.objects.filter(expected_date=date.today())
                 .select_related("resident", "guard")
                 .order_by("-created_at")
             )
             return render(request, "society/Securityguard/guard_log_visitor.html", {
-                "form":               form,
-                "today_visitors":     today_visitors,
-                "show_log_modal":     True,
-                "total_today":        today_visitors.count(),
-                "currently_inside":   today_visitors.filter(entry_status="inside").count(),
+                "form":                   form,
+                "today_visitors":         today_visitors,
+                "show_log_modal":         True,
+                "total_today":            today_visitors.count(),
+                "currently_inside":       today_visitors.filter(entry_status="inside").count(),
                 "pending_approval_count": today_visitors.filter(approval_status="pending", registered_by="guard").count(),
-                "total_denied":       today_visitors.filter(entry_status="denied").count(),
-                "search_query":       "",
-                "type_filter":        "all",
-                "status_filter":      "all",
+                "total_denied":           today_visitors.filter(entry_status="denied").count(),
+                "search_query":           "",
+                "type_filter":            "all",
+                "status_filter":          "all",
             })
     else:
         form = GuardVisitorForm()
         form.fields["resident"].label_from_instance = lambda u: f"{u.first_name} {u.last_name} — Unit {u.unit_number or '—'}"
 
-    # Build queryset with optional filters
     search_query  = request.GET.get("q", "").strip()
     type_filter   = request.GET.get("type", "all")
     status_filter = request.GET.get("status", "all")
@@ -1477,7 +1474,6 @@ def guard_log_visitor(request):
     if status_filter != "all":
         today_visitors_qs = today_visitors_qs.filter(entry_status=status_filter)
 
-    # CSV export
     if request.GET.get("export") == "csv":
         response = HttpResponse(content_type="text/csv")
         response["Content-Disposition"] = 'attachment; filename="visitor_log_today.csv"'
@@ -1507,22 +1503,19 @@ def guard_log_visitor(request):
     page_obj  = paginator.get_page(request.GET.get("page", 1))
 
     context = {
-        "form":               form,
-        "today_visitors":     page_obj,
-        "page_obj":           page_obj,
-        "is_paginated":       page_obj.has_other_pages(),
-        "search_query":       search_query,
-        "type_filter":        type_filter,
-        "status_filter":      status_filter,
-        # stats
-        "total_today":        Visitor.objects.filter(expected_date=date.today()).count(),
-        "currently_inside":   Visitor.objects.filter(expected_date=date.today(), entry_status="inside").count(),
-        # Guard-logged visitors awaiting resident approval
+        "form":                   form,
+        "today_visitors":         page_obj,
+        "page_obj":               page_obj,
+        "is_paginated":           page_obj.has_other_pages(),
+        "search_query":           search_query,
+        "type_filter":            type_filter,
+        "status_filter":          status_filter,
+        "total_today":            Visitor.objects.filter(expected_date=date.today()).count(),
+        "currently_inside":       Visitor.objects.filter(expected_date=date.today(), entry_status="inside").count(),
         "pending_approval_count": Visitor.objects.filter(expected_date=date.today(), registered_by="guard", approval_status="pending").count(),
-        # Pre-approved by resident (waiting at gate, can enter immediately)
-        "pre_approved_count": Visitor.objects.filter(expected_date=date.today(), registered_by="resident", approval_status="approved", entry_status="waiting").count(),
-        "total_denied":       Visitor.objects.filter(expected_date=date.today(), entry_status="denied").count(),
-        "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
+        "pre_approved_count":     Visitor.objects.filter(expected_date=date.today(), registered_by="resident", approval_status="approved", entry_status="waiting").count(),
+        "total_denied":           Visitor.objects.filter(expected_date=date.today(), entry_status="denied").count(),
+        "unread_notif_count":     Notification.objects.filter(user=request.user, is_read=False).count(),
     }
     return render(request, "society/Securityguard/guard_log_visitor.html", context)
 
@@ -1543,7 +1536,6 @@ def guard_update_entry(request, visitor_id, action):
         visitor.guard        = request.user
         visitor.save()
 
-        # Notify resident that visitor has entered
         Notification.objects.create(
             user=visitor.resident,
             message=(
@@ -1558,7 +1550,6 @@ def guard_update_entry(request, visitor_id, action):
         visitor.exit_time    = timezone.now()
         visitor.save()
 
-        # Notify resident that visitor has exited
         Notification.objects.create(
             user=visitor.resident,
             message=(
@@ -1579,7 +1570,6 @@ def guard_update_entry(request, visitor_id, action):
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_notifications(request):
-    """Full notifications page for security guard."""
     notifications_qs = (
         Notification.objects
         .filter(user=request.user)
@@ -1590,39 +1580,33 @@ def guard_notifications(request):
     unread_count = notifications_qs.filter(is_read=False).count()
     read_count   = total_count - unread_count
 
-    # Mark all as read when this page is opened
     notifications_qs.filter(is_read=False).update(is_read=True)
 
     paginator = Paginator(notifications_qs, 20)
     page_obj  = paginator.get_page(request.GET.get("page", 1))
 
     return render(request, "society/Securityguard/guard_notifications.html", {
-        "notifications": page_obj,
-        "page_obj":      page_obj,
-        "is_paginated":  page_obj.has_other_pages(),
-        "total_count":   total_count,
-        "unread_count":  unread_count,
-        "read_count":    read_count,
-        "unread_notif_count": 0,  # already marked read above
+        "notifications":  page_obj,
+        "page_obj":       page_obj,
+        "is_paginated":   page_obj.has_other_pages(),
+        "total_count":    total_count,
+        "unread_count":   unread_count,
+        "read_count":     read_count,
+        "unread_notif_count": 0,
     })
 
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_mark_all_read(request):
-    """Mark all guard notifications as read. Supports both AJAX and direct GET."""
     Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
-
-    # AJAX request from JS
     if request.headers.get("X-Requested-With") == "XMLHttpRequest":
         from django.http import JsonResponse
         return JsonResponse({"status": "ok"})
-
     return redirect(request.META.get("HTTP_REFERER", "security_dashboard"))
 
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_settings(request):
-    """Guard settings / profile page."""
     return render(request, "society/Securityguard/guard_settings.html", {
         "unread_notif_count":     Notification.objects.filter(user=request.user, is_read=False).count(),
         "pending_approval_count": Visitor.objects.filter(expected_date=date.today(), registered_by="guard", approval_status="pending").count(),
@@ -1631,7 +1615,6 @@ def guard_settings(request):
 
 @role_required(allowed_roles=["Securityguard"])
 def guard_change_password(request):
-    """Guard changes their own password."""
     if request.method == "POST":
         current  = request.POST.get("current_password", "")
         new_pwd  = request.POST.get("new_password", "")

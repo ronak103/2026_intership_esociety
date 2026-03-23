@@ -6,6 +6,33 @@
 
 {% block content %}
 
+<!-- ══ SKELETON ══ -->
+<div class="sk-wrap">
+    <div class="sk-grid-4">
+        <span class="sk sk-stat"></span>
+        <span class="sk sk-stat"></span>
+        <span class="sk sk-stat"></span>
+        <span class="sk sk-stat"></span>
+    </div>
+    <div class="sk-grid-2">
+        <div class="sk-card">
+            <span class="sk sk-title"></span>
+            <span class="sk sk-row"></span>
+            <span class="sk sk-row"></span>
+            <span class="sk sk-row"></span>
+        </div>
+        <div class="sk-card">
+            <span class="sk sk-title"></span>
+            <span class="sk sk-row"></span>
+            <span class="sk sk-row"></span>
+            <span class="sk sk-row"></span>
+        </div>
+    </div>
+</div>
+
+<!-- ══ REAL CONTENT ══ -->
+<div class="real-content">
+
 <!-- Stats -->
 <div class="stats-grid">
     <div class="stat-card {% if maintenance_due.status == 'overdue' %}red{% elif maintenance_due %}amber{% else %}blue{% endif %}">
@@ -16,13 +43,9 @@
             <div class="stat-value">₹{{ maintenance_amount|default:"0" }}</div>
             <div class="stat-label">Maintenance Due</div>
             <div class="stat-sub">
-                {% if maintenance_due.status == 'overdue' %}
-                    Overdue — due {{ maintenance_due.due_date|date:"d M" }}
-                {% elif maintenance_due %}
-                    Due by {{ maintenance_due.due_date|date:"d M Y" }}
-                {% else %}
-                    All clear ✓
-                {% endif %}
+                {% if maintenance_due.status == 'overdue' %}Overdue — due {{ maintenance_due.due_date|date:"d M" }}
+                {% elif maintenance_due %}Due by {{ maintenance_due.due_date|date:"d M Y" }}
+                {% else %}All clear ✓{% endif %}
             </div>
         </div>
     </div>
@@ -85,6 +108,7 @@
     <div class="card">
         <div class="card-header">
             <span class="card-title"><i class="fas fa-receipt"></i> Payment History</span>
+            <a href="{% url 'resident_payments' %}" class="btn btn-outline btn-sm">View All</a>
         </div>
         {% for payment in recent_payments %}
         <div class="payment-row">
@@ -113,9 +137,10 @@
 
 <!-- Pending Visitor Approvals Quick View -->
 {% if pending_visitors > 0 %}
-<div class="card" style="border-left: 4px solid var(--warning);">
+<div class="card" style="border-left:4px solid var(--warning);">
     <div class="card-header">
-        <span class="card-title"><i class="fas fa-user-clock" style="color:var(--warning);"></i>
+        <span class="card-title">
+            <i class="fas fa-user-clock" style="color:var(--warning);"></i>
             Visitors Waiting for Your Approval
             <span class="badge badge-warning" style="margin-left:4px;">{{ pending_visitors }}</span>
         </span>
@@ -126,4 +151,10 @@
 </div>
 {% endif %}
 
+</div>{# /real-content #}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>skeletonReveal(800);</script>
 {% endblock %}

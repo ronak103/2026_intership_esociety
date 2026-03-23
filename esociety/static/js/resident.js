@@ -152,21 +152,33 @@ async function postJson(url, data = {}) {
     const dropdown = document.getElementById('notifDropdown');
     if (!btn || !dropdown) return;
 
+    // FIX: Old Resident_base.html had inline style="display:none" on the dropdown.
+    // Inline styles always beat CSS class rules, so toggling .open never worked.
+    // Solution: remove the inline style on init so the CSS class .open takes over.
+    dropdown.style.removeProperty('display');
+
     btn.addEventListener('click', e => {
         e.stopPropagation();
-        const open = dropdown.classList.toggle('open');
-        btn.setAttribute('aria-expanded', open);
+        const isOpen = dropdown.classList.toggle('open');
+        btn.setAttribute('aria-expanded', isOpen);
+        // Fallback for older base templates that still use inline display
+        dropdown.style.display = isOpen ? 'block' : 'none';
     });
 
     document.addEventListener('click', e => {
         if (!dropdown.contains(e.target) && e.target !== btn) {
             dropdown.classList.remove('open');
             btn.setAttribute('aria-expanded', 'false');
+            dropdown.style.display = 'none';
         }
     });
 
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') dropdown.classList.remove('open');
+        if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+            btn.setAttribute('aria-expanded', 'false');
+            dropdown.style.display = 'none';
+        }
     });
 
     // Mark all read
@@ -322,9 +334,16 @@ document.addEventListener('click', e => {
     $$('[data-poll-form]').forEach(form => {
         form.addEventListener('submit', async e => {
             e.preventDefault();
-            const fd = new FormData(form);
-            const choice = fd.get('choice');
-            if (!choice) return;
+
+            // FIX: FormData does NOT include the clicked submit button's value when
+            // e.preventDefault() is called — fd.get('choice') is always null.
+            // e.submitter is the specific button that was clicked, so we read its value directly.
+            const submitter = e.submitter;
+            const choice    = submitter ? submitter.value : null;
+            if (!choice) {
+                showToast('Please click Yes or No to vote.', 'error');
+                return;
+            }
 
             // Optimistic — disable buttons
             form.querySelectorAll('button').forEach(b => {
@@ -332,30 +351,47 @@ document.addEventListener('click', e => {
                 if (b.value === choice) b.classList.add('voted');
             });
 
+            // Build FormData and set choice explicitly so Django receives it
+            const fd = new FormData(form);
+            fd.set('choice', choice);
+
+            // Use formaction attribute on No button if present, otherwise form.action
+            const actionUrl = submitter.getAttribute('formaction') || form.action;
+
             try {
-                const res = await fetch(form.action, {
+                const res = await fetch(actionUrl, {
                     method: 'POST',
                     body: fd,
                     headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 });
-                const data = await res.json(); // {yes_pct, no_pct, yes_count, no_count}
+
+                if (!res.ok) throw new Error('Server error ' + res.status);
+
+                const data = await res.json(); // {yes_pct, no_pct, yes_count, no_count, total}
 
                 // Animate bars
-                const pollId  = form.dataset.pollId;
-                const result  = $(`[data-poll-result="${pollId}"]`);
+                const pollId = form.dataset.pollId;
+                const result = $(`[data-poll-result="${pollId}"]`);
                 if (result && data.yes_pct !== undefined) {
                     const yesPct = data.yes_pct ?? 0;
                     const noPct  = data.no_pct  ?? 0;
+                    const total  = data.total   ?? ((data.yes_count ?? 0) + (data.no_count ?? 0));
                     const yBar   = result.querySelector('.poll-bar.yes');
                     const nBar   = result.querySelector('.poll-bar.no');
                     const yPct   = result.querySelector('.poll-pct.yes');
                     const nPct   = result.querySelector('.poll-pct.no');
-                    if (yBar) yBar.style.width   = yesPct + '%';
-                    if (nBar) nBar.style.width   = noPct  + '%';
-                    if (yPct) yPct.textContent   = yesPct + '%';
-                    if (nPct) nPct.textContent   = noPct  + '%';
+                    const tot    = result.querySelector('.poll-total-votes');
+                    if (yBar) yBar.style.width = yesPct + '%';
+                    if (nBar) nBar.style.width = noPct  + '%';
+                    if (yPct) yPct.textContent = yesPct + '%';
+                    if (nPct) nPct.textContent = noPct  + '%';
+                    if (tot)  tot.textContent  = total + ' vote' + (total !== 1 ? 's' : '');
                     result.style.display = 'block';
                 }
+
+                // Hide the vote buttons after successful vote
+                form.style.display = 'none';
+
                 showToast('Vote submitted!', 'success', 2000);
             } catch {
                 form.querySelectorAll('button').forEach(b => { b.disabled = false; b.classList.remove('voted'); });

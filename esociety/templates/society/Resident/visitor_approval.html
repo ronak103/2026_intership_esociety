@@ -1,101 +1,94 @@
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
-
 {% block title %}Visitor Approvals — GateNova{% endblock %}
 {% block page_title %}Visitor Approvals{% endblock %}
-
 {% block content %}
 
-<!-- Pending Approvals -->
+<div class="sk-wrap">
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+    </div>
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+    </div>
+</div>
+
+<div class="real-content">
+
 <div class="card" {% if pending %}style="border-left:4px solid var(--warning);"{% endif %}>
     <div class="card-header">
         <span class="card-title">
             <i class="fas fa-user-clock" style="color:var(--warning);"></i>
             Waiting for Your Approval
-            {% if pending %}
-                <span class="badge badge-warning" style="margin-left:4px;">{{ pending|length }}</span>
-            {% endif %}
+            {% if pending %}<span class="badge badge-warning" style="margin-left:4px;">{{ pending|length }}</span>{% endif %}
         </span>
     </div>
-
     {% if pending %}
-        <div id="pendingList">
-        {% for v in pending %}
-        <div class="approval-card" id="approval-{{ v.id }}">
-            {% if v.visitor_photo %}
-            <div style="flex-shrink:0;">
-                <img src="{{ v.visitor_photo.url }}"
-                     alt="Photo of {{ v.visitor_name }}"
-                     style="width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid var(--border);">
-            </div>
-            {% endif %}
-            <div class="visitor-info">
-                <div class="visitor-name">{{ v.visitor_name }}</div>
-                <div class="visitor-meta">
-                    <span><i class="fas fa-phone"></i> {{ v.mobile_number }}</span>
-                    <span><i class="fas fa-tag"></i> {{ v.get_visitor_type_display }}</span>
-                    {% if v.vehicle_number %}<span><i class="fas fa-car"></i> {{ v.vehicle_number }}</span>{% endif %}
-                    <span><i class="fas fa-clock"></i> {{ v.created_at|date:"h:i A, d M" }}</span>
-                </div>
-            </div>
-            <div class="approval-actions">
-                <!-- AJAX buttons wired to resident.js module 8 -->
-                <button class="btn btn-success btn-sm"
-                    data-action="approve"
-                    data-url="{% url 'visitor_decision' v.id 'approve' %}"
-                    data-visitor-id="{{ v.id }}">
-                    <i class="fas fa-check"></i> Approve
-                </button>
-                <button class="btn btn-danger btn-sm"
-                    data-action="reject"
-                    data-url="{% url 'visitor_decision' v.id 'reject' %}"
-                    data-visitor-id="{{ v.id }}">
-                    <i class="fas fa-times"></i> Reject
-                </button>
+    <div id="pendingList">
+    {% for v in pending %}
+    <div class="approval-card" id="approval-{{ v.id }}">
+        {% if v.visitor_photo %}
+        <div style="flex-shrink:0;">
+            <img src="{{ v.visitor_photo.url }}" alt="Photo of {{ v.visitor_name }}"
+                 style="width:64px;height:64px;border-radius:10px;object-fit:cover;border:2px solid var(--border);">
+        </div>
+        {% endif %}
+        <div class="visitor-info">
+            <div class="visitor-name">{{ v.visitor_name }}</div>
+            <div class="visitor-meta">
+                <span><i class="fas fa-phone"></i> {{ v.mobile_number }}</span>
+                <span><i class="fas fa-tag"></i> {{ v.get_visitor_type_display }}</span>
+                {% if v.vehicle_number %}<span><i class="fas fa-car"></i> {{ v.vehicle_number }}</span>{% endif %}
+                <span><i class="fas fa-clock"></i> {{ v.created_at|date:"h:i A, d M" }}</span>
             </div>
         </div>
-        {% endfor %}
+        <div class="approval-actions">
+            <button class="btn btn-success btn-sm"
+                data-action="approve"
+                data-url="{% url 'visitor_decision' v.id 'approve' %}"
+                data-visitor-id="{{ v.id }}">
+                <i class="fas fa-check"></i> Approve
+            </button>
+            <button class="btn btn-danger btn-sm"
+                data-action="reject"
+                data-url="{% url 'visitor_decision' v.id 'reject' %}"
+                data-visitor-id="{{ v.id }}">
+                <i class="fas fa-times"></i> Reject
+            </button>
         </div>
+    </div>
+    {% endfor %}
+    </div>
     {% else %}
-        <div class="empty-state" style="padding:40px;">
-            <i class="fas fa-check-circle" style="color:var(--success);opacity:1;font-size:44px;"></i>
-            <p style="margin-top:10px;font-weight:600;color:var(--text);">All clear!</p>
-            <p style="font-size:13px;">No pending approvals right now.</p>
-        </div>
+    <div class="empty-state" style="padding:40px;">
+        <i class="fas fa-check-circle" style="color:var(--success);opacity:1;font-size:44px;"></i>
+        <p style="margin-top:10px;font-weight:600;color:var(--text);">All clear!</p>
+        <p style="font-size:13px;">No pending approvals right now.</p>
+    </div>
     {% endif %}
 </div>
 
-<!-- Approval History -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-history"></i> Recent History</span>
-        {% if history %}
-        <span class="badge badge-gray">Last {{ history|length }}</span>
-        {% endif %}
+        {% if history %}<span class="badge badge-gray">Last {{ history|length }}</span>{% endif %}
     </div>
     <div class="table-wrap">
         <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Photo</th>
-                    <th>Visitor</th>
-                    <th>Type</th>
-                    <th>Date</th>
-                    <th>Your Decision</th>
-                    <th>Entry Status</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Photo</th><th>Visitor</th><th>Type</th><th>Date</th><th>Your Decision</th><th>Entry Status</th></tr></thead>
             <tbody>
             {% for v in history %}
                 <tr>
                     <td>
                         {% if v.visitor_photo %}
-                            <img src="{{ v.visitor_photo.url }}"
-                                 style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
+                            <img src="{{ v.visitor_photo.url }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
                         {% else %}
-                            <div style="width:40px;height:40px;border-radius:8px;background:var(--border);
-                                        display:flex;align-items:center;justify-content:center;
-                                        font-weight:700;color:var(--text-muted);">
+                            <div style="width:40px;height:40px;border-radius:8px;background:var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text-muted);">
                                 {{ v.visitor_name|first|upper }}
                             </div>
                         {% endif %}
@@ -107,35 +100,24 @@
                     <td><span class="badge badge-gray">{{ v.get_visitor_type_display }}</span></td>
                     <td style="font-size:13px;color:var(--text-muted);">{{ v.expected_date|date:"d M Y" }}</td>
                     <td>
-                        {% if v.approval_status == "approved" %}
-                            <span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
-                        {% else %}
-                            <span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>
-                        {% endif %}
+                        {% if v.approval_status == "approved" %}<span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
+                        {% else %}<span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>{% endif %}
                     </td>
                     <td>
-                        {% if v.entry_status == "inside" %}
-                            <span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
-                        {% elif v.entry_status == "exited" %}
-                            <span class="badge badge-gray">Exited</span>
-                        {% elif v.entry_status == "denied" %}
-                            <span class="badge badge-danger">Denied</span>
-                        {% else %}
-                            <span class="badge badge-warning">Waiting</span>
-                        {% endif %}
+                        {% if v.entry_status == "inside" %}<span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
+                        {% elif v.entry_status == "exited" %}<span class="badge badge-gray">Exited</span>
+                        {% elif v.entry_status == "denied" %}<span class="badge badge-danger">Denied</span>
+                        {% else %}<span class="badge badge-warning">Waiting</span>{% endif %}
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">
-                    <div class="empty-state">
-                        <i class="fas fa-history"></i>
-                        <p>No history yet.</p>
-                    </div>
-                </td></tr>
+                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-history"></i><p>No history yet.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+</div>{# /real-content #}
 {% endblock %}
+{% block extra_js %}<script>skeletonReveal(700);</script>{% endblock %}

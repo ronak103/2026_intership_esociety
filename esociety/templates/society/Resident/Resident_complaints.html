@@ -1,6 +1,8 @@
+<!-- ══════════════════════════════════════════════════════════
+     Resident_complaints.html
+═══════════════════════════════════════════════════════════ -->
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
-
 {% block title %}My Complaints — GateNova{% endblock %}
 {% block page_title %}My Complaints{% endblock %}
 
@@ -12,32 +14,42 @@
 
 {% block content %}
 
-<!-- Stats Row -->
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
-    <div class="stat-card amber">
-        <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ pending_count }}</div>
-            <div class="stat-label">Open</div>
-        </div>
+<div class="sk-wrap">
+    <div class="sk-grid-4" style="grid-template-columns:repeat(3,1fr);">
+        <span class="sk sk-stat"></span>
+        <span class="sk sk-stat"></span>
+        <span class="sk sk-stat"></span>
     </div>
-    <div class="stat-card blue">
-        <div class="stat-icon blue"><i class="fas fa-spinner"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ inprogress_count }}</div>
-            <div class="stat-label">In Progress</div>
-        </div>
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
     </div>
-    <div class="stat-card green">
-        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
-        <div class="stat-info">
-            <div class="stat-value">{{ resolved_count }}</div>
-            <div class="stat-label">Resolved</div>
-        </div>
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
     </div>
 </div>
 
-<!-- Raise Complaint -->
+<div class="real-content">
+
+<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+    <div class="stat-card amber">
+        <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ pending_count }}</div><div class="stat-label">Open</div></div>
+    </div>
+    <div class="stat-card blue">
+        <div class="stat-icon blue"><i class="fas fa-spinner"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ inprogress_count }}</div><div class="stat-label">In Progress</div></div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+        <div class="stat-info"><div class="stat-value">{{ resolved_count }}</div><div class="stat-label">Resolved</div></div>
+    </div>
+</div>
+
 <div class="card" id="complaintFormCard">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-plus-circle"></i> Raise New Complaint</span>
@@ -62,30 +74,18 @@
                 {{ form.description }}
                 {% if form.description.errors %}<span class="field-error">{{ form.description.errors.0 }}</span>{% endif %}
             </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-paper-plane"></i> Submit Complaint
-            </button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Submit Complaint</button>
         </form>
     </div>
 </div>
 
-<!-- Complaint History -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-history"></i> Complaint History</span>
     </div>
     <div class="table-wrap">
         <table class="data-table">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Type</th>
-                    <th>Description</th>
-                    <th>Priority</th>
-                    <th>Date</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
+            <thead><tr><th>#</th><th>Type</th><th>Description</th><th>Priority</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
             {% for c in complaints %}
                 <tr>
@@ -107,16 +107,13 @@
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">
-                    <div class="empty-state">
-                        <i class="fas fa-check-circle"></i>
-                        <p>No complaints submitted yet. All good!</p>
-                    </div>
-                </td></tr>
+                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-check-circle"></i><p>No complaints yet.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+</div>{# /real-content #}
 {% endblock %}
+{% block extra_js %}<script>skeletonReveal(700);</script>{% endblock %}

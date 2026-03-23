@@ -1,19 +1,32 @@
 {% extends "society/Resident/Resident_base.html" %}
 {% load static %}
-
 {% block title %}Visitor Pass — GateNova{% endblock %}
 {% block page_title %}Visitor Pass{% endblock %}
-
 {% block content %}
 
-<!-- Create Pass Card -->
+<div class="sk-wrap">
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+    </div>
+    <div class="sk-card">
+        <span class="sk sk-title"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+        <span class="sk sk-row"></span>
+    </div>
+</div>
+
+<div class="real-content">
+
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-id-badge"></i> Create Visitor Pass</span>
     </div>
     <div class="card-body">
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:18px;">
-            Pre-register your visitor before they arrive. The security guard will see them as pre-approved.
+            Pre-register your visitor. The security guard will see them as pre-approved.
         </p>
         <form method="POST" novalidate>
             {% csrf_token %}
@@ -45,14 +58,11 @@
                 <label class="form-label">Vehicle Number <span style="color:var(--text-muted);font-weight:400;">(optional)</span></label>
                 {{ form.vehicle_number }}
             </div>
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-id-badge"></i> Generate Visitor Pass
-            </button>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-id-badge"></i> Generate Visitor Pass</button>
         </form>
     </div>
 </div>
 
-<!-- My Pre-registered Visitors -->
 <div class="card">
     <div class="card-header">
         <span class="card-title"><i class="fas fa-list"></i> My Pre-registered Visitors</span>
@@ -60,16 +70,7 @@
     </div>
     <div class="table-wrap">
         <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Visitor</th>
-                    <th>Type</th>
-                    <th>Expected Date</th>
-                    <th>Vehicle</th>
-                    <th>Approval</th>
-                    <th>Entry Status</th>
-                </tr>
-            </thead>
+            <thead><tr><th>Visitor</th><th>Type</th><th>Expected Date</th><th>Vehicle</th><th>Approval</th><th>Entry Status</th></tr></thead>
             <tbody>
             {% for v in visitors %}
                 <tr>
@@ -82,28 +83,20 @@
                     <td style="font-size:13px;font-family:var(--font-mono);">{{ v.vehicle_number|default:"—" }}</td>
                     <td><span class="badge badge-success"><i class="fas fa-check"></i> Pre-approved</span></td>
                     <td>
-                        {% if v.entry_status == "inside" %}
-                            <span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
-                        {% elif v.entry_status == "exited" %}
-                            <span class="badge badge-gray">Exited</span>
-                        {% elif v.entry_status == "denied" %}
-                            <span class="badge badge-danger">Denied</span>
-                        {% else %}
-                            <span class="badge badge-warning">Waiting</span>
-                        {% endif %}
+                        {% if v.entry_status == "inside" %}<span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
+                        {% elif v.entry_status == "exited" %}<span class="badge badge-gray">Exited</span>
+                        {% elif v.entry_status == "denied" %}<span class="badge badge-danger">Denied</span>
+                        {% else %}<span class="badge badge-warning">Waiting</span>{% endif %}
                     </td>
                 </tr>
             {% empty %}
-                <tr><td colspan="6">
-                    <div class="empty-state">
-                        <i class="fas fa-id-badge"></i>
-                        <p>No visitor passes created yet.</p>
-                    </div>
-                </td></tr>
+                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-id-badge"></i><p>No visitor passes yet.</p></div></td></tr>
             {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+</div>{# /real-content #}
 {% endblock %}
+{% block extra_js %}<script>skeletonReveal(700);</script>{% endblock %}
