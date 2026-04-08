@@ -6,11 +6,15 @@ from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 import csv
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from datetime import date
 import calendar
+import uuid
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
 from .decorators import role_required
+from django.urls import reverse
+import razorpay
 from .forms import (
     ComplaintForm,
     VisitorForm,
@@ -771,6 +775,63 @@ def AdminDeletePollView(request, poll_id):
     messages.success(request, "Poll deleted.")
     return redirect("admin_community")
 
+# ================================================================
+# ADMIN — BROADCAST NOTIFICATION TO ALL RESIDENTS
+# ================================================================
+@role_required(allowed_roles=["Admin"])
+def AdminBroadcastNotificationView(request):
+    """
+    Sends an in-app notification to every active resident at once.
+    Optionally also creates a Notice (announcement) at the same time.
+    """
+    if request.method != "POST":
+        return redirect("admin_community")
+
+    message        = request.POST.get("message", "").strip()
+    also_post_notice = request.POST.get("also_post_notice") == "on"
+    notice_title   = request.POST.get("notice_title", "").strip()
+
+    if not message:
+        messages.error(request, "Broadcast message cannot be empty.")
+        return redirect("admin_community")
+
+    # Get all active residents
+    active_residents = User.objects.filter(
+        role="Resident",
+        is_active=True,
+        status="active",
+    )
+
+    if not active_residents.exists():
+        messages.warning(request, "No active residents found to notify.")
+        return redirect("admin_community")
+
+    # Bulk create notifications — one DB query instead of N
+    notifications = [
+        Notification(
+            user=resident,
+            message=f"📢 {message}",
+        )
+        for resident in active_residents
+    ]
+    Notification.objects.bulk_create(notifications)
+
+    # Optionally also post as a Notice (shows on community page)
+    if also_post_notice and notice_title:
+        Notice.objects.create(
+            title=notice_title,
+            message=message,
+            target_audience="resident",
+            created_by=request.user,
+        )
+
+    resident_count = active_residents.count()
+    messages.success(
+        request,
+        f"Broadcast sent to {resident_count} resident"
+        f"{'s' if resident_count != 1 else ''}."
+    )
+    return redirect("admin_community")
 
 # ================================================================
 # ADMIN — SETTINGS
@@ -924,6 +985,7 @@ def AdminVisitorLogsView(request):
     today = date.today()
 
     date_filter   = request.GET.get("date", "")
+    month_filter  = request.GET.get("month", "")   # format: YYYY-MM
     type_filter   = request.GET.get("type", "all")
     status_filter = request.GET.get("status", "all")
     search_query  = request.GET.get("q", "").strip()
@@ -934,8 +996,17 @@ def AdminVisitorLogsView(request):
         .order_by("-created_at")
     )
 
+    # Date filter takes priority over month filter
     if date_filter:
         visitors = visitors.filter(expected_date=date_filter)
+        month_filter = ""  # clear month if specific date chosen
+    elif month_filter:
+        try:
+            year, month = int(month_filter.split("-")[0]), int(month_filter.split("-")[1])
+            visitors = visitors.filter(expected_date__year=year, expected_date__month=month)
+        except (ValueError, IndexError):
+            month_filter = ""
+
     if type_filter != "all":
         visitors = visitors.filter(visitor_type=type_filter)
     if status_filter != "all":
@@ -987,6 +1058,7 @@ def AdminVisitorLogsView(request):
         "page_obj":         page_obj,
         "is_paginated":     page_obj.has_other_pages(),
         "date_filter":      date_filter,
+        "month_filter":     month_filter,
         "type_filter":      type_filter,
         "status_filter":    status_filter,
         "search_query":     search_query,
@@ -1295,14 +1367,448 @@ def resident_payments(request):
     pending_dues = dues.filter(status__in=["pending", "overdue"])
     total_due    = pending_dues.aggregate(t=Sum("amount"))["t"] or 0
 
+    # Society UPI ID from settings (set by admin in AdminSocietySettings)
+    from .models import MaintenanceConfig
+    try:
+        config = MaintenanceConfig.objects.first()
+        upi_id = getattr(config, "upi_id", "") or ""
+    except Exception:
+        upi_id = ""
+
     return render(request, "society/Resident/Resident_payments.html", {
         "payments":           payments,
         "dues":               dues,
         "pending_dues":       pending_dues,
         "total_due":          total_due,
+        "upi_id":             upi_id,
         "unread_notif_count": Notification.objects.filter(user=request.user, is_read=False).count(),
         "pending_visitors":   Visitor.objects.filter(resident=request.user, registered_by="guard", approval_status="pending").count(),
     })
+
+
+# ================================================================
+# RESIDENT — RAZORPAY: Create Order
+# ================================================================
+@role_required(allowed_roles=["Resident"])
+def razorpay_create_order(request):
+    """AJAX POST — creates a Razorpay order for Maintenance OR Facility Booking."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method"}, status=405)
+
+    try:
+        client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+        )
+
+        
+        booking_id = request.POST.get("booking_id")
+        if booking_id:
+            booking = get_object_or_404(
+                FacilityBooking, id=booking_id, booked_by=request.user
+            )
+
+            amount_paise = int(float(booking.amount) * 100)
+
+            order_data = {
+                "amount": amount_paise,
+                "currency": "INR",
+                "receipt": f"booking_{booking.id}_{uuid.uuid4().hex[:8]}",
+                "notes": {
+                    "booking_id": str(booking.id),
+                    "resident": str(request.user.id),
+                },
+            }
+
+            order = client.order.create(data=order_data)
+
+            return JsonResponse({
+                "order_id": order["id"],
+                "amount": amount_paise,
+                "currency": "INR",
+                "key": settings.RAZORPAY_KEY_ID,
+                "name": "Facility Booking",
+                "description": f"{booking.facility.facility_name}",
+                "booking_id": booking.id,
+            })
+
+    
+        due_id = request.POST.get("due_id")
+        if not due_id:
+            return JsonResponse({"error": "Missing due_id."}, status=400)
+
+        due = get_object_or_404(MaintenanceDue, id=due_id, resident=request.user)
+
+        if due.status not in ["pending", "overdue"]:
+            return JsonResponse({"error": "This due is already paid or waived."}, status=400)
+
+        amount_paise = int(float(due.amount) * 100)
+
+        order_data = {
+            "amount": amount_paise,
+            "currency": "INR",
+            "receipt": f"due_{due.id}_{uuid.uuid4().hex[:8]}",
+            "notes": {
+                "due_id": str(due.id),
+                "resident": str(request.user.id),
+                "due_month": str(due.due_month),
+            },
+        }
+
+        order = client.order.create(data=order_data)
+
+        return JsonResponse({
+            "order_id": order["id"],
+            "amount": amount_paise,
+            "currency": "INR",
+            "key": settings.RAZORPAY_KEY_ID,
+            "name": "GateNova Society",
+            "description": f"Maintenance – {due.due_month.strftime('%B %Y')}",
+            "due_id": due.id,
+            "prefill_name": f"{request.user.first_name} {request.user.last_name}".strip(),
+            "prefill_email": request.user.email,
+        })
+
+    except Exception as e:
+        return JsonResponse({"error": f"Server error: {str(e)}"}, status=500)
+
+# ================================================================
+# RESIDENT — RAZORPAY: Verify & Record Payment
+# ================================================================
+# NOTE: @csrf_exempt must be outermost so it wraps all inner decorators
+@csrf_exempt
+@role_required(allowed_roles=["Resident"])
+def razorpay_verify_payment(request):
+    """Verify Razorpay payment — handles Maintenance + Facility Booking."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method"}, status=405)
+
+    try:
+        razorpay_order_id   = request.POST.get("razorpay_order_id")
+        razorpay_payment_id = request.POST.get("razorpay_payment_id")
+        razorpay_signature  = request.POST.get("razorpay_signature")
+
+        
+        booking_id = request.POST.get("booking_id")
+
+        if not all([razorpay_order_id, razorpay_payment_id, razorpay_signature]):
+            return JsonResponse({"success": False, "error": "Missing payment fields."}, status=400)
+
+        client = razorpay.Client(
+            auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+        )
+
+        # ✅ Verify signature
+        try:
+            client.utility.verify_payment_signature({
+                "razorpay_order_id":   razorpay_order_id,
+                "razorpay_payment_id": razorpay_payment_id,
+                "razorpay_signature":  razorpay_signature,
+            })
+        except razorpay.errors.SignatureVerificationError:
+            return JsonResponse({"success": False, "error": "Invalid payment signature."}, status=400)
+
+        
+        if booking_id:
+            booking = get_object_or_404(
+                FacilityBooking, id=booking_id, booked_by=request.user
+            )
+
+            if booking.payment_status != "completed":
+                booking.payment_status = "completed"
+                booking.booking_status = "confirmed"
+                booking.save()
+
+            Payment.objects.get_or_create(
+                transaction_id=razorpay_payment_id,
+                defaults={
+                    "resident": request.user,
+                    "amount": booking.amount,
+                    "payment_type": "facility_booking",
+                    "payment_status": "completed",
+                    "payment_date": timezone.now().date(),
+                }
+            )
+
+            Notification.objects.create(
+                user=request.user,
+                message=f"✅ Booking payment of ₹{booking.amount} successful for {booking.facility.facility_name}."
+            )
+
+            return JsonResponse({"success": True})
+
+        
+        due_id = request.POST.get("due_id")
+
+        if not due_id:
+            return JsonResponse({"success": False, "error": "Missing due_id."}, status=400)
+
+        due = get_object_or_404(MaintenanceDue, id=due_id, resident=request.user)
+
+        if due.status in ["pending", "overdue"]:
+            due.status  = "paid"
+            due.paid_on = timezone.now()
+            due.save()
+
+        payment, _ = Payment.objects.get_or_create(
+            transaction_id=razorpay_payment_id,
+            defaults={
+                "resident": request.user,
+                "amount": due.amount,
+                "payment_type": "maintenance",
+                "payment_status": "completed",
+                "payment_date": timezone.now().date(),
+            }
+        )
+
+        Notification.objects.create(
+            user=request.user,
+            message=(
+                f"✅ Maintenance payment of ₹{due.amount} for "
+                f"{due.due_month.strftime('%B %Y')} received."
+            )
+        )
+
+        return JsonResponse({
+            "success": True,
+            "receipt_url": reverse("payment_receipt", args=[payment.id]),
+        })
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
+
+# ================================================================
+# RESIDENT — UPI MANUAL: Submit UTR after scanning QR
+# ================================================================
+@role_required(allowed_roles=["Resident"])
+def razorpay_upi_manual(request):
+    """Resident submits UTR after paying via UPI QR — creates a pending Payment for admin to verify."""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid method"}, status=405)
+
+    try:
+        due_id         = request.POST.get("due_id")
+        transaction_id = request.POST.get("transaction_id", "").strip()
+
+        if not due_id or not transaction_id:
+            return JsonResponse({"success": False, "error": "Missing due ID or transaction ID."}, status=400)
+
+        if len(transaction_id) < 10:
+            return JsonResponse({"success": False, "error": "UTR must be at least 10 characters."}, status=400)
+
+        due = get_object_or_404(MaintenanceDue, id=due_id, resident=request.user)
+
+        if due.status not in ["pending", "overdue"]:
+            return JsonResponse({"success": False, "error": "This due is already paid or waived."}, status=400)
+
+        # Check for duplicate UTR
+        if Payment.objects.filter(transaction_id=transaction_id).exists():
+            return JsonResponse({"success": False, "error": "This UTR has already been submitted."}, status=400)
+
+        # Create a PENDING payment — admin must verify and mark it completed
+        Payment.objects.create(
+            resident       = request.user,
+            amount         = due.amount,
+            payment_type   = "maintenance",
+            payment_status = "pending",       # ← admin verifies before marking completed
+            payment_date   = timezone.now().date(),
+            transaction_id = transaction_id,
+        )
+
+        # Notify admin
+        from core.models import User as CoreUser
+        admins = CoreUser.objects.filter(role="Admin")
+        for admin in admins:
+            Notification.objects.create(
+                user    = admin,
+                message = (
+                    f"📲 UPI payment of ₹{due.amount} submitted by "
+                    f"{request.user.first_name} {request.user.last_name} "
+                    f"(Unit {getattr(request.user, 'unit_number', '—')}) "
+                    f"for {due.due_month.strftime('%B %Y')}. "
+                    f"UTR: {transaction_id}. Please verify and mark as paid."
+                )
+            )
+
+        # Notify resident
+        Notification.objects.create(
+            user    = request.user,
+            message = (
+                f"⏳ Your UPI payment of ₹{due.amount} for "
+                f"{due.due_month.strftime('%B %Y')} has been submitted (UTR: {transaction_id}). "
+                f"It will be confirmed once the admin verifies it."
+            )
+        )
+
+        return JsonResponse({"success": True})
+
+    except Exception as e:
+        return JsonResponse({"success": False, "error": f"Server error: {str(e)}"}, status=500)
+
+
+# ================================================================
+# RESIDENT — PAYMENT RECEIPT (PDF download)
+# ================================================================
+@role_required(allowed_roles=["Resident"])
+def payment_receipt(request, payment_id):
+    """Generate and serve a PDF receipt for a completed payment."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas
+    import io
+
+    payment = get_object_or_404(Payment, id=payment_id, resident=request.user)
+
+    if payment.payment_status != "completed":
+        messages.error(request, "Receipt is only available for completed payments.")
+        return redirect("resident_payments")
+
+    buffer = io.BytesIO()
+    w, h   = A4
+    c      = canvas.Canvas(buffer, pagesize=A4)
+
+    # ── Palette ──
+    PRIMARY  = colors.HexColor("#2563eb")
+    DARK     = colors.HexColor("#0f172a")
+    MUTED    = colors.HexColor("#64748b")
+    LIGHT_BG = colors.HexColor("#f1f5f9")
+    SUCCESS  = colors.HexColor("#10b981")
+    WHITE    = colors.white
+    BORDER   = colors.HexColor("#e2e8f0")
+
+    # ── Header band ──
+    c.setFillColor(PRIMARY)
+    c.rect(0, h - 80*mm, w, 80*mm, fill=1, stroke=0)
+
+    # Society name
+    c.setFillColor(WHITE)
+    c.setFont("Helvetica-Bold", 22)
+    c.drawString(20*mm, h - 28*mm, "GateNova")
+    c.setFont("Helvetica", 10)
+    c.drawString(20*mm, h - 36*mm, "Society Management Portal")
+
+    # RECEIPT label
+    c.setFont("Helvetica-Bold", 28)
+    c.drawRightString(w - 20*mm, h - 28*mm, "RECEIPT")
+    c.setFont("Helvetica", 10)
+    c.drawRightString(w - 20*mm, h - 37*mm, f"#{payment.id:06d}")
+
+    # Green PAID stamp
+    c.setFillColor(SUCCESS)
+    c.roundRect(w - 55*mm, h - 72*mm, 35*mm, 14*mm, 3*mm, fill=1, stroke=0)
+    c.setFillColor(WHITE)
+    c.setFont("Helvetica-Bold", 13)
+    c.drawCentredString(w - 37.5*mm, h - 63*mm, "PAID")
+
+    # Date in header
+    c.setFillColor(WHITE)
+    c.setFont("Helvetica", 9)
+    c.drawString(20*mm, h - 50*mm, "Date of Payment")
+    c.setFont("Helvetica-Bold", 11)
+    c.drawString(20*mm, h - 58*mm, payment.payment_date.strftime("%d %B %Y"))
+
+    # ── Resident info card ──
+    card_top = h - 100*mm
+    c.setFillColor(LIGHT_BG)
+    c.roundRect(15*mm, card_top - 30*mm, w - 30*mm, 32*mm, 3*mm, fill=1, stroke=0)
+
+    c.setFillColor(MUTED)
+    c.setFont("Helvetica", 8)
+    c.drawString(22*mm, card_top - 8*mm, "RESIDENT NAME")
+    c.drawString(w/2, card_top - 8*mm, "UNIT NUMBER")
+
+    c.setFillColor(DARK)
+    c.setFont("Helvetica-Bold", 12)
+    full_name = f"{payment.resident.first_name} {payment.resident.last_name}".strip()
+    c.drawString(22*mm, card_top - 17*mm, full_name)
+    c.drawString(w/2, card_top - 17*mm, getattr(payment.resident, "unit_number", "—") or "—")
+
+    c.setFillColor(MUTED)
+    c.setFont("Helvetica", 8)
+    c.drawString(22*mm, card_top - 24*mm, "EMAIL")
+    c.setFillColor(DARK)
+    c.setFont("Helvetica", 10)
+    c.drawString(22*mm, card_top - 31*mm, payment.resident.email)
+
+    # ── Payment details table ──
+    tbl_top = card_top - 45*mm
+    rows = [
+        ("Payment Type",   payment.get_payment_type_display()),
+        ("Transaction ID", payment.transaction_id or "—"),
+        ("Payment Status", "Completed"),
+        ("Amount Paid",    f"Rs. {payment.amount}"),
+    ]
+
+    # Try to pull maintenance month
+    try:
+        due = MaintenanceDue.objects.filter(
+            resident=payment.resident,
+            paid_on__date=payment.payment_date
+        ).first()
+        if due:
+            rows.insert(1, ("For Month", due.due_month.strftime("%B %Y")))
+    except Exception:
+        pass
+
+    row_h  = 12*mm
+    col1_x = 20*mm
+    col2_x = 90*mm
+    col_w1 = 65*mm
+    col_w2 = w - 90*mm - 20*mm
+
+    for i, (label, value) in enumerate(rows):
+        y = tbl_top - i * row_h
+        if i % 2 == 0:
+            c.setFillColor(LIGHT_BG)
+            c.rect(col1_x, y - 8*mm, col_w1 + col_w2 + 5*mm, row_h, fill=1, stroke=0)
+
+        c.setFillColor(MUTED)
+        c.setFont("Helvetica", 9)
+        c.drawString(col1_x + 3*mm, y - 1*mm, label)
+
+        if label == "Amount Paid":
+            c.setFillColor(PRIMARY)
+            c.setFont("Helvetica-Bold", 13)
+        else:
+            c.setFillColor(DARK)
+            c.setFont("Helvetica", 11)
+        c.drawString(col2_x, y - 1*mm, str(value))
+
+    # ── Divider ──
+    tbl_bottom = tbl_top - len(rows) * row_h - 4*mm
+    c.setStrokeColor(BORDER)
+    c.setLineWidth(0.5)
+    c.line(20*mm, tbl_bottom, w - 20*mm, tbl_bottom)
+
+    # ── Total box ──
+    c.setFillColor(PRIMARY)
+    c.roundRect(w - 80*mm, tbl_bottom - 22*mm, 60*mm, 18*mm, 3*mm, fill=1, stroke=0)
+    c.setFillColor(WHITE)
+    c.setFont("Helvetica", 9)
+    c.drawCentredString(w - 50*mm, tbl_bottom - 9*mm, "TOTAL PAID")
+    c.setFont("Helvetica-Bold", 15)
+    c.drawCentredString(w - 50*mm, tbl_bottom - 17*mm, f"Rs. {payment.amount}")
+
+    # ── Footer ──
+    footer_y = 22*mm
+    c.setStrokeColor(BORDER)
+    c.setLineWidth(0.5)
+    c.line(20*mm, footer_y + 6*mm, w - 20*mm, footer_y + 6*mm)
+    c.setFillColor(MUTED)
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w/2, footer_y,
+        "This is a computer-generated receipt and does not require a signature.")
+    c.drawCentredString(w/2, footer_y - 5*mm,
+        f"GateNova Society Management  |  Generated on {timezone.now().strftime('%d %b %Y %I:%M %p')}")
+
+    c.showPage()
+    c.save()
+
+    buffer.seek(0)
+    filename = f"Receipt_{payment.id:06d}_{payment.payment_date.strftime('%d%b%Y')}.pdf"
+    response  = HttpResponse(buffer, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
 
 
 @role_required(allowed_roles=["Resident"])

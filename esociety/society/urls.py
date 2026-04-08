@@ -13,6 +13,10 @@ urlpatterns = [
     path("resident/visitor-approval/",views.visitor_approvals,name="resident_visitor_approval"),
     path("resident/visitor/<int:visitor_id>/decision/<str:decision>/",views.visitor_decision,name="visitor_decision"),
     path("resident/payments/", views.resident_payments,name="resident_payments"),
+    path("resident/payments/razorpay/create-order/", views.razorpay_create_order,    name="razorpay_create_order"),
+    path("resident/payments/razorpay/verify/",        views.razorpay_verify_payment,  name="razorpay_verify_payment"),
+    path("resident/payments/upi-manual/",             views.razorpay_upi_manual,      name="razorpay_upi_manual"),
+    path("resident/payments/<int:payment_id>/receipt/", views.payment_receipt,        name="payment_receipt"),
     path("resident/notifications/",views.resident_notifications, name="resident_notifications"),
     path("resident/notifications/mark-read/", views.ResidentMarkAllReadView, name="resident_mark_all_read"),
     path("resident/settings/",views.resident_settings,name="resident_settings"),
@@ -63,6 +67,7 @@ urlpatterns = [
     path("admin/settings/facility/<int:facility_id>/toggle/", views.AdminToggleFacilityView, name="admin_toggle_facility"),
     path("admin/export-all/",views.AdminExportAllView,name="admin_export_all"),
     path("admin/notifications/mark-read/", views.AdminMarkAllReadView, name="admin_mark_all_read"),
+    path('society/admin/broadcast/', views.AdminBroadcastNotificationView, name='admin_broadcast'),
 
     # guard urls
     path("guard/notifications/",views.guard_notifications,name="guard_notifications"),
@@ -73,4 +78,3 @@ urlpatterns = [
 
     
 ]
-

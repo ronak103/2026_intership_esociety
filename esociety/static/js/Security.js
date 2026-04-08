@@ -115,14 +115,33 @@ function getCsrf() {
 
     // Active nav highlight from URL
     const path = window.location.pathname.replace(/\/$/, '');
-    $$('.sidebar-link').forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href || href === '#') return;
-        const lp = href.replace(/\/$/, '');
-        if (path === lp || (lp.length > 1 && path.startsWith(lp))) {
-            link.closest('.sidebar-menu-item')?.classList.add('active');
+    const links = $$('.sidebar-link')
+        .map(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#') return null;
+            return { link, normalized: href.replace(/\/$/, '') };
+        })
+        .filter(Boolean);
+
+    let bestMatch = null;
+    for (const candidate of links) {
+        const { link, normalized } = candidate;
+        if (path === normalized) {
+            bestMatch = candidate;
+            break;
         }
-    });
+        if (normalized.length > 1 && path.startsWith(normalized)) {
+            if (!bestMatch || normalized.length > bestMatch.normalized.length) {
+                bestMatch = candidate;
+            }
+        }
+    }
+
+    $$('.sidebar-menu-item.active').forEach(item => item.classList.remove('active'));
+
+    if (bestMatch) {
+        bestMatch.link.closest('.sidebar-menu-item')?.classList.add('active');
+    }
 })();
 
 

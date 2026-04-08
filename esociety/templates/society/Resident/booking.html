@@ -7,7 +7,7 @@
 <div class="sk-wrap">
     <div class="sk-card">
         <span class="sk sk-title"></span>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;">
             <span class="sk sk-stat"></span>
             <span class="sk sk-stat"></span>
             <span class="sk sk-stat"></span>
@@ -65,10 +65,12 @@
     </div>
 
     {% else %}
-    <div class="facility-grid" style="padding:20px;">
-        <div class="facility-card"><div class="facility-icon">🏊</div><div class="facility-name">Swimming Pool</div><div class="facility-fee">₹200/booking</div><span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span><button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button></div>
-        <div class="facility-card"><div class="facility-icon">🏋️</div><div class="facility-name">Gym</div><div class="facility-fee">Free</div><span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span><button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button></div>
-        <div class="facility-card"><div class="facility-icon">🏛️</div><div class="facility-name">Clubhouse</div><div class="facility-fee">₹1,000/day</div><span class="badge badge-warning" style="margin-bottom:14px;">Not Configured</span><button class="btn btn-outline btn-sm" style="width:100%;opacity:.6;" disabled>Contact Admin</button></div>
+    <div style="padding:20px;text-align:center;">
+        <div class="empty-state">
+            <i class="fas fa-inbox" style="font-size:48px;color:var(--text-muted);margin-bottom:16px;display:block;"></i>
+            <p style="color:var(--text-muted);font-size:14px;">No facilities are currently available for booking.</p>
+            <p style="color:var(--text-muted);font-size:12px;">Please contact the admin to set up facilities.</p>
+        </div>
     </div>
     {% endif %}
 </div>
@@ -79,25 +81,48 @@
         {% if bookings %}<span class="badge badge-gray">{{ bookings.count }}</span>{% endif %}
     </div>
     <div class="table-wrap">
-        <table class="data-table">
-            <thead><tr><th>#</th><th>Facility</th><th>Date</th><th>Time Slot</th><th>Amount</th><th>Booking Status</th><th>Payment</th></tr></thead>
+        <table class="data-table table-responsive-cards">
+            <thead><tr>
+                <th>#</th>
+                <th>Facility</th>
+                <th>Date</th>
+                <th>Time Slot</th>
+                <th class="hide-sm">Amount</th>
+                <th>Booking Status</th>
+                <th>Payment</th>
+            </tr></thead>
             <tbody>
             {% for b in bookings %}
                 <tr>
-                    <td style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">#{{ b.id|stringformat:"03d" }}</td>
-                    <td style="font-weight:600;">{{ b.facility.facility_name }}</td>
-                    <td style="font-size:13px;color:var(--text-muted);">{{ b.booking_date|date:"d M Y" }}</td>
-                    <td style="font-size:13px;">{{ b.time_slot }}</td>
-                    <td style="font-family:var(--font-mono);font-weight:600;">{% if b.amount == 0 %}Free{% else %}₹{{ b.amount }}{% endif %}</td>
-                    <td>
-                        {% if b.booking_status == "confirmed" %}<span class="badge badge-success"><i class="fas fa-check"></i> Confirmed</span>
-                        {% elif b.booking_status == "cancelled" %}<span class="badge badge-danger"><i class="fas fa-times"></i> Cancelled</span>
-                        {% else %}<span class="badge badge-warning"><i class="fas fa-clock"></i> Pending</span>{% endif %}
+                    <td data-label="#" style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">#{{ b.id|stringformat:"03d" }}</td>
+                    <td data-label="Facility" style="font-weight:600;">{{ b.facility.facility_name }}</td>
+                    <td data-label="Date" style="font-size:13px;color:var(--text-muted);">{{ b.booking_date|date:"d M Y" }}</td>
+                    <td data-label="Time Slot" style="font-size:13px;">{{ b.time_slot }}</td>
+                    <td data-label="Amount" class="hide-sm" style="font-family:var(--font-mono);font-weight:600;">{% if b.amount == 0 %}Free{% else %}₹{{ b.amount }}{% endif %}</td>
+                    <td data-label="Status">
+                        {% if b.booking_status == "confirmed" %}
+                            <span class="badge badge-success">Confirmed</span>
+                        {% elif b.booking_status == "cancelled" %}
+                            <span class="badge badge-danger">Cancelled</span>
+                        {% else %}
+                            <span class="badge badge-warning">Pending</span>
+                        {% endif %}
                     </td>
-                    <td>
-                        {% if b.payment_status == "completed" %}<span class="badge badge-success">Paid</span>
-                        {% else %}<span class="badge badge-warning">Pending</span>{% endif %}
+                    <td data-label="Payment">
+                        {% if b.payment_status == "completed" %}
+                            <span class="badge badge-success">Paid</span>
+                        {% else %}
+                            {% if b.amount == 0 %}
+                                <span class="badge badge-success">Free</span>
+                            {% else %}
+                                <button type="button" class="btn btn-success btn-sm"
+                                    onclick="payBooking('{{ b.id }}', '{{ b.amount }}')">
+                                    Pay Now
+                                </button>
+                            {% endif %}
+                        {% endif %}
                     </td>
+                        
                 </tr>
             {% empty %}
                 <tr><td colspan="7"><div class="empty-state"><i class="fas fa-calendar-times"></i><p>No bookings yet.</p></div></td></tr>
@@ -109,4 +134,95 @@
 
 </div>{# /real-content #}
 {% endblock %}
-{% block extra_js %}<script>skeletonReveal(700);</script>{% endblock %}
+{% block extra_js %}
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+skeletonReveal(700);
+
+function payBooking(bookingId, amount) {
+    fetch("{% url 'razorpay_create_order' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": "{{ csrf_token }}",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        body: new URLSearchParams({
+            booking_id: bookingId,
+            amount: amount
+        })
+    })
+    .then(res => {
+        if (!res.ok && res.status !== 400 && res.status !== 500) {
+            throw new Error("HTTP " + res.status);
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        var options = {
+            "key": data.key,
+            "amount": data.amount,
+            "currency": "INR",
+            "name": "Facility Booking",
+            "description": "Booking Payment",
+            "order_id": data.order_id,
+
+            "handler": function (response) {
+
+                fetch("{% url 'razorpay_verify_payment' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "X-Requested-With": "XMLHttpRequest",
+                    },
+                    body: new URLSearchParams({
+                        razorpay_order_id: response.razorpay_order_id,
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        booking_id: bookingId
+                    })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    if(res.success){
+                        alert("Payment Successful!");
+                        location.reload();
+                    } else {
+                        alert(res.error || "Payment Failed!");
+                    }
+                })
+                .catch(() => {
+                    alert("Network error during payment verification.");
+                });
+            },
+            "modal": {
+                "ondismiss": function () {
+                    alert("Payment cancelled.");
+                }
+            }
+        };
+
+        var rzp = new Razorpay(options);
+        rzp.on("payment.failed", function (response) {
+            var msg = response && response.error && response.error.description
+                ? response.error.description
+                : "Payment failed.";
+            alert(msg);
+        });
+        rzp.open();
+    })
+    .catch((err) => {
+        alert(err.message || "Unable to start payment right now.");
+    });
+}
+</script>
+
+{% endblock %}

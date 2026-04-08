@@ -133,14 +133,33 @@ async function postJson(url, data = {}) {
 
     // Auto-highlight active nav link from current URL
     const currentPath = window.location.pathname.replace(/\/$/, '');
-    $$('.sidebar-link, .nav-item[data-href]').forEach(link => {
-        const href = link.getAttribute('href') || link.dataset.href;
-        if (!href || href === '#') return;
-        const lp = href.replace(/\/$/, '');
-        if (currentPath === lp || (lp.length > 1 && currentPath.startsWith(lp))) {
-            link.closest('.sidebar-menu-item, .nav-item')?.classList.add('active');
+    const links = $$('.sidebar-link, .nav-item[data-href]')
+        .map(link => {
+            const href = link.getAttribute('href') || link.dataset.href;
+            if (!href || href === '#') return null;
+            return { link, normalized: href.replace(/\/$/, '') };
+        })
+        .filter(Boolean);
+
+    let bestMatch = null;
+    for (const candidate of links) {
+        const { link, normalized } = candidate;
+        if (currentPath === normalized) {
+            bestMatch = candidate;
+            break;
         }
-    });
+        if (normalized.length > 1 && currentPath.startsWith(normalized)) {
+            if (!bestMatch || normalized.length > bestMatch.normalized.length) {
+                bestMatch = candidate;
+            }
+        }
+    }
+
+    $$('.sidebar-menu-item.active, .nav-item.active').forEach(item => item.classList.remove('active'));
+
+    if (bestMatch) {
+        bestMatch.link.closest('.sidebar-menu-item, .nav-item')?.classList.add('active');
+    }
 })();
 
 

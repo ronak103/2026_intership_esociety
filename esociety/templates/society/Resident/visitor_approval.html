@@ -79,12 +79,12 @@
         {% if history %}<span class="badge badge-gray">Last {{ history|length }}</span>{% endif %}
     </div>
     <div class="table-wrap">
-        <table class="data-table">
-            <thead><tr><th>Photo</th><th>Visitor</th><th>Type</th><th>Date</th><th>Your Decision</th><th>Entry Status</th></tr></thead>
+        <table class="data-table table-responsive-cards">
+            <thead><tr><th class="hide-sm">Photo</th><th>Visitor</th><th class="hide-sm">Type</th><th class="hide-sm">Date</th><th>Your Decision</th><th>Entry Status</th></tr></thead>
             <tbody>
             {% for v in history %}
                 <tr>
-                    <td>
+                    <td data-label="Photo" class="hide-sm">
                         {% if v.visitor_photo %}
                             <img src="{{ v.visitor_photo.url }}" style="width:40px;height:40px;border-radius:8px;object-fit:cover;">
                         {% else %}
@@ -93,25 +93,17 @@
                             </div>
                         {% endif %}
                     </td>
-                    <td>
+                    <td data-label="Visitor">
                         <div style="font-weight:600;">{{ v.visitor_name }}</div>
                         <div style="font-size:12px;color:var(--text-muted);">{{ v.mobile_number }}</div>
                     </td>
-                    <td><span class="badge badge-gray">{{ v.get_visitor_type_display }}</span></td>
-                    <td style="font-size:13px;color:var(--text-muted);">{{ v.expected_date|date:"d M Y" }}</td>
-                    <td>
+                    <td data-label="Type" class="hide-sm"><span class="badge badge-gray">{{ v.get_visitor_type_display }}</span></td>
+                    <td data-label="Date" class="hide-sm" style="font-size:13px;color:var(--text-muted);">{{ v.expected_date|date:"d M Y" }}</td>
+                    <td data-label="Decision">
                         {% if v.approval_status == "approved" %}<span class="badge badge-success"><i class="fas fa-check"></i> Approved</span>
                         {% else %}<span class="badge badge-danger"><i class="fas fa-times"></i> Rejected</span>{% endif %}
                     </td>
-                    <td>
-                        {% if v.entry_status == "inside" %}<span class="badge badge-success"><i class="fas fa-circle" style="font-size:7px;"></i> Inside</span>
-                        {% elif v.entry_status == "exited" %}<span class="badge badge-gray">Exited</span>
-                        {% elif v.entry_status == "denied" %}<span class="badge badge-danger">Denied</span>
-                        {% else %}<span class="badge badge-warning">Waiting</span>{% endif %}
-                    </td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="6"><div class="empty-state"><i class="fas fa-history"></i><p>No history yet.</p></div></td></tr>
+                    <td data-label="Entry Status">
             {% endfor %}
             </tbody>
         </table>

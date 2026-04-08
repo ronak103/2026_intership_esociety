@@ -137,3 +137,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'esocietyproject8@gmail.com'
 EMAIL_HOST_PASSWORD = 'zgcp vayz evfs xgsn' #app password
+
+RAZORPAY_KEY_ID = '#'
+RAZORPAY_KEY_SECRET = '#'

@@ -166,8 +166,11 @@ button { cursor: pointer; font-family: var(--font); }
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    transition: margin .25s;
+    transition: margin .25s cubic-bezier(.4,0,.2,1);
+    min-width: 0;
 }
+/* Desktop collapsed sidebar */
+.sidebar.collapsed ~ .main-content { margin-left: 68px; }
 
 /* ── Topbar ── */
 .topbar {
@@ -242,9 +245,6 @@ button { cursor: pointer; font-family: var(--font); }
     opacity: .6;
     font-size: 13px;
 }
-
-/* ── Main Content ── */
-.main-content { padding: 24px; flex: 1; }
 
 /* ── Page Header ── */
 .page-header {
@@ -674,24 +674,315 @@ button { cursor: pointer; font-family: var(--font); }
     transform: translateX(0) !important;
 }
 
-/* ── Responsive ── */
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE SYSTEM — Full breakpoint coverage
+   Breakpoints: 1280 | 1024 | 768 | 640 | 480 | 360
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1280px: Large tablets / small laptops ── */
+@media (max-width: 1280px) {
+    :root { --sidebar-w: 240px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+    .facility-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
+/* ── 1024px: Tablets landscape ── */
 @media (max-width: 1024px) {
-    .stats-grid { grid-template-columns: repeat(2,1fr); }
-    .grid-2     { grid-template-columns: 1fr; }
+    :root { --sidebar-w: 220px; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .grid-2     { grid-template-columns: 1fr; gap: 16px; }
+    .grid-3     { grid-template-columns: repeat(2, 1fr); }
+    .form-row-3 { grid-template-columns: 1fr 1fr; }
+
+    /* Topbar */
+    .topbar { padding: 0 18px; gap: 12px; }
+    .topbar-right { gap: 8px; }
+
+    /* Table — start horizontal scroll earlier */
+    .table-wrap { -webkit-overflow-scrolling: touch; }
+
+    /* Page content */
+    .page-content { padding: 20px; }
+
+    /* Facility grid */
+    .facility-grid { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px; }
 }
+
+/* ── 768px: Tablets portrait / large phones ── */
 @media (max-width: 768px) {
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .main-content { margin-left: 0; }
+    /* Sidebar: off-canvas drawer */
+    .sidebar {
+        transform: translateX(-100%);
+        width: 260px;
+        z-index: 300;
+        box-shadow: none;
+        transition: transform .28s cubic-bezier(.4,0,.2,1), box-shadow .28s;
+    }
+    .sidebar.open,
+    .sidebar.mobile-open { transform: translateX(0); box-shadow: 4px 0 32px rgba(0,0,0,.22); }
+
+    /* Main: full width */
+    .main-content { margin-left: 0 !important; }
+
+    /* Sidebar toggle: always visible */
     .sidebar-toggle,
-.topbar-toggle { display: flex; }
-    .stats-grid { grid-template-columns: 1fr 1fr; }
-    .form-row   { grid-template-columns: 1fr; }
+    .topbar-toggle { display: flex !important; }
+
+    /* Topbar */
+    .topbar { padding: 0 14px; height: 56px; }
     .topbar-name { display: none; }
+    .topbar-left .topbar-breadcrumb .breadcrumb-page { font-size: 14px; }
+    .topbar-btn-primary span { display: none; }   /* hide button text, keep icon */
+    .topbar-btn-primary { padding: 7px 10px; }
+
+    /* Page content */
+    .page-content { padding: 16px; }
+
+    /* Stats grid */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+    .stat-card { padding: 14px 16px; gap: 12px; }
+    .stat-value { font-size: 20px; }
+    .stat-icon { width: 38px; height: 38px; font-size: 16px; }
+
+    /* Grids */
+    .grid-2,
+    .grid-3 { grid-template-columns: 1fr; gap: 14px; }
+
+    /* Forms */
+    .form-row,
+    .form-row-3 { grid-template-columns: 1fr; gap: 0; }
+
+    /* Tables */
+    .data-table { font-size: 13px; }
+    .data-table th,
+    .data-table td { padding: 10px 12px; }
+
+    /* Cards */
+    .card-header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+    .card-body   { padding: 16px; }
+    .card-title  { font-size: 14px; }
+
+    /* Facility grid */
+    .facility-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 14px; }
+    .facility-card { padding: 16px 12px; }
+    .facility-icon { font-size: 28px; }
+    .facility-name { font-size: 14px; }
+
+    /* Visitor approval card */
+    .approval-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .approval-actions { width: 100%; }
+    .approval-actions .btn { flex: 1; justify-content: center; }
+
+    /* Poll card */
+    .poll-card { padding: 16px; }
+    .poll-actions { gap: 8px; }
+
+    /* Payment row */
+    .payment-row { flex-wrap: wrap; gap: 8px; padding: 12px 16px; }
+
+    /* Notices */
+    .notice-item { padding: 12px 16px; gap: 10px; }
+
+    /* Modal */
+    .modal-box { max-width: 100% !important; margin: 0 8px; border-radius: 14px; }
+    .modal-body { padding: 16px; }
+    .modal-header { padding: 16px; }
+    .modal-footer { padding: 14px 16px; flex-direction: column; }
+    .modal-footer .btn { width: 100%; justify-content: center; }
+
+    /* Notification dropdown */
+    #notifDropdown,
+    .notif-dropdown-panel { width: 290px; right: -10px; }
+
+    /* Filter bar */
+    .filter-bar { flex-direction: column; align-items: stretch; gap: 8px; }
+    .search-box { min-width: 100%; }
+    .filter-select { width: 100%; }
+
+    /* Topbar actions button text hide */
+    .topbar-btn .btn-text { display: none; }
+
+    /* Skeleton grid */
+    .sk-grid-2 { grid-template-columns: 1fr !important; }
 }
+
+/* ── 640px: Large phones ── */
+@media (max-width: 640px) {
+    /* Stats: side-by-side still works */
+    .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .stat-card { padding: 12px 14px; border-radius: 10px; }
+    .stat-value { font-size: 18px; }
+    .stat-sub { display: none; } /* hide sub-text on very small */
+    .stat-icon { width: 34px; height: 34px; font-size: 14px; }
+
+    /* Topbar */
+    .topbar { height: 52px; padding: 0 12px; }
+
+    /* Page padding */
+    .page-content { padding: 12px; }
+
+    /* Cards */
+    .card { border-radius: 10px; margin-bottom: 14px; }
+    .card-header { padding: 12px 14px; }
+    .card-body   { padding: 14px; }
+
+    /* Facility grid: 2 col is fine */
+    .facility-grid { grid-template-columns: repeat(2, 1fr); padding: 12px; gap: 10px; }
+
+    /* Tables: hide less-critical columns via utility classes */
+    .data-table .hide-sm { display: none; }
+
+    /* Badges in tables — smaller */
+    .badge { font-size: 10px; padding: 2px 8px; }
+
+    /* Buttons sm */
+    .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+    /* Visitor meta wrap */
+    .visitor-meta { gap: 8px; font-size: 12px; }
+
+    /* Notices */
+    .notice-title { font-size: 13px; }
+    .notice-meta  { font-size: 11px; }
+}
+
+/* ── 480px: Small phones ── */
 @media (max-width: 480px) {
-    .stats-grid { grid-template-columns: 1fr; }
-    .main-content { padding: 16px; }
+    /* Stats: stack to single column */
+    .stats-grid { grid-template-columns: 1fr; gap: 8px; }
+
+    /* Page */
+    .page-content { padding: 10px; }
+    .messages-wrap { padding: 10px 10px 0; }
+
+    /* Topbar */
+    .topbar { padding: 0 10px; }
+    .topbar-avatar { width: 30px; height: 30px; font-size: 11px; }
+
+    /* Card tighter */
+    .card-header { padding: 10px 12px; }
+    .card-body   { padding: 12px; }
+    .card-title  { font-size: 13px; }
+    .card { margin-bottom: 12px; border-radius: 10px; }
+
+    /* Tables - make them card-like on mobile */
+    .table-responsive-cards thead { display: none; }
+    .table-responsive-cards tbody tr {
+        display: block;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        padding: 12px;
+        background: var(--surface);
+    }
+    .table-responsive-cards tbody td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px 0;
+        border: none;
+        font-size: 13px;
+    }
+    .table-responsive-cards tbody td::before {
+        content: attr(data-label);
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: .4px;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+    .table-responsive-cards tbody tr:last-child { margin-bottom: 0; }
+
+    /* Facility grid: 1 col */
+    .facility-grid { grid-template-columns: 1fr; padding: 10px; gap: 10px; }
+
+    /* Modal full screen */
+    .modal-overlay { padding: 0; align-items: flex-end; }
+    .modal-box {
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-radius: 18px 18px 0 0 !important;
+        max-height: 92vh !important;
+        margin: 0 !important;
+        animation: slideUpModal .3s cubic-bezier(.4,0,.2,1);
+    }
+    @keyframes slideUpModal {
+        from { transform: translateY(30px); opacity: 0; }
+        to   { transform: translateY(0);    opacity: 1; }
+    }
+
+    /* Approval actions stacked */
+    .approval-actions { flex-direction: column; gap: 6px; }
+    .approval-actions .btn { width: 100%; justify-content: center; }
+
+    /* Poll */
+    .poll-card { padding: 14px; }
+    .poll-question { font-size: 14px; }
+
+    /* Payment row */
+    .payment-row { flex-direction: column; align-items: flex-start; gap: 6px; }
+
+    /* Notification dropdown */
+    .notif-dropdown-panel,
+    #notifDropdown { width: calc(100vw - 20px); right: -46px; max-height: 70vh; overflow-y: auto; }
+
+    /* Empty state */
+    .empty-state { padding: 32px 16px; }
+    .empty-state i { font-size: 32px; }
+
+    /* Toast */
+    #toast-container,
+    .res-toast-wrap { bottom: 12px; right: 12px; left: 12px; }
+    .res-toast,
+    .toast { max-width: 100%; min-width: unset; }
+
+    /* Stat sub visible again in single col */
+    .stat-sub { display: block; }
+
+    /* Visitor card stacked */
+    .visitor-card { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── 360px: Very small phones ── */
+@media (max-width: 360px) {
+    html { font-size: 14px; }
+
+    .page-content { padding: 8px; }
+    .topbar { padding: 0 8px; height: 50px; }
+    .stat-card { padding: 10px 12px; gap: 10px; }
+    .stat-value { font-size: 17px; }
+    .stat-icon { width: 32px; height: 32px; }
+    .btn { font-size: 12px; padding: 7px 12px; }
+    .btn-sm { font-size: 10px; padding: 4px 8px; }
+    .card-header { padding: 9px 10px; }
+    .card-body   { padding: 10px; }
+    .badge { font-size: 9px; padding: 2px 6px; }
+    .data-table th,
+    .data-table td { padding: 8px 10px; font-size: 12px; }
+    .facility-grid { padding: 8px; gap: 8px; }
+}
+
+/* ── Touch / hover fix: disable hover effects on touch devices ── */
+@media (hover: none) and (pointer: coarse) {
+    .facility-card:hover { box-shadow: var(--shadow); transform: none; }
+    .stat-card:hover { box-shadow: var(--shadow); }
+    .notice-item:hover { background: transparent; }
+    .visitor-card:hover { background: transparent; }
+    .data-table tbody tr:hover td { background: transparent; }
+}
+
+/* ── Safe area insets for notched phones ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .sidebar { padding-bottom: env(safe-area-inset-bottom); }
+    .topbar  { padding-left: max(14px, env(safe-area-inset-left));
+               padding-right: max(14px, env(safe-area-inset-right)); }
+    .page-content { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
 }
 /* ── Skeleton Loading ── */
 .skeleton {
@@ -871,9 +1162,21 @@ button { cursor: pointer; font-family: var(--font); }
    ============================================================ */
 .page-content { padding: 24px; }
 
-@media (max-width: 640px) {
-    .page-content { padding: 14px; }
-    .modal-box { max-height: 95vh; border-radius: 12px; }
-    #toast-container { bottom: 14px; right: 14px; left: 14px; }
-    .toast { max-width: 100%; }
+
+/* ============================================================
+   RAZORPAY PAY BUTTON STATES
+   ============================================================ */
+.pay-now-btn {
+    transition: opacity .2s, transform .1s;
+}
+.pay-now-btn:disabled {
+    opacity: .7;
+    cursor: not-allowed;
+    transform: none;
+}
+.pay-now-btn .fa-spinner {
+    animation: rzp-spin .75s linear infinite;
+}
+@keyframes rzp-spin {
+    to { transform: rotate(360deg); }
 }

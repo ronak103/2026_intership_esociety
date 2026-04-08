@@ -8,7 +8,7 @@
 {% block content %}
 <div class="real-content">
 
-<div style="max-width:640px;">
+<div style="width:100%;max-width:640px;">
 
     <!-- Profile Card -->
     <div class="card" style="margin-bottom:20px;">
@@ -33,7 +33,7 @@
                 <div class="settings-section-title">
                     <i class="fas fa-id-card"></i> Account Information
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;">
                     <div>
                         <div class="form-label">First Name</div>
                         <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-primary);">
@@ -46,7 +46,7 @@
                             {{ user.last_name|default:"—" }}
                         </div>
                     </div>
-                    <div style="grid-column:span 2;">
+                    <div>
                         <div class="form-label">Email Address</div>
                         <div style="padding:9px 12px;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;font-size:13.5px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;">
                             {{ user.email }}

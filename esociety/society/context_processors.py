@@ -31,10 +31,14 @@ def security_notifications(request):
             .order_by('-created_at')[:8]
         )
         unread = Notification.objects.filter(user=request.user, is_read=False).count()
+        from core.models import User
         return {
-            'admin_notifications': notifs,
-            'unread_notif_count':  unread,
-            'pending_count':       _pending_count(),   # ← sidebar badge + dashboard stat
+            'admin_notifications':   notifs,
+            'unread_notif_count':    unread,
+            'pending_count':         _pending_count(),
+            'active_resident_count': User.objects.filter(
+                role='Resident', is_active=True, status='active'
+            ).count(),
         }
 
     if role == 'Resident':

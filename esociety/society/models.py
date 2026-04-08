@@ -157,6 +157,12 @@ class FacilityBooking(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     booking_status = models.CharField(max_length=20, choices=BOOKING_STATUS, default="pending")
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS, default="pending")
+    payment        = models.OneToOneField(          # linked Payment record once paid
+        "Payment",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="facility_booking",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

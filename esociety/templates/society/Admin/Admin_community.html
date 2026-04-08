@@ -35,7 +35,7 @@
 <!-- ░░ REAL CONTENT ░░ -->
 <div class="real-content">
 
-<div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px;">
     <div class="stat-card blue"><div class="stat-icon blue"><i class="fas fa-bullhorn"></i></div>
         <div class="stat-info"><div class="stat-value">{{ total_notices }}</div><div class="stat-label">Total Notices</div></div></div>
     <div class="stat-card green"><div class="stat-icon green"><i class="fas fa-users"></i></div>
@@ -44,6 +44,47 @@
         <div class="stat-info"><div class="stat-value">{{ active_polls }}</div><div class="stat-label">Active Polls</div></div></div>
     <div class="stat-card amber"><div class="stat-icon amber"><i class="fas fa-vote-yea"></i></div>
         <div class="stat-info"><div class="stat-value">{{ total_votes }}</div><div class="stat-label">Total Votes</div></div></div>
+</div>
+
+<!-- ── Broadcast Card ── -->
+<div class="card" style="border-left:4px solid var(--primary);margin-bottom:24px;">
+    <div class="card-header">
+        <span class="card-title">
+            <i class="fas fa-broadcast-tower" style="color:var(--primary);"></i>
+            Broadcast to All Residents
+        </span>
+        <span class="badge badge-info">
+            {{ active_resident_count }} active resident{{ active_resident_count|pluralize }}
+        </span>
+    </div>
+    <div class="card-body">
+        <form method="POST" action="{% url 'admin_broadcast' %}" id="broadcastForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label">Message <span class="req">*</span></label>
+                <textarea name="message" class="inner-input inner-textarea" rows="2"
+                          maxlength="300"
+                          placeholder="e.g. Water supply interrupted Sunday 10am–2pm for maintenance."
+                          required></textarea>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                <input type="checkbox" name="also_post_notice" id="alsoPostNotice"
+                       style="width:16px;height:16px;cursor:pointer;"
+                       onchange="document.getElementById('noticeTitleGroup').style.display=this.checked?'block':'none'">
+                <label for="alsoPostNotice" style="font-size:13px;color:var(--text-muted);cursor:pointer;">
+                    Also post this as an announcement on the community page
+                </label>
+            </div>
+            <div class="form-group" id="noticeTitleGroup" style="display:none;">
+                <label class="form-label">Announcement Title</label>
+                <input type="text" name="notice_title" class="inner-input"
+                       placeholder="e.g. Water Supply Interruption — Sunday">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="confirmBroadcast()">
+                <i class="fas fa-paper-plane"></i> Send to All Residents
+            </button>
+        </form>
+    </div>
 </div>
 
 <div class="two-col">
@@ -196,4 +237,17 @@
 
 {% block extra_js %}
 <script>skeletonReveal(1500);</script>
+<script>
+function confirmBroadcast() {
+    const msg   = document.querySelector('[name=message]').value.trim();
+    const count = "{{ active_resident_count }}";
+    if (!msg) {
+        alert('Please enter a message before broadcasting.');
+        return;
+    }
+    if (confirm('Send this message to all ' + count + ' active residents?\n\n"' + msg + '"')) {
+        document.getElementById('broadcastForm').submit();
+    }
+}
+</script>
 {% endblock %}

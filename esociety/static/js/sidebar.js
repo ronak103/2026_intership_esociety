@@ -73,12 +73,34 @@ const _$ = (sel, ctx) => (ctx || document).querySelector(sel);
 
     /* active link highlight */
     const path = window.location.pathname.replace(/\/$/, '');
-    document.querySelectorAll('.sidebar-link').forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href || href === '#') return;
-        const lp = href.replace(/\/$/, '');
-        if (path === lp || (lp.length > 1 && path.startsWith(lp))) {
-            link.closest('.sidebar-menu-item')?.classList.add('active');
+    const links = [...document.querySelectorAll('.sidebar-link')]
+        .map(link => {
+            const href = link.getAttribute('href');
+            if (!href || href === '#') return null;
+            const normalized = href.replace(/\/$/, '');
+            return { link, normalized };
+        })
+        .filter(Boolean);
+
+    let bestMatch = null;
+    for (const candidate of links) {
+        const { link, normalized } = candidate;
+        if (path === normalized) {
+            bestMatch = candidate;
+            break;
         }
+        if (normalized.length > 1 && path.startsWith(normalized)) {
+            if (!bestMatch || normalized.length > bestMatch.normalized.length) {
+                bestMatch = candidate;
+            }
+        }
+    }
+
+    document.querySelectorAll('.sidebar-menu-item.active, .nav-item.active').forEach(item => {
+        item.classList.remove('active');
     });
+
+    if (bestMatch) {
+        bestMatch.link.closest('.sidebar-menu-item, .nav-item')?.classList.add('active');
+    }
 })();

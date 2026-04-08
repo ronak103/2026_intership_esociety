@@ -8,14 +8,14 @@
 
 {% block topbar_actions %}
 <button class="topbar-btn topbar-btn-primary" onclick="document.getElementById('complaintFormCard').scrollIntoView({behavior:'smooth'})">
-    <i class="fas fa-plus"></i> New Complaint
+    <i class="fas fa-plus"></i> <span class="btn-label">New Complaint</span>
 </button>
 {% endblock %}
 
 {% block content %}
 
 <div class="sk-wrap">
-    <div class="sk-grid-4" style="grid-template-columns:repeat(3,1fr);">
+    <div class="sk-grid-4" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));">
         <span class="sk sk-stat"></span>
         <span class="sk sk-stat"></span>
         <span class="sk sk-stat"></span>
@@ -35,7 +35,7 @@
 
 <div class="real-content">
 
-<div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px;">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:24px;">
     <div class="stat-card amber">
         <div class="stat-icon amber"><i class="fas fa-clock"></i></div>
         <div class="stat-info"><div class="stat-value">{{ pending_count }}</div><div class="stat-label">Open</div></div>
@@ -84,22 +84,22 @@
         <span class="card-title"><i class="fas fa-history"></i> Complaint History</span>
     </div>
     <div class="table-wrap">
-        <table class="data-table">
-            <thead><tr><th>#</th><th>Type</th><th>Description</th><th>Priority</th><th>Date</th><th>Status</th></tr></thead>
+        <table class="data-table table-responsive-cards">
+            <thead><tr><th>#</th><th>Type</th><th class="hide-sm">Description</th><th>Priority</th><th class="hide-sm">Date</th><th>Status</th></tr></thead>
             <tbody>
             {% for c in complaints %}
                 <tr>
-                    <td style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">#C{{ c.id|stringformat:"03d" }}</td>
-                    <td><span style="font-weight:600;">{{ c.complaint_type }}</span></td>
-                    <td style="max-width:280px;color:var(--text-muted);">{{ c.description|truncatechars:60 }}</td>
-                    <td>
+                    <td data-label="#" style="color:var(--text-muted);font-size:12px;font-family:var(--font-mono);">#C{{ c.id|stringformat:"03d" }}</td>
+                    <td data-label="Type"><span style="font-weight:600;">{{ c.complaint_type }}</span></td>
+                    <td data-label="Description" class="hide-sm" style="max-width:280px;color:var(--text-muted);">{{ c.description|truncatechars:60 }}</td>
+                    <td data-label="Priority">
                         {% if c.priority == "urgent" %}<span class="badge badge-danger">Urgent</span>
                         {% elif c.priority == "high" %}<span class="badge badge-warning">High</span>
                         {% elif c.priority == "medium" %}<span class="badge badge-info">Medium</span>
                         {% else %}<span class="badge badge-gray">Low</span>{% endif %}
                     </td>
-                    <td style="font-size:13px;color:var(--text-muted);">{{ c.created_at|date:"d M Y" }}</td>
-                    <td>
+                    <td data-label="Date" class="hide-sm" style="font-size:13px;color:var(--text-muted);">{{ c.created_at|date:"d M Y" }}</td>
+                    <td data-label="Status">
                         {% if c.status == "pending" %}<span class="badge badge-warning">Open</span>
                         {% elif c.status == "in_progress" %}<span class="badge badge-info">In Progress</span>
                         {% elif c.status == "resolved" %}<span class="badge badge-success">Resolved</span>
