@@ -1,21 +1,4 @@
-/* ============================================================
-   SocietySync — Admin Panel CSS  (IMPROVED)
-   
-   IMPROVEMENTS:
-   ✦ Unified CSS variable system — one source of truth
-   ✦ Consistent 4px spacing grid throughout
-   ✦ Better hover / focus states with ring system
-   ✦ Improved typography scale (fluid clamp where appropriate)
-   ✦ Richer stat card design with gradient accents
-   ✦ Notification bell / dropdown system
-   ✦ Toast system styles
-   ✦ Skeleton shimmer improved (faster, smoother)
-   ✦ Removed duplicate .topbar-hamburger declarations
-   ✦ Cleaner responsive breakpoints (3 tiers)
-   ✦ Added .card-header-row, .card-sub, .notif-* classes used by templates
-   ✦ Sidebar section labels added
-   ============================================================ */
-
+ 
 /* ── Google Fonts ─────────────────────────────────────────── */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
 
@@ -586,6 +569,7 @@ img    { display: block; max-width: 100%; }
 .page-body {
     padding: 24px 28px;
     flex: 1;
+    overflow-x: hidden;
 }
 
 /* Messages */
@@ -848,6 +832,49 @@ table.data-table {
     transition: background .12s;
 }
 .table-wrap table:not(.data-table) tbody tr:hover { background: #f0f7ff; }
+
+/* ── Visitor log stability: keep horizontal movement inside table container ── */
+.table-wrap .visitor-log-table {
+    width: 100%;
+    min-width: 1450px;
+    table-layout: auto;
+}
+
+.card .table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.page-body {
+    overflow-x: hidden;
+}
+
+/* Visitor log page: keep horizontal scroll strictly inside the table wrapper */
+.visitor-log-page {
+    overflow-x: hidden;
+}
+
+.visitor-log-page .card {
+    overflow: hidden;
+}
+
+.visitor-log-page .table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.visitor-log-page .visitor-log-table {
+    width: max-content;
+    min-width: 100%;
+}
+
+.visitor-log-page .visitor-log-table th,
+.visitor-log-page .visitor-log-table td {
+    white-space: nowrap;
+}
 
 /* ============================================================
    BADGES

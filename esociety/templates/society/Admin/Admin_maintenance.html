@@ -121,14 +121,14 @@
             </div>
             <input type="month" name="month" value="{{ month_filter }}"
                    class="filter-select" style="padding:8px 10px;">
-            <select name="status" class="filter-select" onchange="this.form.submit()">
+            <select name="status" class="filter-select">
                 <option value="all"     {% if status_filter == 'all'     %}selected{% endif %}>All Status</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                 <option value="paid"    {% if status_filter == 'paid'    %}selected{% endif %}>Paid</option>
                 <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
                 <option value="waived"  {% if status_filter == 'waived'  %}selected{% endif %}>Waived</option>
             </select>
-            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Apply</button>
             {% if search_query or status_filter != 'all' or month_filter %}
             <a href="{% url 'admin_maintenance' %}" class="btn btn-outline btn-sm">Clear</a>
             {% endif %}
@@ -166,7 +166,7 @@
                     </td>
                     <td><span class="badge badge-gray">{{ due.resident.unit_number|default:"—" }}</span></td>
                     <td><strong>{{ due.due_month|date:"M Y" }}</strong></td>
-                    <td class="fw amount" style="color:var(--success);">₹{{ due.amount }}</td>
+                    <td class="fw amount" style="color:{% if due.status == 'paid' %}var(--success){% elif due.status == 'waived' %}var(--text-muted){% else %}var(--danger){% endif %};">₹{{ due.amount }}</td>
                     <td style="font-size:12.5px;">{{ due.due_date|date:"d M Y" }}</td>
                     <td>
                         {% if due.status == "paid" %}
@@ -187,17 +187,18 @@
                             {% if due.status != "paid" and due.status != "waived" %}
                             <a href="{% url 'admin_mark_due_paid' due.id %}"
                                class="btn btn-success btn-xs"
-                               onclick="return confirm('Mark as paid?')">
+                               data-confirm="Mark this due as paid?">
                                 <i class="fas fa-check"></i> Mark Paid
                             </a>
                             <button class="btn btn-outline btn-xs"
+                                    title="Waive due"
                                     onclick="openWaiveModal({{ due.id }})">
                                 <i class="fas fa-hand-paper"></i>
                             </button>
                             {% endif %}
                             <a href="{% url 'admin_delete_due' due.id %}"
                                class="btn btn-danger btn-xs"
-                               onclick="return confirm('Delete this due?')">
+                               data-confirm="Delete this due record? This cannot be undone.">
                                 <i class="fas fa-trash"></i>
                             </a>
                         </div>
@@ -306,7 +307,7 @@
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form method="POST" id="waiveForm" action="">
+        <form method="POST" id="waiveForm" action="" data-url-template="{% url 'admin_waive_due' 0 %}">
             {% csrf_token %}
             <div class="modal-body">
                 <div class="form-group">
@@ -331,7 +332,9 @@
 <script>skeletonReveal(1500);</script>
 <script>
 function openWaiveModal(dueId) {
-    document.getElementById('waiveForm').action = '/society/admin/maintenance/due/' + dueId + '/waive/';
+    const form = document.getElementById('waiveForm');
+    const template = form.dataset.urlTemplate;
+    form.action = template.replace('/0/', '/' + dueId + '/');
     openModal('waiveModal');
 }
 </script>

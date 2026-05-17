@@ -30,7 +30,7 @@
 </div>
 
 <!-- ░░ REAL CONTENT ░░ -->
-<div class="real-content">
+<div class="real-content visitor-log-page">
 
 <!-- ── Stat Cards ── -->
 <div class="stats-grid">
@@ -146,13 +146,11 @@
 
     <!-- Table -->
     <div class="table-wrap">
-        <table>
+        <table class="visitor-log-table">
             <thead>
                 <tr>
                     <th>#</th>
-                    <th>Photo</th>
-                    <th>Visitor Name</th>
-                    <th>Mobile</th>
+                    <th>Visitor</th>
                     <th>Unit</th>
                     <th>Resident</th>
                     <th>Type</th>
@@ -185,22 +183,21 @@
                     <td class="td-num">{{ forloop.counter }}</td>
 
                     <td>
-                        {% if v.visitor_photo %}
-                            <img src="{{ v.visitor_photo.url }}"
-                                 width="36" height="36"
-                                 style="border-radius:8px;object-fit:cover;border:1px solid var(--border);display:block;">
-                        {% else %}
-                            <div style="width:36px;height:36px;border-radius:8px;
-                                        background:var(--primary-light);color:var(--primary);
-                                        display:flex;align-items:center;justify-content:center;
-                                        font-weight:700;font-size:13px;">
-                                {{ v.visitor_name|first|upper }}
+                        <div class="resident-cell">
+                            {% if v.visitor_photo %}
+                                <img src="{{ v.visitor_photo.url }}"
+                                     width="32" height="32"
+                                     style="border-radius:50%;object-fit:cover;border:1px solid var(--border);display:block;flex-shrink:0;">
+                            {% else %}
+                                <div class="avatar sm">{{ v.visitor_name|first|upper }}</div>
+                            {% endif %}
+                            <div class="info">
+                                <div class="name">{{ v.visitor_name }}</div>
+                                <div class="sub">{{ v.mobile_number }}</div>
                             </div>
-                        {% endif %}
+                        </div>
                     </td>
 
-                    <td class="td-name">{{ v.visitor_name }}</td>
-                    <td class="td-mono">{{ v.mobile_number }}</td>
                     <td><strong>{{ v.resident.unit_number|default:"—" }}</strong></td>
                     <td>{{ v.resident.first_name }} {{ v.resident.last_name }}</td>
 
@@ -267,7 +264,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="14">
+                    <td colspan="12">
                         <div class="empty-state">
                             <div class="empty-icon">🔍</div>
                             <div class="empty-title">No visitors found</div>

@@ -42,6 +42,15 @@
             <div class="sk sk-notice"></div><div class="sk sk-notice"></div><div class="sk sk-notice"></div>
         </div>
     </div>
+    <!-- chart skeletons -->
+    <div class="sk-grid-2">
+        <div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-row" style="height:220px;"></div></div>
+        <div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-row" style="height:220px;"></div></div>
+    </div>
+    <div class="sk-grid-2">
+        <div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-row" style="height:220px;"></div></div>
+        <div class="sk-card"><div class="sk sk-title"></div><div class="sk sk-row" style="height:220px;"></div></div>
+    </div>
 </div>
 
 <!-- ░░ REAL CONTENT ░░ -->
@@ -317,11 +326,251 @@
                 {% endfor %}
             </div>
         </div>
+    </div><!-- /two-col bottom row -->
+
+    <!-- ── Analytics Charts ── -->
+    <div class="card-header" style="margin-bottom:16px;padding:0;">
+        <span class="card-title" style="font-size:16px;">
+            <i class="fas fa-chart-line"></i> Analytics — Last 6 Months
+        </span>
+    </div>
+
+    <!-- Row 1: Maintenance + Complaints -->
+    <div class="two-col" style="margin-bottom:20px;">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-indian-rupee-sign"></i> Maintenance Collection</span>
+            </div>
+            <div class="card-body">
+                <canvas id="maintenanceChart" height="220"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-exclamation-circle"></i> Complaint Trends</span>
+            </div>
+            <div class="card-body">
+                <canvas id="complaintChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Visitors + Pending Dues -->
+    <div class="two-col" style="margin-bottom:20px;">
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-person-walking"></i> Visitor Traffic</span>
+            </div>
+            <div class="card-body">
+                <canvas id="visitorChart" height="220"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-file-invoice-dollar"></i> Pending Dues</span>
+            </div>
+            <div class="card-body">
+                <canvas id="duesChart" height="220"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2.5: Facility Usage -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-header">
+            <span class="card-title"><i class="fas fa-building"></i> Facility Usage</span>
+        </div>
+        <div class="card-body">
+            <canvas id="facilityChart" height="120"></canvas>
+        </div>
+    </div>
+
+    <!-- Row 3: Donut breakdowns -->
+    <div class="three-col" style="margin-bottom:20px;">
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-chart-pie"></i> Complaints</span>
+            </div>
+            <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                <canvas id="complaintDonut" style="max-width:130px;max-height:130px;"></canvas>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0;display:inline-block;"></span>
+                        Pending ({{ complaint_breakdown.pending }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#3b82f6;flex-shrink:0;display:inline-block;"></span>
+                        In Progress ({{ complaint_breakdown.in_progress }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;display:inline-block;"></span>
+                        Resolved ({{ complaint_breakdown.resolved }})
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-chart-pie"></i> Visitor Types</span>
+            </div>
+            <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                <canvas id="visitorDonut" style="max-width:130px;max-height:130px;"></canvas>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#2563eb;flex-shrink:0;display:inline-block;"></span>
+                        Guest ({{ visitor_type_breakdown.guest }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#8b5cf6;flex-shrink:0;display:inline-block;"></span>
+                        Delivery ({{ visitor_type_breakdown.delivery }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0;display:inline-block;"></span>
+                        Maintenance ({{ visitor_type_breakdown.maintenance }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#64748b;flex-shrink:0;display:inline-block;"></span>
+                        Staff ({{ visitor_type_breakdown.staff }})
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title"><i class="fas fa-chart-pie"></i> Dues Status</span>
+            </div>
+            <div class="card-body" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+                <canvas id="duesDonut" style="max-width:130px;max-height:130px;"></canvas>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#10b981;flex-shrink:0;display:inline-block;"></span>
+                        Paid ({{ dues_status.paid }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;flex-shrink:0;display:inline-block;"></span>
+                        Pending ({{ dues_status.pending }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;display:inline-block;"></span>
+                        Overdue ({{ dues_status.overdue }})
+                    </span>
+                    <span style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:7px;">
+                        <span style="width:10px;height:10px;border-radius:50%;background:#94a3b8;flex-shrink:0;display:inline-block;"></span>
+                        Waived ({{ dues_status.waived }})
+                    </span>
+                </div>
+            </div>
+        </div>
+
     </div>
 
 </div><!-- /real-content -->
 
 {% block extra_js %}
-<script>skeletonReveal(1500);</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+skeletonReveal(1500);
+
+(function () {
+    const labels  = {{ month_labels|safe }};
+    const mData   = {{ maintenance_data|safe }};
+    const cData   = {{ complaint_data|safe }};
+    const vData   = {{ visitor_data|safe }};
+    const fData   = {{ facility_data|safe }};
+    const dData   = {{ dues_pending_data|safe }};
+    const cBreak  = {
+        pending: {{ complaint_breakdown.pending }},
+        in_progress: {{ complaint_breakdown.in_progress }},
+        resolved: {{ complaint_breakdown.resolved }}
+    };
+    const vtBreak = {
+        guest: {{ visitor_type_breakdown.guest }},
+        delivery: {{ visitor_type_breakdown.delivery }},
+        maintenance: {{ visitor_type_breakdown.maintenance }},
+        staff: {{ visitor_type_breakdown.staff }}
+    };
+    const dBreak  = [{{ dues_status.paid }}, {{ dues_status.pending }},
+                     {{ dues_status.overdue }}, {{ dues_status.waived }}];
+
+    Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+    Chart.defaults.font.size   = 12;
+    Chart.defaults.color       = '#64748b';
+
+    const grid = '#f1f5f9';
+    const tick  = '#94a3b8';
+
+    function scales() {
+        return {
+            x: { grid: { color: grid }, ticks: { color: tick } },
+            y: { grid: { color: grid }, ticks: { color: tick }, beginAtZero: true },
+        };
+    }
+
+    function bar(id, data, color, label) {
+        new Chart(document.getElementById(id), {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{ label, data,
+                    backgroundColor: color + 'cc', borderColor: color,
+                    borderWidth: 1.5, borderRadius: 6, borderSkipped: false }],
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, scales: scales() },
+        });
+    }
+
+    function line(id, data, color, label) {
+        new Chart(document.getElementById(id), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{ label, data,
+                    borderColor: color, borderWidth: 2.5,
+                    backgroundColor: color + '18',
+                    pointBackgroundColor: color,
+                    pointRadius: 4, pointHoverRadius: 6,
+                    fill: true, tension: 0.4 }],
+            },
+            options: { responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } }, scales: scales() },
+        });
+    }
+
+    function donut(id, labels, data, colors) {
+        new Chart(document.getElementById(id), {
+            type: 'doughnut',
+            data: { labels, datasets: [{ data, backgroundColor: colors,
+                borderWidth: 2, borderColor: '#fff', hoverOffset: 6 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '68%',
+                plugins: { legend: { display: false } } },
+        });
+    }
+
+    bar('maintenanceChart', mData, '#10b981', '₹ Collected');
+    line('complaintChart',  cData, '#f59e0b', 'Complaints');
+    bar('visitorChart',     vData, '#2563eb', 'Visitors');
+    bar('facilityChart',    fData, '#8b5cf6', 'Facility Bookings');
+    bar('duesChart',        dData, '#ef4444', 'Unpaid Dues');
+
+    donut('complaintDonut',
+        ['Pending','In Progress','Resolved'],
+        [cBreak.pending, cBreak.in_progress, cBreak.resolved],
+        ['#f59e0b','#3b82f6','#10b981']);
+
+    donut('visitorDonut',
+        ['Guest','Delivery','Maintenance','Staff'],
+        [vtBreak.guest, vtBreak.delivery, vtBreak.maintenance, vtBreak.staff],
+        ['#2563eb','#8b5cf6','#f59e0b','#64748b']);
+
+    donut('duesDonut',
+        ['Paid','Pending','Overdue','Waived'],
+        dBreak,
+        ['#10b981','#f59e0b','#ef4444','#94a3b8']);
+})();
+</script>
 {% endblock %}
 {% endblock %}

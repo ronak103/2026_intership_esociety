@@ -368,6 +368,7 @@ body {
     flex-direction: column;
     min-height: 100vh;
     transition: margin-left var(--sidebar-transition);
+    overflow-x: hidden;
 }
 
 /* When sidebar is collapsed, main-content takes full width */

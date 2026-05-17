@@ -1,27 +1,8 @@
-/**
- * SocietySync — admin.js  (IMPROVED)
- *
- * IMPROVEMENTS:
- * ✦ Modular IIFE pattern — no global namespace pollution
- * ✦ Unified Toast system (replaces scattered alert calls)
- * ✦ Skeleton reveal upgraded to work with both old (.page-loading)
- *   and new (.sk-active) patterns
- * ✦ Visitor modal styles moved to admin.css (not injected via JS)
- *   — kept here only as minimal fallback
- * ✦ Counter animation uses requestAnimationFrame (smoother)
- * ✦ Debounce utility extracted
- * ✦ Confirm helper uses a styled confirm() wrapper
- * ✦ Auto-dismiss messages with progress bar
- * ✦ Tab pill memory (persists via sessionStorage)
- * ✦ Export button with improved spinner UX
- * ✦ Removed redundant event re-registrations
- */
 
-'use strict';
 
 /* ═══════════════════════════════════════════════════════════
    UTILITIES
-═══════════════════════════════════════════════════════════ */
+═════════════════════════════════════════════════════ */
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 const on = (el, ev, fn, opts) => el && el.addEventListener(ev, fn, opts);
@@ -442,15 +423,15 @@ document.addEventListener('DOMContentLoaded', function () {
     ────────────────────────────────────────────────────── */
     const filterForm = document.getElementById('filter-form');
     if (filterForm) {
-
-        // Auto-submit select dropdowns
-        filterForm.querySelectorAll("select[name='type'], select[name='status']")
-            .forEach(el => on(el, 'change', () => filterForm.submit()));
-
-        // Live search with 450ms debounce
+        // Search submit on Enter only (prevents repeated reload jitter while typing)
         const qInput = filterForm.querySelector("input[name='q']");
         if (qInput) {
-            on(qInput, 'input', debounce(() => filterForm.submit(), 450));
+            on(qInput, 'keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    filterForm.submit();
+                }
+            });
         }
 
         // Highlight active filters

@@ -2,9 +2,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Q, Sum, Count
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
+import json
 import csv
 from django.http import HttpResponse, JsonResponse
 from datetime import date
@@ -81,6 +83,79 @@ def AdminDashboardView(request):
     recent_payments   = Payment.objects.select_related("resident").order_by("-created_at")[:6]
     recent_notices    = Notice.objects.order_by("-created_at")[:4]
 
+    # ===== Analytics series (last 6 months, including current month) =====
+    month_anchor = date(today.year, today.month, 1)
+    month_points = []
+    for i in range(5, -1, -1):
+        year = month_anchor.year
+        month = month_anchor.month - i
+        while month <= 0:
+            month += 12
+            year -= 1
+        month_points.append(date(year, month, 1))
+
+    chart_labels = [d.strftime("%b %Y") for d in month_points]
+
+    def _to_month_key(value):
+        if value is None:
+            return None
+        return value.date() if hasattr(value, "date") else value
+
+    maintenance_raw = (
+        Payment.objects
+        .filter(payment_status="completed", payment_type="maintenance", payment_date__gte=month_points[0])
+        .annotate(month=TruncMonth("payment_date"))
+        .values("month")
+        .annotate(total=Sum("amount"))
+        .order_by("month")
+    )
+    maintenance_map = {_to_month_key(r["month"]): float(r["total"] or 0) for r in maintenance_raw}
+    maintenance_series = [maintenance_map.get(m, 0) for m in month_points]
+
+    complaint_raw = (
+        Complaint.objects
+        .filter(created_at__date__gte=month_points[0])
+        .annotate(month=TruncMonth("created_at"))
+        .values("month")
+        .annotate(total=Count("id"))
+        .order_by("month")
+    )
+    complaint_map = {_to_month_key(r["month"]): int(r["total"] or 0) for r in complaint_raw}
+    complaint_series = [complaint_map.get(m, 0) for m in month_points]
+
+    visitor_raw = (
+        Visitor.objects
+        .filter(expected_date__gte=month_points[0])
+        .annotate(month=TruncMonth("expected_date"))
+        .values("month")
+        .annotate(total=Count("id"))
+        .order_by("month")
+    )
+    visitor_map = {_to_month_key(r["month"]): int(r["total"] or 0) for r in visitor_raw}
+    visitor_series = [visitor_map.get(m, 0) for m in month_points]
+
+    facility_raw = (
+        FacilityBooking.objects
+        .filter(booking_date__gte=month_points[0])
+        .annotate(month=TruncMonth("booking_date"))
+        .values("month")
+        .annotate(total=Count("id"))
+        .order_by("month")
+    )
+    facility_map = {_to_month_key(r["month"]): int(r["total"] or 0) for r in facility_raw}
+    facility_series = [facility_map.get(m, 0) for m in month_points]
+
+    pending_due_raw = (
+        MaintenanceDue.objects
+        .filter(status__in=["pending", "overdue"], due_month__gte=month_points[0])
+        .annotate(month=TruncMonth("due_month"))
+        .values("month")
+        .annotate(total=Sum("amount"))
+        .order_by("month")
+    )
+    pending_due_map = {_to_month_key(r["month"]): float(r["total"] or 0) for r in pending_due_raw}
+    pending_due_series = [pending_due_map.get(m, 0) for m in month_points]
+
     visitor_status_today = [
         {"label": "Total Visitors",      "count": today_visitors,  "badge": "badge-info"},
         {"label": "Currently Inside",    "count": inside_visitors, "badge": "badge-success"},
@@ -88,6 +163,24 @@ def AdminDashboardView(request):
         {"label": "Guard Logged",        "count": Visitor.objects.filter(expected_date=today, registered_by="guard").count(),    "badge": "badge-warning"},
         {"label": "Denied Entry",        "count": Visitor.objects.filter(expected_date=today, entry_status="denied").count(),    "badge": "badge-danger"},
     ]
+
+    complaint_breakdown = {
+        "pending": Complaint.objects.filter(status="pending").count(),
+        "in_progress": Complaint.objects.filter(status="in_progress").count(),
+        "resolved": Complaint.objects.filter(status="resolved").count(),
+    }
+    visitor_type_breakdown = {
+        "guest": Visitor.objects.filter(visitor_type="guest").count(),
+        "delivery": Visitor.objects.filter(visitor_type="delivery").count(),
+        "maintenance": Visitor.objects.filter(visitor_type="maintenance").count(),
+        "staff": Visitor.objects.filter(visitor_type="staff").count(),
+    }
+    dues_status = {
+        "paid": MaintenanceDue.objects.filter(status="paid").count(),
+        "pending": MaintenanceDue.objects.filter(status="pending").count(),
+        "overdue": MaintenanceDue.objects.filter(status="overdue").count(),
+        "waived": MaintenanceDue.objects.filter(status="waived").count(),
+    }
 
     context = {
         "total_residents":       total_residents,
@@ -110,6 +203,21 @@ def AdminDashboardView(request):
         "recent_payments":       recent_payments,
         "recent_notices":        recent_notices,
         "visitor_status_today":  visitor_status_today,
+        "month_labels":          json.dumps(chart_labels),
+        "maintenance_data":      json.dumps(maintenance_series),
+        "complaint_data":        json.dumps(complaint_series),
+        "visitor_data":          json.dumps(visitor_series),
+        "facility_data":         json.dumps(facility_series),
+        "dues_pending_data":     json.dumps(pending_due_series),
+        "complaint_breakdown":   complaint_breakdown,
+        "visitor_type_breakdown": visitor_type_breakdown,
+        "dues_status":           dues_status,
+        "chart_labels_json":     json.dumps(chart_labels),
+        "maintenance_series_json": json.dumps(maintenance_series),
+        "complaint_series_json": json.dumps(complaint_series),
+        "visitor_series_json":   json.dumps(visitor_series),
+        "facility_series_json":  json.dumps(facility_series),
+        "pending_due_series_json": json.dumps(pending_due_series),
         "pending_count":         _pending_count(),   # ← sidebar badge
         "active_residents":      User.objects.filter(role="Resident", status="active").count(),  # ← pending_users page needs this
     }
